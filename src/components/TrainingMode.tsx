@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Board } from './Board';
+import type { BoardArrow } from './Board';
 import type { PlyEval } from '../analysis/analyze';
 import type { UsiEngine } from '../engine/UsiEngine';
 import { scoreToCp } from '../analysis/classify';
@@ -160,6 +161,21 @@ export function TrainingMode({
     setErrorSquare(null);
   };
 
+  // Rien n'est montré tant que la position n'est pas résolue ou dévoilée : une
+  // flèche affichée trop tôt donnerait la réponse.
+  const arrows: BoardArrow[] = [];
+  const toArrow = (usi: string, kind: BoardArrow['kind']): BoardArrow => ({
+    from: usi[1] === '*' ? null : usiToSquare(usi.slice(0, 2)),
+    to: usiToSquare(usi.slice(2, 4)),
+    kind,
+  });
+  if (verdict.kind === 'revealed') {
+    arrows.push(toArrow(current.moveUsi, 'played'));
+    if (current.bestMove) arrows.push(toArrow(current.bestMove, 'best'));
+  } else if (verdict.kind === 'correct') {
+    arrows.push(toArrow(verdict.usi, 'best'));
+  }
+
   const playedLabel =
     verdict.kind === 'correct' || verdict.kind === 'wrong'
       ? formatUsiMoveAsKif(position, verdict.usi, null)
@@ -213,6 +229,7 @@ export function TrainingMode({
           errorSquare={errorSquare}
           handSide={position.turn}
           flipped={flipped}
+          arrows={arrows}
           blackName={blackName}
           whiteName={whiteName}
           onSquareClick={onSquareClick}

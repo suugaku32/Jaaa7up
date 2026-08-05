@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Board } from './components/Board';
+import type { BoardArrow } from './components/Board';
 import { EvalGraph } from './components/EvalGraph';
 import { KifuInput } from './components/KifuInput';
 import { MoveList } from './components/MoveList';
@@ -38,6 +39,7 @@ export default function App() {
   const [currentPly, setCurrentPly] = useState(0);
   const [tab, setTab] = useState<Tab>('analysis');
   const [flipped, setFlipped] = useState(false);
+  const [showBestArrow, setShowBestArrow] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const engineRef = useRef<UsiEngine | null>(null);
 
@@ -112,6 +114,22 @@ export default function App() {
           to: usiToSquare(game.moves[currentPly - 1].slice(2, 4)),
         }
       : null;
+
+  // Le meilleur coup depuis la position affichée : plies[i] a pour sfenBefore
+  // sfens[i], donc plies[currentPly] part bien de ce qu'on voit.
+  const arrows = useMemo<BoardArrow[]>(() => {
+    if (!showBestArrow || !result) return [];
+    const best = result.plies[currentPly]?.bestMove;
+    if (!best) return [];
+    const isDrop = best[1] === '*';
+    return [
+      {
+        from: isDrop ? null : usiToSquare(best.slice(0, 2)),
+        to: usiToSquare(best.slice(2, 4)),
+        kind: 'best',
+      },
+    ];
+  }, [result, currentPly, showBestArrow]);
 
   const summary = useMemo(() => {
     if (!result) return null;
@@ -201,6 +219,13 @@ export default function App() {
               </button>
               <button
                 className="btn btn-ghost"
+                onClick={() => setShowBestArrow((v) => !v)}
+                title="Flèche verte : le coup recommandé depuis la position affichée"
+              >
+                {showBestArrow ? '↗ Flèches' : '↗ Sans flèches'}
+              </button>
+              <button
+                className="btn btn-ghost"
                 onClick={() => {
                   setPhase({ kind: 'input' });
                   setResult(null);
@@ -252,6 +277,7 @@ export default function App() {
                     position={shownPosition}
                     lastMove={lastMove}
                     flipped={flipped}
+                    arrows={arrows}
                     blackName={game.black}
                     whiteName={game.white}
                   />

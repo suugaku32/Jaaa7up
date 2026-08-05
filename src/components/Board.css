@@ -5,13 +5,90 @@
   align-items: center;
 }
 
+.board-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.board-body {
+  display: flex;
+  align-items: stretch;
+}
+
+/* Numéros de colonne (筋) au-dessus, kanji de rangée (段) à droite : convention shogi. */
+.coords-files {
+  display: flex;
+  font-size: 10px;
+  color: var(--dim);
+}
+
+.coords-files span {
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.coords-ranks {
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+  color: var(--dim);
+  padding-left: 3px;
+}
+
+.coords-ranks span {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .goban {
+  position: relative;
   background: var(--board-bg);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   border: 1px solid var(--border);
   border-radius: 6px;
   overflow: hidden;
+}
+
+/* Couche de flèches : purement indicative, ne doit pas voler les clics. */
+.arrow-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.arrow-line {
+  stroke-width: 4;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+
+.arrow-drop {
+  fill: none;
+  stroke-width: 4;
+  opacity: 0.9;
+}
+
+.arrow-best,
+.arrow-line.arrow-best {
+  stroke: var(--status-good);
+}
+
+.arrow-head.arrow-best {
+  fill: var(--status-good);
+  stroke: none;
+}
+
+.arrow-played,
+.arrow-line.arrow-played {
+  stroke: var(--status-blunder);
+}
+
+.arrow-head.arrow-played {
+  fill: var(--status-blunder);
+  stroke: none;
 }
 
 .board-row {
