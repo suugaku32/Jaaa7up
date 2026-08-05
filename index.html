@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Tout est servi depuis l'origine du site : aucune requête réseau sortante,
+      aucun CDN. 'wasm-unsafe-eval' est requis pour instancier le moteur WASM ;
+      'unsafe-inline' en style- car les composants posent des styles inline.
+      Pas de frame-ancestors : cette directive n'existe qu'en en-tête HTTP, que
+      GitHub Pages ne permet pas de définir.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
     <meta
       name="description"
       content="Analysez vos parties de shogi dans le navigateur : courbe d'évaluation, détection des gaffes et mode entraînement."

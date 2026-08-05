@@ -6,6 +6,9 @@ export const HIRATE_SFEN =
 
 const SFEN_TYPE_LETTERS = 'PLNSGBRK';
 
+/** Coordinate move ("7g7f", "7g7f+") or drop ("P*5e"). Anchored on purpose. */
+const USI_MOVE_RE = /^(?:[1-9][a-i][1-9][a-i]\+?|[PLNSGBR]\*[1-9][a-i])$/;
+
 function sfenLetterToType(letter: string): PieceType {
   return letter.toUpperCase() as PieceType;
 }
@@ -26,10 +29,19 @@ export class Position {
     this.moveNumber = 1;
   }
 
+  /**
+   * Parses an SFEN. Rejects malformed input with a clear message rather than
+   * letting it through — callers feed the result straight to the engine and to
+   * React render, so a half-built Position must never escape from here.
+   */
   static fromSfen(sfen: string): Position {
     const pos = new Position();
     const parts = sfen.trim().split(/\s+/);
     const [boardPart, turnPart, handPart, moveNumPart] = parts;
+
+    if (!boardPart) {
+      throw new Error('SFEN invalide : chaîne vide');
+    }
 
     const rows = boardPart.split('/');
     if (rows.length !== 9) {
@@ -57,6 +69,15 @@ export class Position {
           promoted = true;
           i++;
           letter = row[i];
+          if (letter === undefined) {
+            throw new Error(`SFEN invalide : '+' en fin de rangée ${rank}`);
+          }
+        }
+        if (!SFEN_TYPE_LETTERS.includes(letter.toUpperCase())) {
+          throw new Error(`SFEN invalide : pièce inconnue '${letter}' rangée ${rank}`);
+        }
+        if (file < 1 || file > 9) {
+          throw new Error(`SFEN invalide : rangée ${rank} déborde de l'échiquier`);
         }
         const color: Color = letter === letter.toUpperCase() ? 'b' : 'w';
         const type = sfenLetterToType(letter);
@@ -66,6 +87,9 @@ export class Position {
       }
     });
 
+    if (turnPart !== undefined && turnPart !== 'b' && turnPart !== 'w') {
+      throw new Error(`SFEN invalide : trait '${turnPart}' (attendu 'b' ou 'w')`);
+    }
     pos.turn = turnPart === 'w' ? 'w' : 'b';
 
     pos.hands = { b: emptyHand(), w: emptyHand() };
@@ -77,16 +101,26 @@ export class Position {
           numStr += handPart[i];
           i++;
         }
-        const count = numStr ? parseInt(numStr, 10) : 1;
         const letter = handPart[i];
+        if (letter === undefined) {
+          throw new Error("SFEN invalide : nombre sans pièce dans les pièces en main");
+        }
         i++;
-        const color: Color = letter === letter.toUpperCase() ? 'b' : 'w';
-        const type = sfenLetterToType(letter) as Exclude<PieceType, 'K'>;
-        pos.hands[color][type] = count;
+        const upper = letter.toUpperCase();
+        if (upper === 'K' || !SFEN_TYPE_LETTERS.includes(upper)) {
+          throw new Error(`SFEN invalide : pièce en main inconnue '${letter}'`);
+        }
+        const count = numStr ? parseInt(numStr, 10) : 1;
+        if (count > 18) {
+          throw new Error(`SFEN invalide : ${count} exemplaires de '${letter}' en main`);
+        }
+        const color: Color = letter === upper ? 'b' : 'w';
+        pos.hands[color][upper as Exclude<PieceType, 'K'>] = count;
       }
     }
 
-    pos.moveNumber = moveNumPart ? parseInt(moveNumPart, 10) : 1;
+    const moveNumber = moveNumPart ? parseInt(moveNumPart, 10) : 1;
+    pos.moveNumber = Number.isFinite(moveNumber) && moveNumber > 0 ? moveNumber : 1;
     return pos;
   }
 
@@ -153,10 +187,19 @@ export class Position {
 
   /** Apply a move given in USI coordinate form: "7g7f", "7g7f+", "P*5e". Mutates in place. */
   applyUsiMove(usi: string): { capture: PieceType | null } {
+    if (!USI_MOVE_RE.test(usi)) {
+      throw new Error(`Coup USI malformé : '${usi}'`);
+    }
     let capture: PieceType | null = null;
     if (usi[1] === '*') {
       const type = usi[0] as Exclude<PieceType, 'K'>;
       const to = usiToSquare(usi.slice(2, 4));
+      if (this.pieceAt(to)) {
+        throw new Error(`Parachutage sur une case occupée : ${usi}`);
+      }
+      if (this.hands[this.turn][type] <= 0) {
+        throw new Error(`Parachutage sans la pièce en main : ${usi}`);
+      }
       this.setPiece(to, { color: this.turn, type, promoted: false });
       this.hands[this.turn][type] -= 1;
     } else {
@@ -167,8 +210,17 @@ export class Position {
       if (!piece) {
         throw new Error(`Aucune pièce en ${usi.slice(0, 2)} pour le coup ${usi}`);
       }
+      if (piece.color !== this.turn) {
+        throw new Error(`Le coup ${usi} déplace une pièce adverse`);
+      }
       const captured = this.pieceAt(to);
       if (captured) {
+        if (captured.color === this.turn) {
+          throw new Error(`Le coup ${usi} capture une pièce alliée`);
+        }
+        if (captured.type === 'K') {
+          throw new Error(`Le coup ${usi} capture le roi`);
+        }
         capture = captured.type;
         this.hands[this.turn][captured.type as Exclude<PieceType, 'K'>] += 1;
       }

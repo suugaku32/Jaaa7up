@@ -1,10 +1,11 @@
 import { isCsaLike, isKifLike, parseCsa, parseKif } from './kif';
-import { HIRATE_SFEN } from './position';
+import { HIRATE_SFEN, Position } from './position';
 
 export type KifuFormat = 'kif' | 'csa' | 'usi';
 
 export interface ParsedGame {
   format: KifuFormat;
+  /** Always a canonical SFEN regenerated from a validated Position, never raw input. */
   startSfen: string;
   moves: string[]; // USI coordinate moves, e.g. "7g7f", "P*5e"
   black: string;
@@ -12,6 +13,10 @@ export interface ParsedGame {
 }
 
 const USI_MOVE_RE = /^[1-9][a-i][1-9][a-i]\+?$|^[A-Z]\*[1-9][a-i]$/;
+
+/** Guards against pathological inputs before any parsing work happens. */
+const MAX_INPUT_CHARS = 2_000_000;
+const MAX_MOVES = 2_000;
 
 function parseUsiText(text: string): ParsedGame {
   let rest = text.trim();
@@ -34,16 +39,40 @@ function parseUsiText(text: string): ParsedGame {
   return { format: 'usi', startSfen, moves, black: '', white: '' };
 }
 
+/**
+ * Replays the game to prove it is coherent, and rewrites `startSfen` in canonical
+ * form. Everything downstream — React render and the engine command string — then
+ * works from engine-generated text rather than from whatever the user pasted.
+ */
+function validateAndNormalize(game: ParsedGame): ParsedGame {
+  if (game.moves.length > MAX_MOVES) {
+    throw new Error(`Partie trop longue : ${game.moves.length} coups (maximum ${MAX_MOVES}).`);
+  }
+  const pos = Position.fromSfen(game.startSfen);
+  const startSfen = pos.toSfen();
+  game.moves.forEach((usi, i) => {
+    try {
+      pos.applyUsiMove(usi);
+    } catch (e) {
+      throw new Error(`Coup ${i + 1} (${usi}) impossible : ${(e as Error).message}`);
+    }
+  });
+  return { ...game, startSfen };
+}
+
 export function parseKifu(text: string): ParsedGame {
   const trimmed = text.trim();
   if (!trimmed) {
     throw new Error('Le kifu est vide.');
   }
+  if (trimmed.length > MAX_INPUT_CHARS) {
+    throw new Error('Le kifu dépasse la taille maximale acceptée (2 Mo).');
+  }
   if (isCsaLike(trimmed)) {
-    return parseCsa(trimmed);
+    return validateAndNormalize(parseCsa(trimmed));
   }
   if (isKifLike(trimmed)) {
-    return parseKif(trimmed);
+    return validateAndNormalize(parseKif(trimmed));
   }
-  return parseUsiText(trimmed);
+  return validateAndNormalize(parseUsiText(trimmed));
 }
