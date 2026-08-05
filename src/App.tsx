@@ -4,7 +4,7 @@ import { EvalGraph } from './components/EvalGraph';
 import { KifuInput } from './components/KifuInput';
 import { MoveList } from './components/MoveList';
 import { TrainingMode } from './components/TrainingMode';
-import { UsiEngine, engineEnvironmentIssues } from './engine/UsiEngine';
+import { UsiEngine, engineEnvironment } from './engine/UsiEngine';
 import { analyzeGame } from './analysis/analyze';
 import type { AnalysisPhase, AnalysisResult } from './analysis/analyze';
 import { QUALITY_LABEL_FR } from './analysis/classify';
@@ -41,7 +41,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const engineRef = useRef<UsiEngine | null>(null);
 
-  const envIssues = useMemo(() => engineEnvironmentIssues(), []);
+  const env = useMemo(() => engineEnvironment(), []);
 
   const moveLabels = useMemo(() => {
     if (!game) return [];
@@ -136,9 +136,9 @@ export default function App() {
         </p>
       </header>
 
-      {envIssues.length > 0 && (
-        <div className="banner banner-warn">
-          {envIssues.map((msg) => (
+      {env.messages.length > 0 && (
+        <div className={`banner ${env.blocking ? 'banner-error' : 'banner-warn'}`}>
+          {env.messages.map((msg) => (
             <p key={msg}>{msg}</p>
           ))}
         </div>
@@ -155,7 +155,7 @@ export default function App() {
           onMovetimeChange={setMovetimeMs}
           deepMovetimeMs={deepMovetimeMs}
           onDeepMovetimeChange={setDeepMovetimeMs}
-          disabled={phase.kind === 'analyzing'}
+          disabled={phase.kind === 'analyzing' || env.blocking}
         />
       )}
 

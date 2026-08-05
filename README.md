@@ -57,6 +57,18 @@ utilisée par Lichess pour son Stockfish WASM). Le service worker s'installe au
 premier chargement et recharge la page une fois ; c'est pour cela qu'un avertissement
 peut apparaître très brièvement à la toute première visite.
 
+`public/coi-config.js` force `COEP: require-corp`. Sans ça, coi-serviceworker
+choisit `credentialless` pour tout ce qui n'est ni Chrome ni Firefox — donc pour
+Safari, qui ne reconnaît pas cette valeur et se retrouve sans isolation, donc sans
+`SharedArrayBuffer`. Tout étant servi depuis la même origine, `require-corp`
+convient à tous les navigateurs. Ce réglage est un fichier séparé et non un script
+inline, la CSP n'autorisant pas `'unsafe-inline'` pour les scripts.
+
+Le moteur est compilé avec pthreads : sa mémoire WebAssembly est partagée, il ne
+peut donc pas s'instancier sans `SharedArrayBuffer`. Il n'existe pas de repli
+mono-thread dans ce paquet ; quand l'isolation manque, l'app le diagnostique et
+désactive l'analyse plutôt que d'échouer en cours de route.
+
 ### Parsing des notations
 
 C'est la partie la moins triviale du projet. `src/shogi/` contient un modèle de

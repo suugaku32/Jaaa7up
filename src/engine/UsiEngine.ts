@@ -48,17 +48,61 @@ function loadEngineScript(): Promise<void> {
   return scriptLoadPromise;
 }
 
-export function engineEnvironmentIssues(): string[] {
-  const issues: string[] = [];
+export interface EnvironmentReport {
+  /** The engine cannot run at all in this browser as things stand. */
+  blocking: boolean;
+  messages: string[];
+}
+
+/**
+ * The engine is compiled with pthreads, so its WebAssembly memory is shared and
+ * it simply cannot instantiate without SharedArrayBuffer — which browsers only
+ * expose to cross-origin-isolated pages.
+ */
+export function engineEnvironment(): EnvironmentReport {
+  const messages: string[] = [];
+
   if (typeof WebAssembly === 'undefined') {
-    issues.push("Ce navigateur ne supporte pas WebAssembly.");
+    return { blocking: true, messages: ['Ce navigateur ne supporte pas WebAssembly.'] };
   }
-  if (typeof SharedArrayBuffer === 'undefined' || window.crossOriginIsolated === false) {
-    issues.push(
-      "L'isolation cross-origin (COOP/COEP) n'est pas active : le moteur multi-thread risque de ne pas démarrer. Rechargez la page si elle vient de s'ouvrir (le service worker s'active après un premier chargement).",
+
+  const hasSab = typeof SharedArrayBuffer !== 'undefined';
+  const isolated = window.crossOriginIsolated === true;
+  if (hasSab && isolated) return { blocking: false, messages: [] };
+
+  const swSupported = 'serviceWorker' in navigator;
+  const swControlling = swSupported && navigator.serviceWorker.controller !== null;
+
+  if (!window.isSecureContext) {
+    messages.push(
+      "La page n'est pas servie en HTTPS, ce que l'isolation cross-origin exige. Ouvrez le site en https://.",
     );
+    return { blocking: true, messages };
   }
-  return issues;
+
+  if (!swSupported) {
+    messages.push(
+      "Ce navigateur n'expose pas les service workers (navigation privée ?), qui sont nécessaires ici pour activer l'isolation cross-origin.",
+    );
+    return { blocking: true, messages };
+  }
+
+  if (!swControlling) {
+    messages.push(
+      "Le service worker vient de s'installer et ne contrôle pas encore la page. Rechargez pour activer le moteur.",
+    );
+    return { blocking: true, messages };
+  }
+
+  // Service worker in place but still no isolation: the browser is refusing the
+  // headers rather than missing them.
+  messages.push(
+    "Le service worker est actif mais ce navigateur n'accorde pas l'isolation cross-origin, sans laquelle le moteur ne peut pas démarrer.",
+  );
+  messages.push(
+    "Safari sur iPhone et iPad est le cas le plus courant : essayez Chrome ou Firefox, ou un ordinateur.",
+  );
+  return { blocking: true, messages };
 }
 
 export class UsiEngine {
@@ -71,6 +115,12 @@ export class UsiEngine {
   }
 
   private async init(): Promise<void> {
+    const env = engineEnvironment();
+    if (env.blocking) {
+      // Fail with the diagnosis rather than letting the emscripten glue throw a
+      // bare "Can't find variable: SharedArrayBuffer" at the user.
+      throw new Error(env.messages.join(' '));
+    }
     await loadEngineScript();
     const factory = window.YaneuraOu;
     if (!factory) {
