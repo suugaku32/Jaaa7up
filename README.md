@@ -80,6 +80,36 @@ peut donc pas s'instancier sans `SharedArrayBuffer`. Il n'existe pas de repli
 mono-thread dans ce paquet ; quand l'isolation manque, l'app le diagnostique et
 désactive l'analyse plutôt que d'échouer en cours de route.
 
+### Tests différentiels contre lishogi
+
+Lishogi publie son moteur de règles en paquet autonome,
+[`shogiops`](https://github.com/WandererXII/shogiops) (GPL-3.0). Il sert ici
+d'**oracle** en dépendance de développement : il n'entre pas dans le bundle.
+
+```bash
+npm test          # parsers puis générateur de coups
+```
+
+`test/movegen-vs-shogiops.ts` joue des parties aléatoires et compare, à chaque
+position, les coups légaux produits par `src/shogi/moveGen.ts` à ceux de
+shogiops. Référence actuelle : **7 200 positions, zéro divergence**.
+
+`test/parsers-vs-shogiops.ts` compare la lecture d'un KIF et d'un CSA.
+
+Pourquoi ce filet plutôt qu'une migration vers shogiops : le générateur de coups
+a été cassé deux fois pendant le développement, et ces tests l'auraient attrapé
+immédiatement. Une migration, elle, toucherait les six fichiers qui dépendent de
+`src/shogi/` — soit toute l'application — sans même couvrir le **KI2** : la regex
+de shogiops exige la case de départ `(77)`, et son module `japanese` ne sait que
+générer, pas lire.
+
+Attention en écrivant ces tests : `allMoveDests()` ne donne que les cases
+atteignables, il faut éprouver chaque état de promotion séparément, sinon des
+cavaliers et lances apparaissent non promus en dernière rangée. Et
+`allDropDests()` renvoie des clés colorées (« gote bishop ») que `makeUsi`
+n'accepte pas telles quelles. Ces deux pièges ont d'abord fait croire à des
+divergences inexistantes.
+
 ### Parsing des notations
 
 C'est la partie la moins triviale du projet. `src/shogi/` contient un modèle de
