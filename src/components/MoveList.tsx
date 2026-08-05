@@ -7,11 +7,19 @@ interface MoveListProps {
   moveLabels: string[];
   currentPly: number;
   onSelectPly: (ply: number) => void;
+  /** Estompe les coups de l'autre camp sans les retirer, pour garder le fil de la partie. */
+  focusSide?: 'both' | 'b' | 'w';
 }
 
 const SHOWN_QUALITIES = new Set(['inaccuracy', 'mistake', 'blunder']);
 
-export function MoveList({ plies, moveLabels, currentPly, onSelectPly }: MoveListProps) {
+export function MoveList({
+  plies,
+  moveLabels,
+  currentPly,
+  onSelectPly,
+  focusSide = 'both',
+}: MoveListProps) {
   return (
     <ol className="move-list" aria-label="Liste des coups">
       <li
@@ -23,7 +31,9 @@ export function MoveList({ plies, moveLabels, currentPly, onSelectPly }: MoveLis
       {plies.map((p) => (
         <li
           key={p.ply}
-          className={`move-row${currentPly === p.ply ? ' active' : ''}`}
+          className={`move-row${currentPly === p.ply ? ' active' : ''}${
+            focusSide !== 'both' && p.color !== focusSide ? ' dimmed' : ''
+          }`}
           onClick={() => onSelectPly(p.ply)}
         >
           <span className="move-num">{p.ply}.</span>

@@ -171,3 +171,37 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+
+.focus-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.focus-control select {
+  font: inherit;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.analysis-board {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.variation-hint {
+  font-size: 11px;
+  color: var(--gold);
+}
+
+.variations {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

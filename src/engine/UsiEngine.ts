@@ -179,11 +179,25 @@ export class UsiEngine {
     let scoreCp: number | null = null;
     let scoreMate: number | null = null;
     let pv: string[] = [];
+    let bestDepth = -1;
     const onInfo = (line: string) => {
       if (!line.startsWith('info')) return;
+      // Une borne n'est qu'un résultat partiel de la fenêtre de recherche : sa
+      // variante est tronquée et son score approximatif.
+      if (/\b(lowerbound|upperbound)\b/.test(line)) return;
+
+      const depthMatch = line.match(/\bdepth (\d+)/);
+      const depth = depthMatch ? parseInt(depthMatch[1], 10) : bestDepth;
+      // Le moteur émet plusieurs itérations ; ne garder que la plus profonde
+      // évite de retenir une ligne écourtée émise en fin de réflexion.
+      if (depth < bestDepth) return;
+
       const cpMatch = line.match(/score cp (-?\d+)/);
       const mateMatch = line.match(/score mate (-?\d+)/);
       const pvMatch = line.match(/ pv (.+)$/);
+      if (!cpMatch && !mateMatch && !pvMatch) return;
+
+      bestDepth = depth;
       if (cpMatch) {
         scoreCp = parseInt(cpMatch[1], 10);
         scoreMate = null;

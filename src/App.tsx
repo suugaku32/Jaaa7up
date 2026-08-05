@@ -5,6 +5,7 @@ import { EvalGraph } from './components/EvalGraph';
 import { KifuInput } from './components/KifuInput';
 import { MoveList } from './components/MoveList';
 import { TrainingMode } from './components/TrainingMode';
+import { VariationBar } from './components/VariationBar';
 import { UsiEngine, engineEnvironment } from './engine/UsiEngine';
 import { analyzeGame } from './analysis/analyze';
 import type { AnalysisPhase, AnalysisResult } from './analysis/analyze';
@@ -40,6 +41,13 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('analysis');
   const [flipped, setFlipped] = useState(false);
   const [showBestArrow, setShowBestArrow] = useState(true);
+  const [focusSide, setFocusSide] = useState<'both' | 'b' | 'w'>('both');
+  /** Variante rejouée par-dessus la partie : d'où elle part, ses coups, et où on en est. */
+  const [variation, setVariation] = useState<{
+    baseSfen: string;
+    moves: string[];
+    index: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const engineRef = useRef<UsiEngine | null>(null);
 
@@ -104,8 +112,30 @@ export default function App() {
     }
   }, [kifuText, movetimeMs, deepMovetimeMs]);
 
-  const shownPosition = positions[currentPly] ?? null;
-  const lastMove =
+  // Quand une variante est en cours, c'est elle qu'on montre : le plateau rejoue
+  // la ligne du moteur au lieu de la partie.
+  const variationView = useMemo(() => {
+    if (!variation) return null;
+    try {
+      const pos = Position.fromSfen(variation.baseSfen);
+      let last: { from: Square | null; to: Square } | null = null;
+      for (const usi of variation.moves.slice(0, variation.index)) {
+        last = {
+          from: usi.includes('*') ? null : usiToSquare(usi.slice(0, 2)),
+          to: usiToSquare(usi.slice(2, 4)),
+        };
+        pos.applyUsiMove(usi);
+      }
+      const next = variation.moves[variation.index] ?? null;
+      return { position: pos, lastMove: last, next };
+    } catch {
+      return null;
+    }
+  }, [variation]);
+
+  const shownPosition = variationView ? variationView.position : (positions[currentPly] ?? null);
+
+  const gameLastMove =
     currentPly > 0 && game
       ? {
           from: game.moves[currentPly - 1].includes('*')
@@ -114,22 +144,41 @@ export default function App() {
           to: usiToSquare(game.moves[currentPly - 1].slice(2, 4)),
         }
       : null;
+  const lastMove = variationView ? variationView.lastMove : gameLastMove;
 
-  // Le meilleur coup depuis la position affichée : plies[i] a pour sfenBefore
-  // sfens[i], donc plies[currentPly] part bien de ce qu'on voit.
+  const toArrow = (usi: string, kind: BoardArrow['kind']): BoardArrow => ({
+    from: usi[1] === '*' ? null : usiToSquare(usi.slice(0, 2)),
+    to: usiToSquare(usi.slice(2, 4)),
+    kind,
+  });
+
+  // Dans une variante on annonce le coup suivant de la ligne ; sinon le meilleur
+  // coup depuis la position affichée — plies[i] a pour sfenBefore sfens[i], donc
+  // plies[currentPly] part bien de ce qu'on voit.
   const arrows = useMemo<BoardArrow[]>(() => {
-    if (!showBestArrow || !result) return [];
-    const best = result.plies[currentPly]?.bestMove;
-    if (!best) return [];
-    const isDrop = best[1] === '*';
-    return [
-      {
-        from: isDrop ? null : usiToSquare(best.slice(0, 2)),
-        to: usiToSquare(best.slice(2, 4)),
-        kind: 'best',
-      },
-    ];
-  }, [result, currentPly, showBestArrow]);
+    if (!showBestArrow) return [];
+    if (variationView) return variationView.next ? [toArrow(variationView.next, 'best')] : [];
+    const best = result?.plies[currentPly]?.bestMove;
+    return best ? [toArrow(best, 'best')] : [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, currentPly, showBestArrow, variationView]);
+
+  const currentPlyEval = result?.plies[currentPly - 1] ?? null;
+
+  const selectPly = useCallback((ply: number) => {
+    setCurrentPly(ply);
+    setVariation(null);
+  }, []);
+
+  // « Suivre un joueur » : on ne montre que ses fautes, sans réanalyser la partie.
+  const focusedPlies = useMemo(
+    () => (result ? result.plies.filter((p) => focusSide === 'both' || p.color === focusSide) : []),
+    [result, focusSide],
+  );
+  const focusedBlunders = useMemo(
+    () => focusedPlies.filter((p) => p.quality === 'blunder'),
+    [focusedPlies],
+  );
 
   const summary = useMemo(() => {
     if (!result) return null;
@@ -206,10 +255,21 @@ export default function App() {
                 className={`tab${tab === 'training' ? ' active' : ''}`}
                 onClick={() => setTab('training')}
               >
-                Entraînement ({result.blunders.length})
+                Entraînement ({focusedBlunders.length})
               </button>
             </div>
             <div className="toolbar-actions">
+              <label className="focus-control">
+                Suivre :
+                <select
+                  value={focusSide}
+                  onChange={(e) => setFocusSide(e.target.value as 'both' | 'b' | 'w')}
+                >
+                  <option value="both">Les deux joueurs</option>
+                  <option value="b">▲ {game.black || 'Sente'}</option>
+                  <option value="w">△ {game.white || 'Gote'}</option>
+                </select>
+              </label>
               <button
                 className="btn btn-ghost"
                 onClick={() => setFlipped((f) => !f)}
@@ -266,65 +326,119 @@ export default function App() {
             <>
               <EvalGraph
                 evalCurve={result.evalCurve}
-                plies={result.plies}
+                plies={focusedPlies}
                 moveLabels={moveLabels}
                 currentPly={currentPly}
-                onSelectPly={setCurrentPly}
+                onSelectPly={selectPly}
               />
               <div className="analysis-body">
-                {shownPosition && (
-                  <Board
-                    position={shownPosition}
-                    lastMove={lastMove}
-                    flipped={flipped}
-                    arrows={arrows}
-                    blackName={game.black}
-                    whiteName={game.white}
-                  />
-                )}
+                <div className="analysis-board">
+                  {shownPosition && (
+                    <Board
+                      position={shownPosition}
+                      lastMove={lastMove}
+                      flipped={flipped}
+                      arrows={arrows}
+                      blackName={game.black}
+                      whiteName={game.white}
+                    />
+                  )}
+                  {variation && (
+                    <p className="variation-hint">
+                      Variante du moteur — le plateau ne suit plus la partie.
+                    </p>
+                  )}
+                </div>
                 <div className="analysis-side">
                   <div className="ply-nav">
                     <button
                       className="btn btn-ghost"
-                      onClick={() => setCurrentPly(0)}
+                      onClick={() => selectPly(0)}
                       disabled={currentPly === 0}
                     >
                       ⏮
                     </button>
                     <button
                       className="btn btn-ghost"
-                      onClick={() => setCurrentPly((p) => Math.max(0, p - 1))}
+                      onClick={() => selectPly(Math.max(0, currentPly - 1))}
                       disabled={currentPly === 0}
                     >
                       ‹
                     </button>
                     <button
                       className="btn btn-ghost"
-                      onClick={() => setCurrentPly((p) => Math.min(game.moves.length, p + 1))}
+                      onClick={() => selectPly(Math.min(game.moves.length, currentPly + 1))}
                       disabled={currentPly >= game.moves.length}
                     >
                       ›
                     </button>
                     <button
                       className="btn btn-ghost"
-                      onClick={() => setCurrentPly(game.moves.length)}
+                      onClick={() => selectPly(game.moves.length)}
                       disabled={currentPly >= game.moves.length}
                     >
                       ⏭
                     </button>
                   </div>
+
+                  {currentPlyEval && (
+                    <div className="variations">
+                      <VariationBar
+                        label="Suite jouée"
+                        tone="played"
+                        baseSfen={currentPlyEval.sfenAfter}
+                        moves={currentPlyEval.refutationPv}
+                        activeIndex={
+                          variation?.baseSfen === currentPlyEval.sfenAfter ? variation.index : null
+                        }
+                        onSelect={(i) =>
+                          setVariation(
+                            i === null
+                              ? null
+                              : {
+                                  baseSfen: currentPlyEval.sfenAfter,
+                                  moves: currentPlyEval.refutationPv,
+                                  index: i,
+                                },
+                          )
+                        }
+                      />
+                      <VariationBar
+                        label="Meilleure suite"
+                        tone="best"
+                        baseSfen={currentPlyEval.sfenBefore}
+                        moves={currentPlyEval.bestMovePv}
+                        activeIndex={
+                          variation?.baseSfen === currentPlyEval.sfenBefore ? variation.index : null
+                        }
+                        onSelect={(i) =>
+                          setVariation(
+                            i === null
+                              ? null
+                              : {
+                                  baseSfen: currentPlyEval.sfenBefore,
+                                  moves: currentPlyEval.bestMovePv,
+                                  index: i,
+                                },
+                          )
+                        }
+                      />
+                    </div>
+                  )}
+
                   <MoveList
                     plies={result.plies}
                     moveLabels={moveLabels}
                     currentPly={currentPly}
-                    onSelectPly={setCurrentPly}
+                    onSelectPly={selectPly}
+                    focusSide={focusSide}
                   />
                 </div>
               </div>
             </>
           ) : (
             <TrainingMode
-              blunders={result.blunders}
+              blunders={focusedBlunders}
               engine={engineRef.current}
               movetimeMs={deepMovetimeMs > 0 ? deepMovetimeMs : movetimeMs}
               flipped={flipped}

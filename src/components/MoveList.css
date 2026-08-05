@@ -68,3 +68,7 @@
   color: var(--dim);
   font-weight: 400;
 }
+
+.move-row.dimmed {
+  opacity: 0.42;
+}

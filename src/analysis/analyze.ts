@@ -14,7 +14,10 @@ export interface PlyEval {
   /** Engine cp score at sfenAfter, converted to the mover's perspective. */
   evalAfterCp: number;
   bestMove: string | null;
+  /** Ce que le moteur aurait joué à la place, et la suite qu'il envisage. */
   bestMovePv: string[];
+  /** La suite après le coup réellement joué : c'est elle qui montre pourquoi il est mauvais. */
+  refutationPv: string[];
   centipawnLoss: number;
   quality: MoveQuality;
   /** True once the second pass has re-examined this ply at the deeper time control. */
@@ -112,6 +115,7 @@ export async function analyzeGame(
       evalAfterCp,
       bestMove: evals[i].bestMove,
       bestMovePv: evals[i].pv,
+      refutationPv: evals[i + 1].pv,
       centipawnLoss: loss,
       quality: classifyLoss(winDrop),
     });
@@ -158,6 +162,7 @@ export async function analyzeGame(
       p.evalAfterCp = -after.cp;
       p.bestMove = before.bestMove;
       p.bestMovePv = before.pv;
+      p.refutationPv = after.pv;
       p.centipawnLoss = Math.max(0, p.evalBeforeCp - p.evalAfterCp);
       p.quality = classifyLoss(
         Math.max(0, cpToWinPercent(p.evalBeforeCp) - cpToWinPercent(p.evalAfterCp)),
