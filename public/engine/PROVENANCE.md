@@ -46,6 +46,9 @@ binaire.
 
 ### SuishoPetite (2021) a été testé, et n'est pas retenu
 
+Le fichier est archivé dans [`nets/`](../../nets/) pour rester disponible sans
+retéléchargement ; il n'est pas servi par le site.
+
 L'hypothèse « réseau plus récent = moteur plus fort » a été mesurée, pas supposée.
 SuishoPetite (`suishopetite_20211123.k_p`, même architecture, empreinte
 `39a295d3…`) a été chargé dans ce binaire et confronté au réseau actuel :
