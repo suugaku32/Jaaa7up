@@ -102,3 +102,19 @@
 .verdict strong {
   font-size: 15px;
 }
+
+.training-board {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.training-played {
+  color: var(--status-blunder);
+}
+
+.training-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

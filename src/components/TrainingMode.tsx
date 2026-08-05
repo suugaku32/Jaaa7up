@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Board } from './Board';
+import { VariationBar } from './VariationBar';
 import type { BoardArrow } from './Board';
 import type { PlyEval } from '../analysis/analyze';
 import type { UsiEngine } from '../engine/UsiEngine';
@@ -17,9 +18,17 @@ const ACCEPT_MARGIN_CP = 50;
 type Verdict =
   | { kind: 'idle' }
   | { kind: 'checking' }
-  | { kind: 'correct'; playedCp: number; bestCp: number; usi: string }
-  | { kind: 'wrong'; playedCp: number; bestCp: number; usi: string }
+  | { kind: 'correct'; playedCp: number; bestCp: number; usi: string; pv: string[] }
+  | { kind: 'wrong'; playedCp: number; bestCp: number; usi: string; pv: string[] }
   | { kind: 'revealed' };
+
+/** Ligne rejouable montrée une fois la position résolue ou dévoilée. */
+interface Line {
+  label: string;
+  tone: 'best' | 'played';
+  baseSfen: string;
+  moves: string[];
+}
 
 interface TrainingModeProps {
   blunders: PlyEval[];
@@ -46,6 +55,8 @@ export function TrainingMode({
   const [verdict, setVerdict] = useState<Verdict>({ kind: 'idle' });
   const [promptPromotion, setPromptPromotion] = useState<{ from: Square; to: Square } | null>(null);
   const [solved, setSolved] = useState<Set<number>>(new Set());
+  /** Suite en cours de lecture : quelle ligne, et combien de coups rejoués. */
+  const [replay, setReplay] = useState<{ line: Line; index: number } | null>(null);
 
   const current = blunders[idx];
 
@@ -90,12 +101,25 @@ export function TrainingMode({
     const playedCp = -scoreToCp(after.scoreCp, after.scoreMate);
     const bestCp = current.evalBeforeCp;
     const correct = bestCp - playedCp <= ACCEPT_MARGIN_CP;
+    // La variante renvoyée part de la position d'après le coup proposé : c'est
+    // elle qui montre ce que devient la partie, et donc pourquoi le coup tient.
     if (correct) {
       setSolved((s) => new Set(s).add(idx));
-      setVerdict({ kind: 'correct', playedCp, bestCp, usi });
+      setVerdict({ kind: 'correct', playedCp, bestCp, usi, pv: after.pv });
     } else {
       flashError(usiToSquare(usi.slice(2, 4)));
-      setVerdict({ kind: 'wrong', playedCp, bestCp, usi });
+      setVerdict({ kind: 'wrong', playedCp, bestCp, usi, pv: after.pv });
+    }
+  };
+
+  /** Position obtenue après un coup joué depuis la position de l'exercice. */
+  const sfenAfterUsi = (usi: string): string | null => {
+    try {
+      const p = Position.fromSfen(current.sfenBefore);
+      p.applyUsiMove(usi);
+      return p.toSfen();
+    } catch {
+      return null;
     }
   };
 
@@ -159,7 +183,67 @@ export function TrainingMode({
     setVerdict({ kind: 'idle' });
     setPromptPromotion(null);
     setErrorSquare(null);
+    setReplay(null);
   };
+
+  // Lignes proposées une fois la position résolue ou dévoilée. Jamais avant :
+  // elles donneraient la réponse.
+  const lines: Line[] = [];
+  if (verdict.kind === 'correct' || verdict.kind === 'wrong') {
+    const base = sfenAfterUsi(verdict.usi);
+    if (base && verdict.pv.length) {
+      lines.push({
+        label: verdict.kind === 'correct' ? 'Votre coup, la suite' : 'Après votre coup',
+        tone: verdict.kind === 'correct' ? 'best' : 'played',
+        baseSfen: base,
+        moves: verdict.pv,
+      });
+    }
+  }
+  if (verdict.kind === 'revealed' || verdict.kind === 'correct') {
+    if (current.bestMovePv.length) {
+      lines.push({
+        label: 'Meilleure suite',
+        tone: 'best',
+        baseSfen: current.sfenBefore,
+        moves: current.bestMovePv,
+      });
+    }
+    if (current.refutationPv.length) {
+      lines.push({
+        label: 'Ce qui a suivi',
+        tone: 'played',
+        baseSfen: current.sfenAfter,
+        moves: current.refutationPv,
+      });
+    }
+  }
+
+  // Le plateau suit la suite en cours de lecture, sinon la position de l'exercice.
+  // Pas de useMemo ici : ce code vit après le retour anticipé plus haut, et un
+  // hook conditionnel casserait l'ordre des hooks entre deux rendus. Rejouer une
+  // poignée de coups ne coûte rien.
+  const replayView = ((): {
+    position: Position;
+    lastMove: { from: Square | null; to: Square } | null;
+    next: string | null;
+  } | null => {
+    if (!replay) return null;
+    try {
+      const pos = Position.fromSfen(replay.line.baseSfen);
+      let last: { from: Square | null; to: Square } | null = null;
+      for (const usi of replay.line.moves.slice(0, replay.index)) {
+        last = {
+          from: usi.includes('*') ? null : usiToSquare(usi.slice(0, 2)),
+          to: usiToSquare(usi.slice(2, 4)),
+        };
+        pos.applyUsiMove(usi);
+      }
+      return { position: pos, lastMove: last, next: replay.line.moves[replay.index] ?? null };
+    } catch {
+      return null;
+    }
+  })();
 
   // Rien n'est montré tant que la position n'est pas résolue ou dévoilée : une
   // flèche affichée trop tôt donnerait la réponse.
@@ -169,7 +253,9 @@ export function TrainingMode({
     to: usiToSquare(usi.slice(2, 4)),
     kind,
   });
-  if (verdict.kind === 'revealed') {
+  if (replayView) {
+    if (replayView.next) arrows.push(toArrow(replayView.next, 'best'));
+  } else if (verdict.kind === 'revealed') {
     arrows.push(toArrow(current.moveUsi, 'played'));
     if (current.bestMove) arrows.push(toArrow(current.bestMove, 'best'));
   } else if (verdict.kind === 'correct') {
@@ -216,25 +302,36 @@ export function TrainingMode({
             ? ` (${current.color === 'b' ? blackName : whiteName})`
             : ''}
         </strong>{' '}
-        de jouer. Dans la partie, ce coup a coûté{' '}
-        <strong>{(current.centipawnLoss / 100).toFixed(1)}</strong> points. Trouvez mieux.
+        de jouer. Dans la partie : <strong className="training-played">{actualLabel}</strong>, qui a
+        coûté <strong>{(current.centipawnLoss / 100).toFixed(1)}</strong> points.{' '}
+        <strong>Trouvez mieux.</strong>
       </p>
 
       <div className="training-body">
-        <Board
-          position={position}
-          interactive={verdict.kind !== 'correct' && verdict.kind !== 'revealed'}
-          selected={selected}
-          legalDestinations={destinations()}
-          errorSquare={errorSquare}
-          handSide={position.turn}
-          flipped={flipped}
-          arrows={arrows}
-          blackName={blackName}
-          whiteName={whiteName}
-          onSquareClick={onSquareClick}
-          onHandPieceClick={onHandPieceClick}
-        />
+        <div className="training-board">
+          <Board
+            position={replayView ? replayView.position : position}
+            lastMove={replayView ? replayView.lastMove : null}
+            interactive={
+              !replayView && verdict.kind !== 'correct' && verdict.kind !== 'revealed'
+            }
+            selected={selected}
+            legalDestinations={replayView ? [] : destinations()}
+            errorSquare={errorSquare}
+            handSide={position.turn}
+            flipped={flipped}
+            arrows={arrows}
+            blackName={blackName}
+            whiteName={whiteName}
+            onSquareClick={onSquareClick}
+            onHandPieceClick={onHandPieceClick}
+          />
+          {replayView && (
+            <p className="variation-hint">
+              Suite du moteur — le plateau ne montre plus la position de l'exercice.
+            </p>
+          )}
+        </div>
 
         <div className="training-side">
           {promptPromotion && (
@@ -280,8 +377,30 @@ export function TrainingMode({
             </div>
           )}
 
+          {lines.length > 0 && (
+            <div className="training-lines">
+              {lines.map((line) => (
+                <VariationBar
+                  key={line.label}
+                  label={line.label}
+                  tone={line.tone}
+                  baseSfen={line.baseSfen}
+                  moves={line.moves}
+                  activeIndex={replay?.line.label === line.label ? replay.index : null}
+                  onSelect={(i) => setReplay(i === null ? null : { line, index: i })}
+                />
+              ))}
+            </div>
+          )}
+
           {verdict.kind !== 'revealed' && verdict.kind !== 'correct' && (
-            <button className="btn btn-ghost" onClick={() => setVerdict({ kind: 'revealed' })}>
+            <button
+              className="btn btn-ghost"
+              onClick={() => {
+                setVerdict({ kind: 'revealed' });
+                setReplay(null);
+              }}
+            >
               Voir la solution
             </button>
           )}
