@@ -25,6 +25,7 @@
       SharedArrayBuffer (moteur WASM multi-thread). coi-serviceworker les injecte
       côté client. Doit rester avant le bundle applicatif.
     -->
+    <script src="./boot-check.js"></script>
     <script src="./coi-config.js"></script>
     <script src="./coi-serviceworker.js"></script>
   </head>
@@ -71,6 +72,21 @@
           Si le problème persiste, videz les données de site pour
           <code>suugaku32.github.io</code> dans les réglages du navigateur.
         </p>
+        <pre
+          id="boot-diagnostic"
+          style="
+            display: none;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #16213e;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-size: 0.7rem;
+            color: #c3c2b7;
+            margin-top: 1.25rem;
+          "
+        ></pre>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
