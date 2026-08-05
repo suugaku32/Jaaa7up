@@ -88,6 +88,18 @@
     },
   };
 
+  // Un service worker déjà en place a pu servir ce document sous l'ancien mode
+  // COEP : le changement demandé ci-dessus ne vaut que pour les requêtes
+  // suivantes. Un rechargement unique remet la page dans le bon mode, sans quoi
+  // il faudrait actualiser à la main. Le garde ci-dessus le plafonne, donc pas
+  // de boucle si le navigateur refuse l'isolation pour une autre raison.
+  window.addEventListener('load', function () {
+    if (reset) return;
+    if (window.crossOriginIsolated !== false) return;
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
+    window.coi.doReload();
+  });
+
   if (reset) {
     try {
       sessionStorage.removeItem(RELOAD_KEY);
