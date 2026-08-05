@@ -24,9 +24,19 @@ interface TrainingModeProps {
   blunders: PlyEval[];
   engine: UsiEngine | null;
   movetimeMs: number;
+  flipped?: boolean;
+  blackName?: string;
+  whiteName?: string;
 }
 
-export function TrainingMode({ blunders, engine, movetimeMs }: TrainingModeProps) {
+export function TrainingMode({
+  blunders,
+  engine,
+  movetimeMs,
+  flipped,
+  blackName,
+  whiteName,
+}: TrainingModeProps) {
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<
     { kind: 'square'; sq: Square } | { kind: 'hand'; type: PieceType } | null
@@ -183,7 +193,13 @@ export function TrainingMode({ blunders, engine, movetimeMs }: TrainingModeProps
       </div>
 
       <p className="training-prompt">
-        Coup {current.ply} — c'est à <strong>{current.color === 'b' ? '▲ Sente' : '△ Gote'}</strong>{' '}
+        Coup {current.ply} — c'est à{' '}
+        <strong>
+          {current.color === 'b' ? '▲ Sente' : '△ Gote'}
+          {(current.color === 'b' ? blackName : whiteName)
+            ? ` (${current.color === 'b' ? blackName : whiteName})`
+            : ''}
+        </strong>{' '}
         de jouer. Dans la partie, ce coup a coûté{' '}
         <strong>{(current.centipawnLoss / 100).toFixed(1)}</strong> points. Trouvez mieux.
       </p>
@@ -196,6 +212,9 @@ export function TrainingMode({ blunders, engine, movetimeMs }: TrainingModeProps
           legalDestinations={destinations()}
           errorSquare={errorSquare}
           handSide={position.turn}
+          flipped={flipped}
+          blackName={blackName}
+          whiteName={whiteName}
           onSquareClick={onSquareClick}
           onHandPieceClick={onHandPieceClick}
         />

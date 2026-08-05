@@ -165,3 +165,9 @@
   padding-top: 12px;
   margin-top: 8px;
 }
+
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

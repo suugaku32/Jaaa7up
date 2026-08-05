@@ -37,6 +37,7 @@ export default function App() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [currentPly, setCurrentPly] = useState(0);
   const [tab, setTab] = useState<Tab>('analysis');
+  const [flipped, setFlipped] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const engineRef = useRef<UsiEngine | null>(null);
 
@@ -190,16 +191,25 @@ export default function App() {
                 Entraînement ({result.blunders.length})
               </button>
             </div>
-            <button
-              className="btn btn-ghost"
-              onClick={() => {
-                setPhase({ kind: 'input' });
-                setResult(null);
-                setGame(null);
-              }}
-            >
-              Nouvelle partie
-            </button>
+            <div className="toolbar-actions">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setFlipped((f) => !f)}
+                title="Voir le plateau depuis l'autre camp"
+              >
+                ⇅ {flipped ? 'Vue Gote' : 'Vue Sente'}
+              </button>
+              <button
+                className="btn btn-ghost"
+                onClick={() => {
+                  setPhase({ kind: 'input' });
+                  setResult(null);
+                  setGame(null);
+                }}
+              >
+                Nouvelle partie
+              </button>
+            </div>
           </div>
 
           {summary && (
@@ -237,7 +247,15 @@ export default function App() {
                 onSelectPly={setCurrentPly}
               />
               <div className="analysis-body">
-                {shownPosition && <Board position={shownPosition} lastMove={lastMove} />}
+                {shownPosition && (
+                  <Board
+                    position={shownPosition}
+                    lastMove={lastMove}
+                    flipped={flipped}
+                    blackName={game.black}
+                    whiteName={game.white}
+                  />
+                )}
                 <div className="analysis-side">
                   <div className="ply-nav">
                     <button
@@ -283,6 +301,9 @@ export default function App() {
               blunders={result.blunders}
               engine={engineRef.current}
               movetimeMs={deepMovetimeMs > 0 ? deepMovetimeMs : movetimeMs}
+              flipped={flipped}
+              blackName={game.black}
+              whiteName={game.white}
             />
           )}
         </>
