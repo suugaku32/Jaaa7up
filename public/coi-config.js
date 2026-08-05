@@ -16,9 +16,25 @@
  * s'affiche telle quelle ; l'app détecte l'absence de SharedArrayBuffer et
  * l'explique au lieu de disparaître.
  *
+ * ── Mode COEP ────────────────────────────────────────────────────────────────
+ * La bibliothèque choisit `credentialless` pour tout ce qui n'est ni Chrome ni
+ * Firefox — son test est `!(window.chrome || window.netscape)`, vrai sur Safari.
+ * Or Safari ne reconnaît pas cette valeur : l'en-tête est ignoré, la page n'est
+ * pas isolée, SharedArrayBuffer reste absent et le moteur ne démarre pas.
+ *
+ * Tout étant servi depuis la même origine, `require-corp` convient partout, et
+ * c'est déjà ce que reçoivent Chrome et Firefox. Le service worker pose alors
+ * aussi `Cross-Origin-Resource-Policy: cross-origin` sur ce qu'il sert.
+ *
+ * Ce forçage avait été tenté puis annulé, la page ne s'ouvrant plus sur iOS. Ce
+ * signal était faux à deux titres : le réglage vivait dans un script inline que
+ * la CSP bloquait, donc il ne s'exécutait pas, et GitHub Pages servait alors le
+ * dépôt brut au lieu du build. Il n'avait donc jamais été mis à l'épreuve.
+ *
  * ── Porte de secours ─────────────────────────────────────────────────────────
  * Ouvrir la page avec `?reset-sw` désinstalle le service worker sans en
- * réenregistrer un.
+ * réenregistrer un. À garder à portée : si `require-corp` devait casser un
+ * navigateur, c'est le moyen de s'en sortir.
  */
 (function () {
   var RELOAD_KEY = 'coi-reload-count';
@@ -45,6 +61,9 @@
   }
 
   window.coi = {
+    coepCredentialless: function () {
+      return false;
+    },
     shouldRegister: function () {
       return !reset && count() < MAX_RELOADS;
     },
