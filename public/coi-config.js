@@ -4,28 +4,71 @@
  * Fichier séparé et non script inline : la CSP de index.html n'autorise pas
  * 'unsafe-inline' pour les scripts.
  *
- * On ne force PAS le mode COEP. Une tentative de forcer `require-corp` (pour
- * contourner le fait que la bibliothèque choisit `credentialless` sur Safari,
- * qui ne reconnaît pas cette valeur) a empêché la page de s'ouvrir sur iOS.
- * Faute de pouvoir tester WebKit, on s'en tient au comportement par défaut de la
- * bibliothèque, connu pour se charger partout — quitte à ce que Safari n'obtienne
- * pas SharedArrayBuffer et que l'app le signale proprement.
+ * ── Garde anti-boucle ────────────────────────────────────────────────────────
+ * coi-serviceworker recharge la page lui-même : quand le service worker est actif
+ * sans contrôler la page, et quand une mise à jour est détectée. Si le navigateur
+ * n'accorde jamais l'isolation — Safari/WebKit reçoit `COEP: credentialless`,
+ * valeur qu'il ne reconnaît pas — la condition reste vraie à chaque chargement et
+ * la page se recharge indéfiniment : écran blanc permanent, que vider les données
+ * du site ne répare pas puisque la boucle redémarre aussitôt.
  *
- * Porte de secours : ouvrir la page avec `?reset-sw` désinstalle le service
- * worker et n'en réenregistre pas. Indispensable parce qu'un service worker
- * survit aux rechargements et intercepte toutes les requêtes : sans ça, un état
- * cassé ne se répare qu'en vidant les données du site.
+ * On plafonne donc les rechargements par onglet. Passé la limite, la page
+ * s'affiche telle quelle ; l'app détecte l'absence de SharedArrayBuffer et
+ * l'explique au lieu de disparaître.
+ *
+ * ── Porte de secours ─────────────────────────────────────────────────────────
+ * Ouvrir la page avec `?reset-sw` désinstalle le service worker sans en
+ * réenregistrer un.
  */
 (function () {
+  var RELOAD_KEY = 'coi-reload-count';
+  var MAX_RELOADS = 2;
   var reset = /[?&]reset-sw\b/.test(window.location.search);
+
+  function count() {
+    try {
+      return parseInt(sessionStorage.getItem(RELOAD_KEY) || '0', 10) || 0;
+    } catch (e) {
+      // sessionStorage peut lever en navigation privée : sans compteur fiable,
+      // on interdit tout rechargement plutôt que risquer la boucle.
+      return MAX_RELOADS;
+    }
+  }
+
+  // Isolation obtenue : la séquence a abouti, on repart de zéro.
+  if (window.crossOriginIsolated === true) {
+    try {
+      sessionStorage.removeItem(RELOAD_KEY);
+    } catch (e) {
+      /* sans importance */
+    }
+  }
+
   window.coi = {
     shouldRegister: function () {
-      return !reset;
+      return !reset && count() < MAX_RELOADS;
     },
     shouldDeregister: function () {
       return reset;
     },
+    doReload: function () {
+      var n = count();
+      if (n >= MAX_RELOADS) {
+        console.warn(
+          "coi-serviceworker : rechargement ignoré (" + n + " déjà effectués). " +
+            "Ce navigateur n'accorde pas l'isolation cross-origin.",
+        );
+        return;
+      }
+      try {
+        sessionStorage.setItem(RELOAD_KEY, String(n + 1));
+      } catch (e) {
+        return; // pas de compteur, pas de rechargement
+      }
+      window.location.reload();
+    },
   };
+
   if (reset && 'serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(function (regs) {
       regs.forEach(function (r) {
