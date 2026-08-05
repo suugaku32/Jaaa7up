@@ -1,17 +1,36 @@
 /*
- * Configuration de coi-serviceworker, à charger avant lui.
- *
- * Par défaut il choisit `COEP: credentialless` pour tout ce qui n'est ni Chrome
- * ni Firefox — donc pour Safari, qui ne reconnaît pas cette valeur. L'en-tête est
- * alors ignoré, la page n'est pas cross-origin isolated, et SharedArrayBuffer
- * reste indisponible : le moteur ne peut pas démarrer.
- *
- * Tout étant servi depuis la même origine, `require-corp` convient à tous les
- * navigateurs — c'est déjà ce que reçoivent Chrome et Firefox.
+ * Configuration de coi-serviceworker, chargée avant lui.
  *
  * Fichier séparé et non script inline : la CSP de index.html n'autorise pas
  * 'unsafe-inline' pour les scripts.
+ *
+ * On ne force PAS le mode COEP. Une tentative de forcer `require-corp` (pour
+ * contourner le fait que la bibliothèque choisit `credentialless` sur Safari,
+ * qui ne reconnaît pas cette valeur) a empêché la page de s'ouvrir sur iOS.
+ * Faute de pouvoir tester WebKit, on s'en tient au comportement par défaut de la
+ * bibliothèque, connu pour se charger partout — quitte à ce que Safari n'obtienne
+ * pas SharedArrayBuffer et que l'app le signale proprement.
+ *
+ * Porte de secours : ouvrir la page avec `?reset-sw` désinstalle le service
+ * worker et n'en réenregistre pas. Indispensable parce qu'un service worker
+ * survit aux rechargements et intercepte toutes les requêtes : sans ça, un état
+ * cassé ne se répare qu'en vidant les données du site.
  */
-window.coi = {
-  coepCredentialless: () => false,
-};
+(function () {
+  var reset = /[?&]reset-sw\b/.test(window.location.search);
+  window.coi = {
+    shouldRegister: function () {
+      return !reset;
+    },
+    shouldDeregister: function () {
+      return reset;
+    },
+  };
+  if (reset && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+      regs.forEach(function (r) {
+        r.unregister();
+      });
+    });
+  }
+})();
