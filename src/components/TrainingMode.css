@@ -1,0 +1,104 @@
+.training {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.training-empty {
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--dim);
+}
+
+.training-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.training-progress {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.training-solved {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.training-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.training-prompt {
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.training-body {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.training-side {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.training-hint {
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.promo-prompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  border-left: 4px solid var(--dim);
+  background: var(--surface);
+}
+
+.verdict-correct {
+  border-left-color: var(--status-good);
+}
+
+.verdict-wrong {
+  border-left-color: var(--status-blunder);
+}
+
+.verdict-revealed {
+  border-left-color: var(--gold);
+}
+
+.verdict strong {
+  font-size: 15px;
+}

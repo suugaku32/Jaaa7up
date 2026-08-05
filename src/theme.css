@@ -1,0 +1,102 @@
+/*
+ * Palette reprise de l'app Tsume (suugaku32/tsume) pour que les deux outils
+ * forment une famille visuelle. Fond sombre, pièces en kanji avec halo néon.
+ */
+:root {
+  color-scheme: dark;
+
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --surface2: #0f3460;
+  --accent: #e94560;
+  --gold: #f5a623;
+  --green: #27ae60;
+  --blue: #2980b9;
+  --text: #eaeaea;
+  --dim: #888;
+
+  /* Rôles dataviz — divergent (avantage Sente / Gote) + statuts de qualité.
+     Tous ≥ 3:1 sur le fond #1a1a2e (validé). Les marqueurs portent en plus
+     une forme distincte, jamais la couleur seule. */
+  --diverging-pos: #2980b9;
+  --diverging-neg: #e94560;
+  --gridline: rgba(255, 255, 255, 0.08);
+  --baseline: rgba(255, 255, 255, 0.25);
+  --border: rgba(255, 255, 255, 0.18);
+
+  --status-blunder: #e94560;
+  --status-mistake: #e8833a;
+  --status-inaccuracy: #f5a623;
+  --status-good: #27ae60;
+
+  /* Plateau */
+  --board-bg: rgba(255, 255, 255, 0.03);
+  --board-line: rgba(255, 255, 255, 0.85);
+  --piece-text: #ffffff;
+  --glow-normal: 0 0 1px #00cfff, 0 0 5px #00aaff, 0 0 12px rgba(0, 180, 255, 0.6);
+  --glow-promoted: 0 0 1px #ff4444, 0 0 5px #ff3333, 0 0 12px rgba(255, 60, 60, 0.7);
+  --sq-to: rgba(255, 196, 0, 0.22);
+  --sq-from: rgba(100, 149, 255, 0.18);
+  --sq-sel: rgba(0, 255, 120, 0.25);
+  --sq-err: rgba(255, 50, 50, 0.5);
+  --sq-hint: rgba(0, 200, 100, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+  line-height: 1.5;
+}
+
+.btn {
+  font: inherit;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface2);
+  transition: filter 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.2);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn-primary {
+  background: var(--blue);
+  color: #fff;
+}
+
+.btn-ghost {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.btn-link {
+  background: none;
+  color: var(--dim);
+  text-decoration: underline;
+  padding: 9px 4px;
+}
