@@ -10,10 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "coi-serviceworker": "^0.1.7",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "yaneuraou.wasm": "^0.1.2"
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
