@@ -6,6 +6,16 @@ import { KifuInput } from './components/KifuInput';
 import { MoveList } from './components/MoveList';
 import { TrainingMode } from './components/TrainingMode';
 import { VariationBar } from './components/VariationBar';
+import { HistoryList } from './components/HistoryList';
+import {
+  clearHistory,
+  deleteGame,
+  isHistoryAvailable,
+  listHistory,
+  loadGame,
+  saveGame,
+} from './storage/history';
+import type { HistoryEntry } from './storage/history';
 import { UsiEngine, engineEnvironment } from './engine/UsiEngine';
 import { analyzeGame } from './analysis/analyze';
 import type { AnalysisPhase, AnalysisResult } from './analysis/analyze';
@@ -49,7 +59,11 @@ export default function App() {
     index: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>(() => listHistory());
+  const [historyNote, setHistoryNote] = useState<string | null>(null);
   const engineRef = useRef<UsiEngine | null>(null);
+
+  const historyAvailable = useMemo(() => isHistoryAvailable(), []);
 
   const env = useMemo(() => engineEnvironment(), []);
 
@@ -106,11 +120,35 @@ export default function App() {
       });
       setResult(res);
       setPhase({ kind: 'done' });
+      // Une analyse coûte des dizaines de secondes : la conserver évite de la
+      // refaire pour revoir une partie.
+      const saved = saveGame(parsed, res, movetimeMs, deepMovetimeMs);
+      setHistory(listHistory());
+      setHistoryNote(saved.reason ?? null);
     } catch (e) {
       setError(`Analyse interrompue : ${(e as Error).message}`);
       setPhase({ kind: 'input' });
     }
   }, [kifuText, movetimeMs, deepMovetimeMs]);
+
+  const openFromHistory = useCallback((id: string) => {
+    const loaded = loadGame(id);
+    if (!loaded) {
+      setError("Cette partie n'a pas pu être relue depuis l'historique.");
+      setHistory(listHistory());
+      return;
+    }
+    setError(null);
+    setHistoryNote(null);
+    setGame(loaded.game);
+    setResult(loaded.result);
+    setMovetimeMs(loaded.movetimeMs);
+    setDeepMovetimeMs(loaded.deepMovetimeMs);
+    setCurrentPly(0);
+    setVariation(null);
+    setTab('analysis');
+    setPhase({ kind: 'done' });
+  }, []);
 
   // Quand une variante est en cours, c'est elle qu'on montre : le plateau rejoue
   // la ligne du moteur au lieu de la partie.
@@ -225,6 +263,24 @@ export default function App() {
           disabled={phase.kind === 'analyzing' || env.blocking}
         />
       )}
+
+      {phase.kind === 'input' && (
+        <HistoryList
+          entries={history}
+          unavailable={!historyAvailable}
+          onOpen={openFromHistory}
+          onDelete={(id) => {
+            deleteGame(id);
+            setHistory(listHistory());
+          }}
+          onClear={() => {
+            clearHistory();
+            setHistory(listHistory());
+          }}
+        />
+      )}
+
+      {historyNote && <div className="banner banner-warn">{historyNote}</div>}
 
       {phase.kind === 'analyzing' && (
         <div className="progress">
