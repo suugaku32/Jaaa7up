@@ -69,11 +69,31 @@
     },
   };
 
-  if (reset && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function (regs) {
-      regs.forEach(function (r) {
-        r.unregister();
-      });
-    });
+  if (reset) {
+    try {
+      sessionStorage.removeItem(RELOAD_KEY);
+    } catch (e) {
+      /* sans importance */
+    }
+    // Repartir sur l'URL nue ne suffirait pas : c'est justement son HTML qui est
+    // périmé en cache. Un paramètre unique force une clé de cache neuve, donc un
+    // index.html à jour référençant un bundle qui existe.
+    var done = function () {
+      window.location.replace('./?fresh=' + Date.now());
+    };
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then(function (regs) {
+          return Promise.all(
+            regs.map(function (r) {
+              return r.unregister();
+            }),
+          );
+        })
+        .then(done, done);
+    } else {
+      done();
+    }
   }
 })();
