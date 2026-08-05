@@ -60,6 +60,11 @@
   transition: width 0.2s;
 }
 
+/* Seconde passe : couleur distincte, la barre repart de zéro sur un autre total. */
+.progress-fill.refine {
+  background: var(--gold);
+}
+
 .toolbar {
   display: flex;
   align-items: center;

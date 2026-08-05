@@ -17,6 +17,8 @@ export interface PlyEval {
   bestMovePv: string[];
   centipawnLoss: number;
   quality: MoveQuality;
+  /** True once the second pass has re-examined this ply at the deeper time control. */
+  refined?: boolean;
 }
 
 export interface EvalPoint {
@@ -33,12 +35,20 @@ export interface AnalysisResult {
   mistakes: PlyEval[];
 }
 
+export type AnalysisPhase = 'scan' | 'refine';
+
 export interface AnalyzeGameOptions {
+  /** Time per position for the first pass, which sweeps the whole game. */
   movetimeMs?: number;
+  /** Time per position for the second pass, which re-examines suspect moves only. */
+  deepMovetimeMs?: number;
   depth?: number;
-  onProgress?: (done: number, total: number) => void;
+  onProgress?: (phase: AnalysisPhase, done: number, total: number) => void;
   signal?: AbortSignal;
 }
+
+/** Qualities worth spending the second pass on. */
+const REFINED_QUALITIES: MoveQuality[] = ['inaccuracy', 'mistake', 'blunder'];
 
 export async function analyzeGame(
   engine: UsiEngine,
@@ -53,6 +63,7 @@ export async function analyzeGame(
     sfens.push(pos.toSfen());
   }
 
+  // Pass 1 — sweep every position quickly, just to locate the suspect moves.
   const total = sfens.length;
   const evals: { cp: number; bestMove: string | null; pv: string[] }[] = [];
   for (let i = 0; i < sfens.length; i++) {
@@ -66,7 +77,7 @@ export async function analyzeGame(
       bestMove: result.bestMove,
       pv: result.pv,
     });
-    opts.onProgress?.(i + 1, total);
+    opts.onProgress?.('scan', i + 1, total);
   }
 
   const plies: PlyEval[] = [];
@@ -110,6 +121,55 @@ export async function analyzeGame(
       ply: i + 1,
       cpForBlack: mover === 'b' ? evalAfterCp : -evalAfterCp,
     });
+  }
+
+  // Pass 2 — re-examine only the suspect moves, with a much longer search.
+  // The first pass is too shallow to be trusted as the answer key in training
+  // mode, and it also mislabels some moves in both directions.
+  const deepMs = opts.deepMovetimeMs;
+  if (deepMs && deepMs > (opts.movetimeMs ?? 0)) {
+    const candidates = plies.filter((p) => REFINED_QUALITIES.includes(p.quality));
+    // A ply needs its own position and the one after it; consecutive candidates share.
+    const needed = new Set<number>();
+    for (const p of candidates) {
+      needed.add(p.ply - 1);
+      needed.add(p.ply);
+    }
+    const indices = [...needed].sort((a, b) => a - b);
+    const deep = new Map<number, { cp: number; bestMove: string | null; pv: string[] }>();
+
+    for (let k = 0; k < indices.length; k++) {
+      if (opts.signal?.aborted) throw new DOMException('Analyse annulée', 'AbortError');
+      const i = indices[k];
+      const r = await engine.analyze(sfens[i], [], { movetimeMs: deepMs });
+      deep.set(i, {
+        cp: scoreToCp(r.scoreCp, r.scoreMate),
+        bestMove: r.bestMove,
+        pv: r.pv,
+      });
+      opts.onProgress?.('refine', k + 1, indices.length);
+    }
+
+    for (const p of candidates) {
+      const before = deep.get(p.ply - 1);
+      const after = deep.get(p.ply);
+      if (!before || !after) continue;
+      p.evalBeforeCp = before.cp;
+      p.evalAfterCp = -after.cp;
+      p.bestMove = before.bestMove;
+      p.bestMovePv = before.pv;
+      p.centipawnLoss = Math.max(0, p.evalBeforeCp - p.evalAfterCp);
+      p.quality = classifyLoss(
+        Math.max(0, cpToWinPercent(p.evalBeforeCp) - cpToWinPercent(p.evalAfterCp)),
+      );
+      p.refined = true;
+    }
+
+    // Keep the curve consistent with the deepened values.
+    for (const p of candidates) {
+      const point = evalCurve[p.ply];
+      if (point) point.cpForBlack = p.color === 'b' ? p.evalAfterCp : -p.evalAfterCp;
+    }
   }
 
   const blunders = plies.filter((p) => p.quality === 'blunder');

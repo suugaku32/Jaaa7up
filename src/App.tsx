@@ -6,7 +6,7 @@ import { MoveList } from './components/MoveList';
 import { TrainingMode } from './components/TrainingMode';
 import { UsiEngine, engineEnvironmentIssues } from './engine/UsiEngine';
 import { analyzeGame } from './analysis/analyze';
-import type { AnalysisResult } from './analysis/analyze';
+import type { AnalysisPhase, AnalysisResult } from './analysis/analyze';
 import { QUALITY_LABEL_FR } from './analysis/classify';
 import { parseKifu } from './shogi/parser';
 import type { ParsedGame } from './shogi/parser';
@@ -20,12 +20,18 @@ type Tab = 'analysis' | 'training';
 
 type Phase =
   | { kind: 'input' }
-  | { kind: 'analyzing'; done: number; total: number }
+  | { kind: 'analyzing'; step: AnalysisPhase; done: number; total: number }
   | { kind: 'done' };
+
+const PHASE_LABEL: Record<AnalysisPhase, string> = {
+  scan: 'Balayage de la partie',
+  refine: 'Étude des coups suspects',
+};
 
 export default function App() {
   const [kifuText, setKifuText] = useState('');
-  const [movetimeMs, setMovetimeMs] = useState(400);
+  const [movetimeMs, setMovetimeMs] = useState(200);
+  const [deepMovetimeMs, setDeepMovetimeMs] = useState(2000);
   const [phase, setPhase] = useState<Phase>({ kind: 'input' });
   const [game, setGame] = useState<ParsedGame | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -76,7 +82,7 @@ export default function App() {
     }
     setGame(parsed);
     setCurrentPly(0);
-    setPhase({ kind: 'analyzing', done: 0, total: parsed.moves.length + 1 });
+    setPhase({ kind: 'analyzing', step: 'scan', done: 0, total: parsed.moves.length + 1 });
 
     try {
       if (!engineRef.current) engineRef.current = new UsiEngine();
@@ -84,7 +90,8 @@ export default function App() {
       await engine.ready;
       const res = await analyzeGame(engine, parsed.startSfen, parsed.moves, {
         movetimeMs,
-        onProgress: (done, total) => setPhase({ kind: 'analyzing', done, total }),
+        deepMovetimeMs,
+        onProgress: (step, done, total) => setPhase({ kind: 'analyzing', step, done, total }),
       });
       setResult(res);
       setPhase({ kind: 'done' });
@@ -92,7 +99,7 @@ export default function App() {
       setError(`Analyse interrompue : ${(e as Error).message}`);
       setPhase({ kind: 'input' });
     }
-  }, [kifuText, movetimeMs]);
+  }, [kifuText, movetimeMs, deepMovetimeMs]);
 
   const shownPosition = positions[currentPly] ?? null;
   const lastMove =
@@ -145,6 +152,8 @@ export default function App() {
           onAnalyze={runAnalysis}
           movetimeMs={movetimeMs}
           onMovetimeChange={setMovetimeMs}
+          deepMovetimeMs={deepMovetimeMs}
+          onDeepMovetimeChange={setDeepMovetimeMs}
           disabled={phase.kind === 'analyzing'}
         />
       )}
@@ -153,12 +162,13 @@ export default function App() {
         <div className="progress">
           <div className="progress-bar">
             <div
-              className="progress-fill"
+              className={`progress-fill${phase.step === 'refine' ? ' refine' : ''}`}
               style={{ width: `${Math.round((phase.done / phase.total) * 100)}%` }}
             />
           </div>
           <span>
-            Analyse : {phase.done} / {phase.total} positions
+            {PHASE_LABEL[phase.step]} — {phase.done} / {phase.total} positions
+            {phase.step === 'scan' && deepMovetimeMs > 0 && ' (passe 1 sur 2)'}
           </span>
         </div>
       )}
@@ -272,7 +282,7 @@ export default function App() {
             <TrainingMode
               blunders={result.blunders}
               engine={engineRef.current}
-              movetimeMs={movetimeMs}
+              movetimeMs={deepMovetimeMs > 0 ? deepMovetimeMs : movetimeMs}
             />
           )}
         </>

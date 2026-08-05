@@ -63,3 +63,8 @@
   font-weight: 600;
   font-size: 11px;
 }
+
+.move-refined {
+  color: var(--dim);
+  font-weight: 400;
+}

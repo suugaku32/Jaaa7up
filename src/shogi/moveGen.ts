@@ -229,14 +229,28 @@ export function generateLegalMoves(pos: Position, color: Color): Move[] {
   pseudo.push(...dropMoves(pos, color));
 
   return pseudo.filter((m) => {
+    // Capturing the enemy king is never a move we offer, and applying it would be
+    // rejected outright — that shape only appears when the opponent already left
+    // their king en prise, i.e. the position itself is illegal.
+    if (m.capture === 'K') return false;
     const clone = pos.clone();
     clone.turn = color;
-    const usi = moveToUsi(m);
-    clone.applyUsiMove(usi);
+    try {
+      clone.applyUsiMove(moveToUsi(m));
+    } catch {
+      return false;
+    }
     const king = clone.findKing(color);
     if (!king) return true;
     return !isSquareAttacked(clone, king, otherColor(color));
   });
+}
+
+/** True when `color` has left their king capturable — an illegal position. */
+export function isKingCapturable(pos: Position, color: Color): boolean {
+  const king = pos.findKing(color);
+  if (!king) return false;
+  return isSquareAttacked(pos, king, otherColor(color));
 }
 
 export function legalMovesFrom(pos: Position, from: Square): Move[] {

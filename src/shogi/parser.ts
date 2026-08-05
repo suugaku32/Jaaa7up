@@ -1,4 +1,5 @@
 import { isCsaLike, isKifLike, parseCsa, parseKif } from './kif';
+import { isKingCapturable } from './moveGen';
 import { HIRATE_SFEN, Position } from './position';
 
 export type KifuFormat = 'kif' | 'csa' | 'usi';
@@ -51,10 +52,19 @@ function validateAndNormalize(game: ParsedGame): ParsedGame {
   const pos = Position.fromSfen(game.startSfen);
   const startSfen = pos.toSfen();
   game.moves.forEach((usi, i) => {
+    const mover = pos.turn;
     try {
       pos.applyUsiMove(usi);
     } catch (e) {
       throw new Error(`Coup ${i + 1} (${usi}) impossible : ${(e as Error).message}`);
+    }
+    // A move that leaves your own king capturable is illegal, and feeding such a
+    // position to the engine makes it trap on an unreachable instruction — which
+    // would kill the whole analysis with no usable message.
+    if (isKingCapturable(pos, mover)) {
+      throw new Error(
+        `Coup ${i + 1} (${usi}) illégal : il laisse le roi ${mover === 'b' ? '▲' : '△'} en prise.`,
+      );
     }
   });
   return { ...game, startSfen };
