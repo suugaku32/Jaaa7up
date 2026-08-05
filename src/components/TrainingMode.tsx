@@ -255,11 +255,15 @@ export function TrainingMode({
   });
   if (replayView) {
     if (replayView.next) arrows.push(toArrow(replayView.next, 'best'));
-  } else if (verdict.kind === 'revealed') {
+  } else {
+    // Le coup joué est déjà nommé dans l'énoncé : la flèche rouge n'ajoute aucun
+    // indice, elle rend seulement le contexte lisible sans chercher les cases.
     arrows.push(toArrow(current.moveUsi, 'played'));
-    if (current.bestMove) arrows.push(toArrow(current.bestMove, 'best'));
-  } else if (verdict.kind === 'correct') {
-    arrows.push(toArrow(verdict.usi, 'best'));
+    if (verdict.kind === 'revealed' && current.bestMove) {
+      arrows.push(toArrow(current.bestMove, 'best'));
+    } else if (verdict.kind === 'correct') {
+      arrows.push(toArrow(verdict.usi, 'best'));
+    }
   }
 
   const playedLabel =
