@@ -72,13 +72,26 @@ export function TsumeMode({
   const [promptPromotion, setPromptPromotion] = useState<{ from: Square; to: Square } | null>(null);
   const [solvedSet, setSolvedSet] = useState<Set<number>>(new Set());
   const [replayIndex, setReplayIndex] = useState<number | null>(null);
+  /**
+   * Demi-coups de la solution déjà joués d'avance, pour raccourcir l'exercice.
+   * Toujours pair : sauter un nombre impair rendrait la main à l'adversaire, et
+   * ce n'est plus le même problème.
+   */
+  const [skipped, setSkipped] = useState(0);
 
   const current = tsumes[idx];
 
-  const startPosition = useMemo(
-    () => (current ? Position.fromSfen(current.sfen) : null),
-    [current],
-  );
+  // Position d'où part réellement l'exercice, une fois le raccourci appliqué.
+  const startPosition = useMemo(() => {
+    if (!current) return null;
+    try {
+      const p = Position.fromSfen(current.sfen);
+      for (const m of current.solution.slice(0, skipped)) p.applyUsiMove(m);
+      return p;
+    } catch {
+      return null;
+    }
+  }, [current, skipped]);
 
   // Un tsume se choisit sur son énoncé — qui mate, en combien, et si l'occasion
   // a été saisie — pas en défilant à l'aveugle.
@@ -105,10 +118,31 @@ export function TsumeMode({
     );
   }
 
+  /*
+   * Tout ce qui suit raisonne sur l'exercice *raccourci*, pas sur le tsume
+   * d'origine : sa position de départ, sa solution restante, sa longueur. Un
+   * mat en 13 est illisible comme exercice ; ses cinq derniers demi-coups sont
+   * un vrai problème.
+   */
+  const exerciseSfen = startPosition.toSfen();
+  const solution = current.solution.slice(skipped);
+  const mateIn = current.mateIn - skipped;
+
+  /*
+   * Jusqu'où on peut raccourcir. Deux plafonds :
+   *  — laisser au moins un demi-coup à trouver ;
+   *  — ne pas dépasser la variante que le moteur a réellement fournie, qui peut
+   *    être plus courte que le mat annoncé si la recherche l'a tronquée.
+   * Et toujours un nombre pair, pour que le camp au trait reste le bon.
+   */
+  const maxSkip =
+    Math.floor(Math.min(current.mateIn - 1, current.solution.length - 1) / 2) * 2;
+
   // Position courante de l'exercice : départ + coups déjà joués. La solution
   // dévoilée prend la main sur le plateau quand on la parcourt.
-  const solutionView = replayIndex === null ? null : replay(current.sfen, current.solution.slice(0, replayIndex));
-  const livePosition = replay(current.sfen, line) ?? startPosition;
+  const solutionView =
+    replayIndex === null ? null : replay(exerciseSfen, solution.slice(0, replayIndex));
+  const livePosition = replay(exerciseSfen, line) ?? startPosition;
   const position = solutionView ?? livePosition;
 
   const legalMoves = generateLegalMoves(position, position.turn);
@@ -135,7 +169,7 @@ export function TsumeMode({
     if (!engine) return;
     setState({ kind: 'checking' });
     const afterOurs = line.concat(usi);
-    const posAfterOurs = replay(current.sfen, afterOurs);
+    const posAfterOurs = replay(exerciseSfen, afterOurs);
     if (!posAfterOurs) {
       setState({ kind: 'solving' });
       return;
@@ -153,11 +187,11 @@ export function TsumeMode({
     // un score de mat négatif chez lui veut dire qu'il est toujours perdu.
     const stillMated = (r: { scoreMate: number | null }) =>
       r.scoreMate !== null && r.scoreMate < 0;
-    let verdict = await engine.analyze(current.sfen, afterOurs, {
+    let verdict = await engine.analyze(exerciseSfen, afterOurs, {
       movetimeMs: QUICK_CHECK_MS,
     });
     if (!stillMated(verdict) && movetimeMs > QUICK_CHECK_MS) {
-      verdict = await engine.analyze(current.sfen, afterOurs, { movetimeMs });
+      verdict = await engine.analyze(exerciseSfen, afterOurs, { movetimeMs });
     }
     if (!stillMated(verdict)) {
       flashError(usiToSquare(usi.slice(2, 4)));
@@ -177,7 +211,7 @@ export function TsumeMode({
       return;
     }
     const afterDefence = afterOurs.concat(defence);
-    const posAfterDefence = replay(current.sfen, afterDefence);
+    const posAfterDefence = replay(exerciseSfen, afterDefence);
     if (!posAfterDefence) {
       setLine(afterOurs);
       setState({ kind: 'solving' });
@@ -261,6 +295,18 @@ export function TsumeMode({
 
   const goTo = (next: number) => {
     setIdx(next);
+    setSkipped(0);
+    setLine([]);
+    setState({ kind: 'solving' });
+    setSelected(null);
+    setPromptPromotion(null);
+    setErrorSquare(null);
+    setReplayIndex(null);
+  };
+
+  /** Raccourcir remet l'exercice à zéro : ce n'est plus la même position. */
+  const changeSkipped = (n: number) => {
+    setSkipped(n);
     setLine([]);
     setState({ kind: 'solving' });
     setSelected(null);
@@ -270,7 +316,7 @@ export function TsumeMode({
   };
 
   // Dernier coup joué, pour le surlignage du plateau.
-  const shownMoves = solutionView ? current.solution.slice(0, replayIndex ?? 0) : line;
+  const shownMoves = solutionView ? solution.slice(0, replayIndex ?? 0) : line;
   const lastUsi = shownMoves[shownMoves.length - 1] ?? null;
   const lastMove = lastUsi
     ? {
@@ -281,7 +327,7 @@ export function TsumeMode({
 
   const arrows: BoardArrow[] = [];
   if (solutionView) {
-    const next = current.solution[replayIndex ?? 0];
+    const next = solution[replayIndex ?? 0];
     if (next) {
       arrows.push({
         from: next[1] === '*' ? null : usiToSquare(next.slice(0, 2)),
@@ -289,8 +335,8 @@ export function TsumeMode({
         kind: 'best',
       });
     }
-  } else if (state.kind === 'revealed' && current.solution[0]) {
-    const first = current.solution[0];
+  } else if (state.kind === 'revealed' && solution[0]) {
+    const first = solution[0];
     arrows.push({
       from: first[1] === '*' ? null : usiToSquare(first.slice(0, 2)),
       to: usiToSquare(first.slice(2, 4)),
@@ -352,7 +398,7 @@ export function TsumeMode({
           {sideLabel}
           {playerName ? ` (${playerName})` : ''}
         </strong>{' '}
-        peut mater en <strong className="tsume-count">{current.mateIn}</strong> demi-coups.{' '}
+        peut mater en <strong className="tsume-count">{mateIn}</strong> demi-coups.{' '}
         {current.delivered ? (
           <span className="tsume-found">Le mat a été porté dans la partie.</span>
         ) : current.lostAtPly === current.ply ? (
@@ -377,6 +423,30 @@ export function TsumeMode({
           La même occasion revenait encore au coup {current.lastPly} ({current.repeats} position
           {current.repeats > 1 ? 's regroupées' : ' regroupée'} ici).
         </p>
+      )}
+
+      {maxSkip > 0 && (
+        <div className="tsume-shorten">
+          <label>
+            <span className="tsume-shorten-label">Longueur</span>
+            <input
+              type="range"
+              min={0}
+              max={maxSkip}
+              step={2}
+              value={skipped}
+              onChange={(e) => changeSkipped(Number(e.target.value))}
+              aria-label="Raccourcir le tsume"
+            />
+            <output>mat en {mateIn}</output>
+          </label>
+          {skipped > 0 && (
+            <span className="tsume-note">
+              {skipped} demi-coup{skipped > 1 ? 's' : ''} de la solution déjà joué
+              {skipped > 1 ? 's' : ''}.
+            </span>
+          )}
+        </div>
       )}
 
       <div className="training-body">
@@ -449,18 +519,18 @@ export function TsumeMode({
             <div className="verdict verdict-correct">
               <strong>✓ Mat</strong>
               <span>
-                Porté en {ourMovesPlayed} coup(s). Le moteur annonçait {current.mateIn} demi-coups.
+                Porté en {ourMovesPlayed} coup(s). Le moteur annonçait {mateIn} demi-coups.
               </span>
             </div>
           )}
 
-          {(state.kind === 'revealed' || state.kind === 'solved') && current.solution.length > 0 && (
+          {(state.kind === 'revealed' || state.kind === 'solved') && solution.length > 0 && (
             <div className="training-lines">
               <VariationBar
                 label="Séquence de mat du moteur"
                 tone="best"
-                baseSfen={current.sfen}
-                moves={current.solution}
+                baseSfen={exerciseSfen}
+                moves={solution}
                 activeIndex={replayIndex}
                 onSelect={setReplayIndex}
               />
