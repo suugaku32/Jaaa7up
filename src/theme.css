@@ -148,6 +148,206 @@
   --piece-promoted: #ff8a8a;
 }
 
+/*
+ * Classiques. Palettes officielles, reprises telles quelles pour le fond et le
+ * texte ; les rôles (gaffe, erreur, imprécision) sont mappés sur les couleurs
+ * sémantiques de chaque palette plutôt que réinventés. Aucun halo : ces thèmes
+ * valent par leurs teintes, pas par des effets.
+ */
+
+/* Catppuccin Mocha — https://catppuccin.com */
+:root[data-theme='catppuccin-mocha'] {
+  --bg: #1e1e2e;
+  --surface: #313244;
+  --surface2: #45475a;
+  --text: #cdd6f4;
+  --dim: #a6adc8;
+  --border: rgba(205, 214, 244, 0.16);
+  --accent: #f38ba8;
+  --gold: #f9e2af;
+  --green: #a6e3a1;
+  --blue: #89b4fa;
+  --diverging-pos: #89b4fa;
+  --diverging-neg: #f38ba8;
+  --gridline: rgba(205, 214, 244, 0.1);
+  --baseline: rgba(205, 214, 244, 0.3);
+  --status-blunder: #f38ba8;
+  --status-mistake: #fab387;
+  --status-inaccuracy: #f9e2af;
+  --status-good: #a6e3a1;
+  --board-bg: rgba(205, 214, 244, 0.04);
+  --board-line: rgba(205, 214, 244, 0.5);
+  --piece-text: #cdd6f4;
+  --piece-promoted: #f38ba8;
+  --on-accent: #1e1e2e;
+}
+
+/* Catppuccin Latte — la variante claire de la même famille. */
+:root[data-theme='catppuccin-latte'] {
+  color-scheme: light;
+  --bg: #eff1f5;
+  --surface: #e6e9ef;
+  --surface2: #ccd0da;
+  --text: #4c4f69;
+  --dim: #6c6f85;
+  --border: rgba(76, 79, 105, 0.22);
+  --accent: #d20f39;
+  --gold: #df8e1d;
+  --green: #40a02b;
+  --blue: #1e66f5;
+  --diverging-pos: #1e66f5;
+  --diverging-neg: #d20f39;
+  --gridline: rgba(76, 79, 105, 0.12);
+  --baseline: rgba(76, 79, 105, 0.35);
+  --status-blunder: #d20f39;
+  --status-mistake: #e64553;
+  --status-inaccuracy: #8c6d1f;
+  --status-good: #40a02b;
+  --board-bg: rgba(76, 79, 105, 0.05);
+  --board-line: rgba(76, 79, 105, 0.5);
+  --piece-text: #4c4f69;
+  --piece-promoted: #d20f39;
+  --on-accent: #eff1f5;
+}
+
+/* Nord — https://nordtheme.com */
+:root[data-theme='nord'] {
+  --bg: #2e3440;
+  --surface: #3b4252;
+  --surface2: #434c5e;
+  --text: #eceff4;
+  --dim: #b3bcca;
+  --border: rgba(236, 239, 244, 0.18);
+  --accent: #bf616a;
+  --gold: #ebcb8b;
+  --green: #a3be8c;
+  --blue: #88c0d0;
+  --diverging-pos: #88c0d0;
+  --diverging-neg: #bf616a;
+  --gridline: rgba(236, 239, 244, 0.1);
+  --baseline: rgba(236, 239, 244, 0.3);
+  --status-blunder: #bf616a;
+  --status-mistake: #d08770;
+  --status-inaccuracy: #ebcb8b;
+  --status-good: #a3be8c;
+  --board-bg: rgba(236, 239, 244, 0.04);
+  --board-line: rgba(236, 239, 244, 0.5);
+  --piece-text: #eceff4;
+  --piece-promoted: #d08770;
+  --on-accent: #2e3440;
+}
+
+/* Dracula — https://draculatheme.com */
+:root[data-theme='dracula'] {
+  --bg: #282a36;
+  --surface: #343746;
+  --surface2: #44475a;
+  --text: #f8f8f2;
+  --dim: #a4b1d6;
+  --border: rgba(248, 248, 242, 0.18);
+  --accent: #ff79c6;
+  --gold: #f1fa8c;
+  --green: #50fa7b;
+  --blue: #8be9fd;
+  --diverging-pos: #8be9fd;
+  --diverging-neg: #ff79c6;
+  --gridline: rgba(248, 248, 242, 0.1);
+  --baseline: rgba(248, 248, 242, 0.3);
+  --status-blunder: #ff5555;
+  --status-mistake: #ffb86c;
+  --status-inaccuracy: #f1fa8c;
+  --status-good: #50fa7b;
+  --board-bg: rgba(248, 248, 242, 0.04);
+  --board-line: rgba(248, 248, 242, 0.5);
+  --piece-text: #f8f8f2;
+  --piece-promoted: #ff79c6;
+  --on-accent: #282a36;
+}
+
+/* Gruvbox — https://github.com/morhetz/gruvbox */
+:root[data-theme='gruvbox'] {
+  --bg: #282828;
+  --surface: #3c3836;
+  --surface2: #504945;
+  --text: #ebdbb2;
+  --dim: #bdae93;
+  --border: rgba(235, 219, 178, 0.2);
+  --accent: #fb4934;
+  --gold: #fabd2f;
+  --green: #b8bb26;
+  --blue: #83a598;
+  --diverging-pos: #83a598;
+  --diverging-neg: #fb4934;
+  --gridline: rgba(235, 219, 178, 0.1);
+  --baseline: rgba(235, 219, 178, 0.3);
+  --status-blunder: #fb4934;
+  --status-mistake: #fe8019;
+  --status-inaccuracy: #fabd2f;
+  --status-good: #b8bb26;
+  --board-bg: rgba(235, 219, 178, 0.04);
+  --board-line: rgba(235, 219, 178, 0.5);
+  --piece-text: #ebdbb2;
+  --piece-promoted: #fb4934;
+  --on-accent: #282828;
+}
+
+/* Solarized Dark — https://ethanschoonover.com/solarized */
+:root[data-theme='solarized'] {
+  --bg: #002b36;
+  --surface: #073642;
+  --surface2: #0f4a58;
+  --text: #eee8d5;
+  --dim: #93a1a1;
+  --border: rgba(238, 232, 213, 0.2);
+  --accent: #dc322f;
+  --gold: #b58900;
+  --green: #859900;
+  --blue: #268bd2;
+  --diverging-pos: #268bd2;
+  --diverging-neg: #dc322f;
+  --gridline: rgba(238, 232, 213, 0.1);
+  --baseline: rgba(238, 232, 213, 0.3);
+  --status-blunder: #dc322f;
+  --status-mistake: #cb4b16;
+  --status-inaccuracy: #b58900;
+  --status-good: #859900;
+  --board-bg: rgba(238, 232, 213, 0.04);
+  --board-line: rgba(238, 232, 213, 0.5);
+  --piece-text: #eee8d5;
+  --piece-promoted: #dc322f;
+  --on-accent: #002b36;
+}
+
+/* Les thèmes classiques partagent l'absence de halo et de lueur interne. */
+:root[data-theme='catppuccin-mocha'],
+:root[data-theme='catppuccin-latte'],
+:root[data-theme='nord'],
+:root[data-theme='dracula'],
+:root[data-theme='gruvbox'],
+:root[data-theme='solarized'] {
+  --glow-normal: none;
+  --glow-promoted: none;
+  --sq-to-inset: none;
+  --sq-from-inset: none;
+  --sq-sel-inset: none;
+  --sq-hint-inset: none;
+  --sq-to: rgba(255, 196, 0, 0.24);
+  --sq-from: rgba(120, 160, 255, 0.2);
+  --sq-sel: rgba(60, 200, 120, 0.3);
+  --sq-hint: rgba(60, 200, 120, 0.16);
+  --sq-err: rgba(220, 50, 50, 0.5);
+  --sq-sel-outline: rgba(60, 200, 120, 0.8);
+}
+
+:root[data-theme='catppuccin-mocha'] .pc.promoted,
+:root[data-theme='catppuccin-latte'] .pc.promoted,
+:root[data-theme='nord'] .pc.promoted,
+:root[data-theme='dracula'] .pc.promoted,
+:root[data-theme='gruvbox'] .pc.promoted,
+:root[data-theme='solarized'] .pc.promoted {
+  color: var(--piece-promoted);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

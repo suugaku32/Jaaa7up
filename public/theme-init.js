@@ -6,8 +6,18 @@
  */
 (function () {
   try {
+    var known = [
+      'sobre',
+      'bois',
+      'catppuccin-mocha',
+      'catppuccin-latte',
+      'nord',
+      'dracula',
+      'gruvbox',
+      'solarized',
+    ];
     var t = localStorage.getItem('jaaa7up-theme');
-    if (t === 'sobre' || t === 'bois') document.documentElement.dataset.theme = t;
+    if (known.indexOf(t) !== -1) document.documentElement.dataset.theme = t;
   } catch (e) {
     /* stockage indisponible : thème par défaut */
   }

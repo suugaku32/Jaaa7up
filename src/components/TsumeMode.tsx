@@ -27,8 +27,8 @@ type State =
   /** L'utilisateur cherche son coup. */
   | { kind: 'solving' }
   | { kind: 'checking' }
-  /** Le coup proposé laisse échapper le mat ; on peut revenir en arrière. */
-  | { kind: 'escaped'; usi: string }
+  /** Le coup proposé laisse échapper le mat ; il reste posé jusqu'au retour en arrière. */
+  | { kind: 'escaped'; label: string }
   | { kind: 'solved' }
   | { kind: 'revealed' };
 
@@ -167,7 +167,6 @@ export function TsumeMode({
 
   const submitMove = async (usi: string) => {
     if (!engine) return;
-    setState({ kind: 'checking' });
     const afterOurs = line.concat(usi);
     const posAfterOurs = replay(exerciseSfen, afterOurs);
     if (!posAfterOurs) {
@@ -175,9 +174,20 @@ export function TsumeMode({
       return;
     }
 
+    /*
+     * Poser le coup sur le plateau tout de suite, avant de le juger.
+     *
+     * Auparavant un coup faux était évalué puis rejeté sans jamais être
+     * affiché : on tapait une pièce, on tapait une case, et rien ne bougeait.
+     * Dans un tsume où la plupart des coups sont faux, l'exercice paraissait
+     * simplement cassé. Le coup fautif reste visible jusqu'à « Réessayer ».
+     */
+    const label = formatUsiMoveAsKif(livePosition, usi, null);
+    setLine(afterOurs);
+    setState({ kind: 'checking' });
+
     // Mat immédiat : inutile de déranger le moteur.
     if (isMated(posAfterOurs)) {
-      setLine(afterOurs);
       setSolvedSet((s) => new Set(s).add(idx));
       setState({ kind: 'solved' });
       return;
@@ -195,7 +205,7 @@ export function TsumeMode({
     }
     if (!stillMated(verdict)) {
       flashError(usiToSquare(usi.slice(2, 4)));
-      setState({ kind: 'escaped', usi });
+      setState({ kind: 'escaped', label });
       return;
     }
 
@@ -205,15 +215,12 @@ export function TsumeMode({
     // comme un mat plutôt que de bloquer l'exercice.
     const defence = verdict.bestMove;
     if (!defence) {
-      setLine(afterOurs);
       setSolvedSet((s) => new Set(s).add(idx));
       setState({ kind: 'solved' });
       return;
     }
     const afterDefence = afterOurs.concat(defence);
-    const posAfterDefence = replay(exerciseSfen, afterDefence);
-    if (!posAfterDefence) {
-      setLine(afterOurs);
+    if (!replay(exerciseSfen, afterDefence)) {
       setState({ kind: 'solving' });
       return;
     }
@@ -276,9 +283,9 @@ export function TsumeMode({
     if (move) void submitMove(moveToUsi(move));
   };
 
-  /** Le coup fautif n'a jamais été appliqué : reprendre la main suffit, la
-   *  progression déjà acquise reste valable. */
+  /** Retirer le coup fautif du plateau ; la progression acquise avant lui reste. */
   const retry = () => {
+    setLine((l) => l.slice(0, -1));
     setState({ kind: 'solving' });
     setSelected(null);
     setErrorSquare(null);
@@ -347,8 +354,7 @@ export function TsumeMode({
   const sideLabel = current.color === 'b' ? '▲ Sente' : '△ Gote';
   const playerName = current.color === 'b' ? blackName : whiteName;
   const playedLabel = formatUsiMoveAsKif(startPosition, current.playedUsi, null);
-  const escapedLabel =
-    state.kind === 'escaped' ? formatUsiMoveAsKif(livePosition, state.usi, null) : '';
+  const escapedLabel = state.kind === 'escaped' ? state.label : '';
   const ourMovesPlayed = Math.ceil(line.length / 2);
 
   return (
