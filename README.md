@@ -16,9 +16,15 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
 - **Classement des coups** à la façon lichess : la perte est mesurée en points de
   *win %* (et non en centipions bruts), ce qui évite de qualifier de « gaffe » un
   coup joué dans une position déjà gagnée ou perdue.
-- **Mode entraînement** : sur chaque gaffe, on rejoue la position ; le coup proposé
-  est réévalué par le moteur et accepté s'il perd au plus 50 centipions par rapport
-  au meilleur coup.
+- **Analyse en deux passes** : un balayage rapide repère les coups suspects, puis
+  une passe lente ne réexamine que ceux-là — l'essentiel du temps va là où il sert.
+- **Variantes** : la suite prévue par le moteur est affichée et rejouable coup par
+  coup, avec flèches sur le goban, pour voir *pourquoi* un coup est une gaffe.
+- **Mode entraînement** : sur chaque gaffe, on rejoue la position ; le coup joué est
+  montré (flèche rouge), le coup proposé est réévalué par le moteur et accepté s'il
+  perd au plus 50 centipions par rapport au meilleur coup.
+- **Historique local** : les parties analysées sont conservées en `localStorage`
+  (30 au plus, sans aucune synchronisation) et rechargeables sans réanalyse.
 
 ## Développement
 
@@ -37,15 +43,16 @@ bien à la racine d'un domaine que sous `/<repo>/`.
 ### Moteur
 
 [YaneuraOu](https://github.com/yaneurao/YaneuraOu) compilé en WebAssembly, via le
-paquet npm [`yaneuraou.wasm`](https://www.npmjs.com/package/yaneuraou.wasm)
-(port de `arashigaoka`). Les fichiers sont copiés dans `public/engine/` et pilotés
-par le protocole USI depuis `src/engine/UsiEngine.ts`.
+paquet npm [`@mizarjp/yaneuraou.k-p`](https://www.npmjs.com/package/@mizarjp/yaneuraou.k-p)
+7.6.3 (fork [`mizar/YaneuraOu.wasm`](https://github.com/mizar/YaneuraOu.wasm)). Les
+fichiers sont vendorisés dans `public/engine/` et pilotés par le protocole USI depuis
+`src/engine/UsiEngine.ts`.
 
-La fonction d'évaluation embarquée est volontairement petite (~900 Ko) pour rester
-raisonnable au chargement. Pour une analyse plus forte, le fork
-[`mizar/YaneuraOu.wasm`](https://github.com/mizar/YaneuraOu.wasm) propose des builds
-avec des fonctions d'évaluation plus costaudes (Suisho5, ou « SuishoPetite »
-allégée) — il suffit de remplacer le contenu de `public/engine/`.
+Le réseau d'évaluation (NNUE K-P) est embarqué dans le wasm : rien à charger à
+côté, et pas de risque de désaccord entre binaire et réseau. Une seule option est
+forcée, `USI_Hash = 32` : le défaut du moteur est 1024 Mo, ce qui fait grossir le
+tas WebAssembly à ~1,2 Go dès `isready` et rend l'onglet intenable sur mobile.
+Détails et mesures dans [`public/engine/PROVENANCE.md`](public/engine/PROVENANCE.md).
 
 ### COOP / COEP sur GitHub Pages
 
@@ -63,17 +70,22 @@ coi-serviceworker choisit `COEP: credentialless` pour tout ce qui n'est ni Chrom
 ni Firefox — donc pour Safari, qui ne reconnaît pas cette valeur et se retrouve
 sans isolation, donc sans `SharedArrayBuffer`.
 
-Forcer `require-corp` semblait la correction évidente, tout étant servi depuis la
-même origine. **Essayé, et la page ne s'ouvrait plus du tout sur iOS.** Faute de
-WebKit pour tester, on s'en tient au comportement par défaut de la bibliothèque :
-Safari n'obtient pas le moteur, mais la page se charge et l'app le signale.
+`public/coi-config.js` force donc `require-corp` pour tout le monde
+(`coepCredentialless: () => false`), ce qui est sans risque ici : tout est servi
+depuis la même origine.
+
+Cette correction a d'abord été écrite, puis annulée à tort — la page restait
+blanche sur iOS et j'en ai conclu que le réglage était en cause. Le vrai coupable
+était ailleurs : le script portant ce réglage était **inline**, et la CSP
+n'autorise pas `'unsafe-inline'` pour les scripts, donc il n'a jamais été exécuté.
+Sorti dans un fichier séparé, il fonctionne, et l'iPhone obtient le moteur.
 
 Un service worker survit aux rechargements et intercepte toutes les requêtes, donc
 un état cassé ne se répare pas en rechargeant. D'où
-`https://…/Jaaa7up/?reset-sw`, qui le désinstalle sans en réenregistrer un.
-
-`public/coi-config.js` porte ces réglages dans un fichier séparé et non un script
-inline, la CSP n'autorisant pas `'unsafe-inline'` pour les scripts.
+`https://…/Jaaa7up/?reset-sw`, qui le désinstalle sans en réenregistrer un. Le
+nombre de rechargements automatiques est par ailleurs plafonné à deux
+(`sessionStorage`), pour qu'un navigateur qui refuse l'isolation ne parte pas en
+boucle.
 
 Le moteur est compilé avec pthreads : sa mémoire WebAssembly est partagée, il ne
 peut donc pas s'instancier sans `SharedArrayBuffer`. Il n'existe pas de repli
@@ -128,9 +140,14 @@ outils forment une famille visuelle.
 
 ## Pistes non implémentées
 
-- **Persistance** : rien n'est sauvegardé pour l'instant. L'app Tsume résout ça sans
+- **Synchronisation** : l'historique est purement local. L'app Tsume résout ça sans
   backend en synchronisant sur un Gist GitHub (token en `localStorage`) — le même
-  mécanisme s'appliquerait ici pour conserver les parties analysées.
+  mécanisme s'appliquerait ici.
 - **Répétition espacée** sur les gaffes, sur le modèle du système Woodpecker /
   FSRS déjà présent dans Tsume.
-- Analyse en tâche de fond (Web Worker) pour ne pas figer l'UI sur les longues parties.
+- Analyse **multi-PV**, pour proposer plusieurs bons coups plutôt qu'un seul en mode
+  entraînement (`MultiPV` est exposé par le moteur, l'app ne s'en sert pas).
+
+Une piste retirée : « déporter l'analyse dans un Web Worker pour ne pas figer l'UI ».
+Le moteur est compilé avec pthreads et sa recherche tourne déjà dans un worker — le
+fil principal ne fait que passer des lignes USI. Rien à déporter.

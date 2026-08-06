@@ -7,9 +7,21 @@ export interface EmscriptenEngineModule {
 
 declare global {
   interface Window {
-    YaneuraOu?: (moduleOverrides?: Record<string, unknown>) => Promise<EmscriptenEngineModule>;
+    YaneuraOu_K_P?: (
+      moduleOverrides?: Record<string, unknown>,
+    ) => Promise<EmscriptenEngineModule>;
   }
 }
+
+/**
+ * Build mizar (@mizarjp/yaneuraou.k-p). Le réseau d'évaluation est embarqué dans
+ * le wasm : pas de fichier .data à charger, et pas de risque de désaccord entre
+ * binaire et réseau — c'est ce qui avait fait échouer un échange de réseau seul.
+ */
+const ENGINE_SCRIPT = 'yaneuraou.k-p.js';
+
+/** Taille de la table de transposition, en mégaoctets. Voir `init()`. */
+const HASH_MB = 32;
 
 export interface AnalyzeOptions {
   movetimeMs?: number;
@@ -34,15 +46,17 @@ function engineBaseUrl(): string {
 function loadEngineScript(): Promise<void> {
   if (scriptLoadPromise) return scriptLoadPromise;
   scriptLoadPromise = new Promise((resolve, reject) => {
-    if (window.YaneuraOu) {
+    if (window.YaneuraOu_K_P) {
       resolve();
       return;
     }
     const script = document.createElement('script');
-    script.src = `${engineBaseUrl()}yaneuraou.js`;
+    script.src = `${engineBaseUrl()}${ENGINE_SCRIPT}`;
     script.onload = () => resolve();
     script.onerror = () =>
-      reject(new Error("Impossible de charger le moteur d'analyse (yaneuraou.js introuvable)."));
+      reject(
+        new Error(`Impossible de charger le moteur d'analyse (${ENGINE_SCRIPT} introuvable).`),
+      );
     document.head.appendChild(script);
   });
   return scriptLoadPromise;
@@ -122,9 +136,9 @@ export class UsiEngine {
       throw new Error(env.messages.join(' '));
     }
     await loadEngineScript();
-    const factory = window.YaneuraOu;
+    const factory = window.YaneuraOu_K_P;
     if (!factory) {
-      throw new Error("Le moteur d'analyse n'a pas pu s'initialiser (YaneuraOu introuvable).");
+      throw new Error("Le moteur d'analyse n'a pas pu s'initialiser (YaneuraOu_K_P introuvable).");
     }
     this.module = await factory({
       locateFile: (path: string) => `${engineBaseUrl()}${path}`,
@@ -134,6 +148,10 @@ export class UsiEngine {
     });
     this.postRaw('usi');
     await this.waitFor((line) => line === 'usiok');
+    // Le défaut du moteur est 1024 Mo, ce qui fait grossir le tas WebAssembly à
+    // ~1,2 Go dès `isready` — intenable sur mobile. Mesuré : 32 Mo suffisent
+    // largement pour des réflexions de 200 ms à 2 s (le tas reste sous 170 Mo).
+    this.postRaw(`setoption name USI_Hash value ${HASH_MB}`);
     this.postRaw('isready');
     await this.waitFor((line) => line === 'readyok');
     this.postRaw('usinewgame');
