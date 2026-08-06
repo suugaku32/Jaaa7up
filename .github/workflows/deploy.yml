@@ -12,7 +12,13 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # Volontairement `false`. Annuler la publication en cours est le bon réflexe
+  # quand elles durent quelques secondes : seule la dernière compte. Mais quand
+  # la file d'attente de GitHub s'allonge, chaque poussée tue la précédente et
+  # plus rien n'aboutit — c'est arrivé plusieurs fois de suite, le site restant
+  # silencieusement en arrière. Mieux vaut une file qui se vide lentement qu'une
+  # file qui se vide dans le néant.
+  cancel-in-progress: false
 
 jobs:
   build-and-publish:
