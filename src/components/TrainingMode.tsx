@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Board } from './Board';
 import { VariationBar } from './VariationBar';
 import type { BoardArrow } from './Board';
@@ -60,6 +60,12 @@ export function TrainingMode({
   const [solved, setSolved] = useState<Set<number>>(new Set());
   /** Suite en cours de lecture : quelle ligne, et combien de coups rejoués. */
   const [replay, setReplay] = useState<{ line: Line; index: number } | null>(null);
+  /**
+   * Score de référence par gaffe, indexé par numéro de coup : celui du meilleur
+   * coup, mesuré dans les mêmes conditions que la proposition de l'utilisateur.
+   * Une gaffe garde le sien tant qu'on y revient.
+   */
+  const baselineRef = useRef<Map<number, number>>(new Map());
 
   const current = blunders[idx];
 
@@ -122,7 +128,36 @@ export function TrainingMode({
     const after = await engine.analyze(current.sfenBefore, [usi], { movetimeMs });
     // Score comes back from the opponent's perspective — flip it to the mover's.
     const playedCp = -scoreToCp(after.scoreCp, after.scoreMate);
-    const bestCp = current.evalBeforeCp;
+
+    /*
+     * La référence doit venir de la *même* mesure que la proposition.
+     *
+     * Elle valait `current.evalBeforeCp`, c'est-à-dire le score de la position
+     * d'avant, issu de l'analyse. On comparait donc deux recherches portant sur
+     * deux positions différentes : jouer le meilleur coup pouvait rendre un
+     * score inférieur au score de la position de départ — instabilité ordinaire
+     * de la recherche — et se faire refuser. Le bon coup était rejeté.
+     *
+     * On évalue donc le meilleur coup dans les mêmes conditions, une fois par
+     * gaffe. Et jouer exactement le coup recommandé n'a plus besoin d'être
+     * mesuré du tout : il est juste par définition.
+     */
+    let bestCp: number;
+    if (current.bestMove && usi === current.bestMove) {
+      bestCp = playedCp;
+    } else if (current.bestMove) {
+      const cached = baselineRef.current.get(current.ply);
+      if (cached !== undefined) {
+        bestCp = cached;
+      } else {
+        const ref = await engine.analyze(current.sfenBefore, [current.bestMove], { movetimeMs });
+        bestCp = -scoreToCp(ref.scoreCp, ref.scoreMate);
+        baselineRef.current.set(current.ply, bestCp);
+      }
+    } else {
+      // Pas de coup recommandé connu : faute de mieux, l'ancienne référence.
+      bestCp = current.evalBeforeCp;
+    }
     const correct = bestCp - playedCp <= ACCEPT_MARGIN_CP;
     // La variante renvoyée part de la position d'après le coup proposé : c'est
     // elle qui montre ce que devient la partie, et donc pourquoi le coup tient.
