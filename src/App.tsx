@@ -27,6 +27,8 @@ import { Position } from './shogi/position';
 import { formatUsiMoveAsKif } from './shogi/notation';
 import type { Square } from './shogi/types';
 import { usiToSquare } from './shogi/types';
+import { THEMES, THEME_LABEL_FR, applyTheme, loadTheme } from './theme';
+import type { Theme } from './theme';
 import './App.css';
 
 type Tab = 'analysis' | 'training' | 'tsume';
@@ -65,6 +67,11 @@ export default function App() {
   const [historyNote, setHistoryNote] = useState<string | null>(null);
   const engineRef = useRef<UsiEngine | null>(null);
   const optionsRef = useRef<HTMLDetailsElement>(null);
+  const [theme, setTheme] = useState<Theme>(() => loadTheme());
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
 
   const closeOptions = useCallback(() => {
     if (optionsRef.current) optionsRef.current.open = false;
@@ -270,51 +277,66 @@ export default function App() {
         {/* Ces réglages ne changent jamais d'un coup à l'autre : ils ne méritent
             pas une barre permanente au-dessus du plateau. Repliés ici, ils
             libèrent une rangée entière sans rien rendre inatteignable. */}
-        {phase.kind === 'done' && game && (
-          <details className="options" ref={optionsRef}>
-            <summary className="options-toggle" title="Réglages d'affichage">
-              ⚙<span className="options-word"> Réglages</span>
-            </summary>
-            <div className="options-panel">
-              <label className="focus-control">
-                Suivre
-                <select
-                  value={focusSide}
-                  onChange={(e) => setFocusSide(e.target.value as 'both' | 'b' | 'w')}
+        <details className="options" ref={optionsRef}>
+          <summary className="options-toggle" title="Réglages d'affichage">
+            ⚙<span className="options-word"> Réglages</span>
+          </summary>
+          <div className="options-panel">
+            {/* Le thème ne dépend pas d'une partie chargée : il reste
+                accessible dès l'écran de saisie. */}
+            <label className="focus-control">
+              Thème
+              <select value={theme} onChange={(e) => setTheme(e.target.value as Theme)}>
+                {THEMES.map((t) => (
+                  <option key={t} value={t}>
+                    {THEME_LABEL_FR[t]}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {phase.kind === 'done' && game && (
+              <>
+                <label className="focus-control">
+                  Suivre
+                  <select
+                    value={focusSide}
+                    onChange={(e) => setFocusSide(e.target.value as 'both' | 'b' | 'w')}
+                  >
+                    <option value="both">Les deux joueurs</option>
+                    <option value="b">▲ {game.black || 'Sente'}</option>
+                    <option value="w">△ {game.white || 'Gote'}</option>
+                  </select>
+                </label>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => setFlipped((f) => !f)}
+                  title="Voir le plateau depuis l'autre camp"
                 >
-                  <option value="both">Les deux joueurs</option>
-                  <option value="b">▲ {game.black || 'Sente'}</option>
-                  <option value="w">△ {game.white || 'Gote'}</option>
-                </select>
-              </label>
-              <button
-                className="btn btn-ghost"
-                onClick={() => setFlipped((f) => !f)}
-                title="Voir le plateau depuis l'autre camp"
-              >
-                ⇅ {flipped ? 'Vue Gote' : 'Vue Sente'}
-              </button>
-              <button
-                className="btn btn-ghost"
-                onClick={() => setShowBestArrow((v) => !v)}
-                title="Flèche verte : le coup recommandé depuis la position affichée"
-              >
-                {showBestArrow ? '↗ Flèches affichées' : '↗ Flèches masquées'}
-              </button>
-              <button
-                className="btn btn-ghost options-danger"
-                onClick={() => {
-                  closeOptions();
-                  setPhase({ kind: 'input' });
-                  setResult(null);
-                  setGame(null);
-                }}
-              >
-                Nouvelle partie
-              </button>
-            </div>
-          </details>
-        )}
+                  ⇅ {flipped ? 'Vue Gote' : 'Vue Sente'}
+                </button>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => setShowBestArrow((v) => !v)}
+                  title="Flèche verte : le coup recommandé depuis la position affichée"
+                >
+                  {showBestArrow ? '↗ Flèches affichées' : '↗ Flèches masquées'}
+                </button>
+                <button
+                  className="btn btn-ghost options-danger"
+                  onClick={() => {
+                    closeOptions();
+                    setPhase({ kind: 'input' });
+                    setResult(null);
+                    setGame(null);
+                  }}
+                >
+                  Nouvelle partie
+                </button>
+              </>
+            )}
+          </div>
+        </details>
       </header>
 
       {env.messages.length > 0 && (

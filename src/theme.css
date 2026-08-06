@@ -40,6 +40,112 @@
   --sq-sel: rgba(0, 255, 120, 0.25);
   --sq-err: rgba(255, 50, 50, 0.5);
   --sq-hint: rgba(0, 200, 100, 0.15);
+  --sq-to-inset: inset 0 0 8px rgba(255, 196, 0, 0.3);
+  --sq-from-inset: inset 0 0 8px rgba(100, 149, 255, 0.25);
+  --sq-sel-inset: inset 0 0 10px rgba(0, 255, 120, 0.5);
+  --sq-hint-inset: inset 0 0 6px rgba(0, 200, 100, 0.35);
+  --sq-sel-outline: rgba(0, 255, 120, 0.7);
+  --on-accent: #fff;
+  --area-opacity: 0.18;
+  --btn-hover: brightness(1.2);
+}
+
+/*
+ * Thèmes. Tout le style passe par les variables ci-dessus, donc un thème n'est
+ * qu'un jeu de valeurs — aucune règle de mise en page n'est dupliquée.
+ *
+ * Les couleurs de statut et de dataviz sont redéfinies pour chaque thème et non
+ * héritées : sur un fond clair, le jaune et le vert du thème néon tombent sous
+ * le seuil de contraste. Chaque jeu vise ≥ 3:1 sur son propre fond.
+ */
+
+/* « Sobre » — même ossature sombre, sans halo : les kanji redeviennent du
+   texte. C'est le thème néon débarrassé de ce qui fatigue. */
+:root[data-theme='sobre'] {
+  --bg: #14161a;
+  --surface: #1d2026;
+  --surface2: #2a2f38;
+  --text: #e6e6e6;
+  --dim: #9099a6;
+  --border: rgba(255, 255, 255, 0.14);
+
+  --board-bg: rgba(255, 255, 255, 0.04);
+  --board-line: rgba(255, 255, 255, 0.55);
+  --piece-text: #f2f2f2;
+  --glow-normal: none;
+  --glow-promoted: none;
+
+  --sq-to-inset: none;
+  --sq-from-inset: none;
+  --sq-sel-inset: none;
+  --sq-hint-inset: none;
+  --sq-to: rgba(255, 196, 0, 0.2);
+  --sq-from: rgba(120, 160, 255, 0.16);
+  --sq-sel: rgba(60, 200, 120, 0.28);
+  --sq-hint: rgba(60, 200, 120, 0.14);
+  --sq-sel-outline: rgba(60, 200, 120, 0.75);
+}
+
+/* Les pièces promues restent lisibles sans halo : c'est la couleur qui les
+   distingue, comme sur un jeu réel où elles sont écrites en rouge. */
+:root[data-theme='sobre'] .pc.promoted,
+:root[data-theme='bois'] .pc.promoted {
+  color: var(--piece-promoted);
+}
+
+/* « Bois » — la table traditionnelle : plateau clair, kanji noirs, promues en
+   rouge. Les deux camps partagent la même couleur, seule l'orientation les
+   distingue, comme sur un vrai jeu. */
+:root[data-theme='bois'] {
+  color-scheme: light;
+
+  --bg: #efe6d5;
+  --surface: #e3d5bb;
+  --surface2: #d4c2a1;
+  --accent: #b3261e;
+  --gold: #8a6d00;
+  --green: #1b6b3a;
+  --blue: #1a5f96;
+  --text: #241d14;
+  --dim: #6d6151;
+
+  --diverging-pos: #1a5f96;
+  --diverging-neg: #b3261e;
+  --gridline: rgba(0, 0, 0, 0.1);
+  --baseline: rgba(0, 0, 0, 0.35);
+  --border: rgba(0, 0, 0, 0.22);
+
+  --status-blunder: #b3261e;
+  --status-mistake: #a24e07;
+  --status-inaccuracy: #7a6000;
+  --status-good: #1b6b3a;
+
+  --board-bg: #f0d9a8;
+  --board-line: rgba(60, 40, 15, 0.75);
+  --piece-text: #241a0e;
+  --piece-promoted: #a3241c;
+  --glow-normal: none;
+  --glow-promoted: none;
+  --on-accent: #fff;
+
+  --sq-to: rgba(210, 150, 0, 0.35);
+  --sq-from: rgba(60, 110, 190, 0.22);
+  --sq-sel: rgba(30, 140, 70, 0.3);
+  --sq-err: rgba(200, 30, 30, 0.45);
+  --sq-hint: rgba(30, 140, 70, 0.16);
+  --sq-to-inset: none;
+  --sq-from-inset: none;
+  --sq-sel-inset: none;
+  --sq-hint-inset: none;
+  --sq-sel-outline: rgba(30, 140, 70, 0.8);
+  /* Sur crème, il faut plus d'encre pour que l'aire se distingue du fond. */
+  --area-opacity: 0.32;
+  /* Éclaircir un bouton déjà clair le fait disparaître : on l'assombrit. */
+  --btn-hover: brightness(0.94);
+}
+
+:root[data-theme='sobre'] {
+  --piece-promoted: #ff8a8a;
 }
 
 * {
@@ -76,7 +182,7 @@ body {
 }
 
 .btn:hover:not(:disabled) {
-  filter: brightness(1.2);
+  filter: var(--btn-hover);
 }
 
 .btn:disabled {

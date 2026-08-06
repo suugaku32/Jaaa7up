@@ -60,6 +60,33 @@ forcée, `USI_Hash = 32` : le défaut du moteur est 1024 Mo, ce qui fait grossir
 tas WebAssembly à ~1,2 Go dès `isready` et rend l'onglet intenable sur mobile.
 Détails et mesures dans [`public/engine/PROVENANCE.md`](public/engine/PROVENANCE.md).
 
+### Thèmes
+
+Trois jeux de couleurs, choisis dans le panneau `⚙` et conservés en
+`localStorage` : **Néon** (le halo d'origine, repris de l'app Tsume), **Sobre**
+(même ossature sombre, halo supprimé) et **Bois** (plateau clair, kanji noirs,
+promues en rouge — la table traditionnelle).
+
+Un thème n'est qu'un jeu de variables CSS dans `src/theme.css` ; aucune règle de
+mise en page n'est dupliquée. Ce qui a dû être corrigé pour que ça marche
+vraiment : les lueurs internes des cases surlignées et l'opacité de l'aire du
+graphe étaient codées en dur. À 18 %, un bleu vif se voit sur fond sombre et se
+délave en gris sur de la crème ; c'est désormais une variable de thème.
+
+Les couleurs de statut sont **redéfinies** par thème et non héritées : le jaune
+et le vert du thème néon tombent sous le seuil de contraste sur fond clair.
+Contrastes mesurés dans le rendu, pas calculés à la main :
+
+| | fond | corps | texte discret | pièces | « gaffe » |
+|---|---|---|---|---|---|
+| Néon | `#1a1a2e` | 14,2 | 4,8 | 17,1 | 4,5 |
+| Sobre | `#14161a` | 14,5 | 6,3 | 16,2 | 4,7 |
+| Bois | `#efe6d5` | 13,4 | 4,9 | 13,8 | 5,3 |
+
+`public/theme-init.js` pose le thème avant le premier rendu — sans lui, un
+utilisateur ayant choisi « Bois » verrait clignoter le néon le temps que React
+monte. Fichier séparé et non script inline, la CSP interdisant `'unsafe-inline'`.
+
 ### Échelle d'évaluation, et une réserve sur sa calibration
 
 L'affichage est en **centipions bruts**, comme le reste de l'écosystème shogi.

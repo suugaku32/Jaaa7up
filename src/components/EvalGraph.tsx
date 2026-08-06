@@ -92,8 +92,20 @@ export function EvalGraph({ evalCurve, plies, moveLabels, currentPly, onSelectPl
           </clipPath>
         </defs>
 
-        <path d={areaPath} fill="var(--diverging-pos)" fillOpacity={0.18} clipPath="url(#clip-top)" />
-        <path d={areaPath} fill="var(--diverging-neg)" fillOpacity={0.18} clipPath="url(#clip-bottom)" />
+        {/* L'opacité vient du thème : 18 % d'un bleu vif se voit sur fond sombre,
+            mais se délave en gris sur un fond clair. */}
+        <path
+          d={areaPath}
+          fill="var(--diverging-pos)"
+          className="eval-area"
+          clipPath="url(#clip-top)"
+        />
+        <path
+          d={areaPath}
+          fill="var(--diverging-neg)"
+          className="eval-area"
+          clipPath="url(#clip-bottom)"
+        />
         <path d={linePath} fill="none" stroke="var(--diverging-pos)" strokeWidth={2} clipPath="url(#clip-top)" />
         <path d={linePath} fill="none" stroke="var(--diverging-neg)" strokeWidth={2} clipPath="url(#clip-bottom)" />
 
