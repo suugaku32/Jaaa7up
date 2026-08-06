@@ -98,6 +98,19 @@ export default function App() {
     saveSettings({ deepMovetimeMs: ms });
   }, []);
 
+  /*
+   * Le moteur était créé uniquement par `runAnalysis`. Une partie rouverte
+   * depuis l'historique n'en avait donc aucun, et l'entraînement comme les
+   * tsume refusaient chaque coup sans rien afficher : on jouait, rien ne se
+   * passait. Le créer à la demande fait disparaître cette dépendance à la
+   * façon dont la partie est arrivée à l'écran.
+   */
+  const ensureEngine = useCallback(async (): Promise<UsiEngine> => {
+    if (!engineRef.current) engineRef.current = new UsiEngine();
+    await engineRef.current.ready;
+    return engineRef.current;
+  }, []);
+
   const closeOptions = useCallback(() => {
     if (optionsRef.current) optionsRef.current.open = false;
   }, []);
@@ -160,9 +173,7 @@ export default function App() {
     setPhase({ kind: 'analyzing', step: 'scan', done: 0, total: parsed.moves.length + 1 });
 
     try {
-      if (!engineRef.current) engineRef.current = new UsiEngine();
-      const engine = engineRef.current;
-      await engine.ready;
+      const engine = await ensureEngine();
       const res = await analyzeGame(engine, parsed.startSfen, parsed.moves, {
         movetimeMs,
         deepMovetimeMs,
@@ -179,7 +190,7 @@ export default function App() {
       setError(`Analyse interrompue : ${(e as Error).message}`);
       setPhase({ kind: 'input' });
     }
-  }, [kifuText, movetimeMs, deepMovetimeMs]);
+  }, [kifuText, movetimeMs, deepMovetimeMs, ensureEngine]);
 
   const openFromHistory = useCallback((id: string) => {
     const loaded = loadGame(id);
@@ -590,7 +601,7 @@ export default function App() {
           ) : tab === 'training' ? (
             <TrainingMode
               blunders={focusedBlunders}
-              engine={engineRef.current}
+              ensureEngine={ensureEngine}
               movetimeMs={deepMovetimeMs > 0 ? deepMovetimeMs : movetimeMs}
               flipped={flipped}
               blackName={game.black}
@@ -599,7 +610,7 @@ export default function App() {
           ) : (
             <TsumeMode
               tsumes={focusedTsumes}
-              engine={engineRef.current}
+              ensureEngine={ensureEngine}
               movetimeMs={deepMovetimeMs > 0 ? deepMovetimeMs : movetimeMs}
               flipped={flipped}
               blackName={game.black}

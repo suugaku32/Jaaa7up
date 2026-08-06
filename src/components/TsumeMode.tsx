@@ -30,11 +30,14 @@ type State =
   /** Le coup proposé laisse échapper le mat ; il reste posé jusqu'au retour en arrière. */
   | { kind: 'escaped'; label: string }
   | { kind: 'solved' }
+  /** Le moteur n'a pas pu démarrer : sans lui, impossible de juger un coup. */
+  | { kind: 'engineError'; message: string }
   | { kind: 'revealed' };
 
 interface TsumeModeProps {
   tsumes: Tsume[];
-  engine: UsiEngine | null;
+  /** Fournit le moteur, en le démarrant s'il ne l'est pas encore. */
+  ensureEngine: () => Promise<UsiEngine>;
   /** Cadence de l'analyse : sert de recours quand la vérification rapide ne voit pas le mat. */
   movetimeMs: number;
   flipped?: boolean;
@@ -55,7 +58,7 @@ function replay(sfen: string, moves: string[]): Position | null {
 
 export function TsumeMode({
   tsumes,
-  engine,
+  ensureEngine,
   movetimeMs,
   flipped,
   blackName,
@@ -166,7 +169,6 @@ export function TsumeMode({
     generateLegalMoves(pos, pos.turn).length === 0;
 
   const submitMove = async (usi: string) => {
-    if (!engine) return;
     const afterOurs = line.concat(usi);
     const posAfterOurs = replay(exerciseSfen, afterOurs);
     if (!posAfterOurs) {
@@ -186,10 +188,19 @@ export function TsumeMode({
     setLine(afterOurs);
     setState({ kind: 'checking' });
 
-    // Mat immédiat : inutile de déranger le moteur.
+    // Mat immédiat : inutile de déranger le moteur — et l'exercice reste
+    // résoluble même si celui-ci ne démarre pas.
     if (isMated(posAfterOurs)) {
       setSolvedSet((s) => new Set(s).add(idx));
       setState({ kind: 'solved' });
+      return;
+    }
+
+    let engine: UsiEngine;
+    try {
+      engine = await ensureEngine();
+    } catch (e) {
+      setState({ kind: 'engineError', message: (e as Error).message });
       return;
     }
 
@@ -500,6 +511,21 @@ export function TsumeMode({
             </p>
           )}
           {state.kind === 'checking' && <p className="training-hint">Le moteur cherche sa défense…</p>}
+
+          {state.kind === 'engineError' && (
+            <div className="verdict verdict-wrong">
+              <strong>Le moteur n’a pas pu démarrer</strong>
+              <span>{state.message}</span>
+              <span>
+                Sans lui, un coup ne peut pas être vérifié — sauf s’il donne mat immédiatement.
+              </span>
+              <div className="tsume-actions">
+                <button className="btn btn-ghost" onClick={retry}>
+                  Réessayer ce coup
+                </button>
+              </div>
+            </div>
+          )}
 
           {state.kind === 'escaped' && (
             <div className="verdict verdict-wrong">

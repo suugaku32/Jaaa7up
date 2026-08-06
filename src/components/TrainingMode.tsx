@@ -20,6 +20,8 @@ type Verdict =
   | { kind: 'checking' }
   | { kind: 'correct'; playedCp: number; bestCp: number; usi: string; pv: string[] }
   | { kind: 'wrong'; playedCp: number; bestCp: number; usi: string; pv: string[] }
+  /** Le moteur n'a pas pu démarrer : sans lui, impossible de juger un coup. */
+  | { kind: 'engineError'; message: string }
   | { kind: 'revealed' };
 
 /** Ligne rejouable montrée une fois la position résolue ou dévoilée. */
@@ -32,7 +34,8 @@ interface Line {
 
 interface TrainingModeProps {
   blunders: PlyEval[];
-  engine: UsiEngine | null;
+  /** Fournit le moteur, en le démarrant s'il ne l'est pas encore. */
+  ensureEngine: () => Promise<UsiEngine>;
   movetimeMs: number;
   flipped?: boolean;
   blackName?: string;
@@ -41,7 +44,7 @@ interface TrainingModeProps {
 
 export function TrainingMode({
   blunders,
-  engine,
+  ensureEngine,
   movetimeMs,
   flipped,
   blackName,
@@ -108,8 +111,14 @@ export function TrainingMode({
   };
 
   const submitMove = async (usi: string) => {
-    if (!engine) return;
     setVerdict({ kind: 'checking' });
+    let engine: UsiEngine;
+    try {
+      engine = await ensureEngine();
+    } catch (e) {
+      setVerdict({ kind: 'engineError', message: (e as Error).message });
+      return;
+    }
     const after = await engine.analyze(current.sfenBefore, [usi], { movetimeMs });
     // Score comes back from the opponent's perspective — flip it to the mover's.
     const playedCp = -scoreToCp(after.scoreCp, after.scoreMate);
@@ -403,6 +412,16 @@ export function TrainingMode({
                   Réessayer
                 </button>
               )}
+            </div>
+          )}
+
+          {verdict.kind === 'engineError' && (
+            <div className="verdict verdict-wrong">
+              <strong>Le moteur n’a pas pu démarrer</strong>
+              <span>{verdict.message}</span>
+              <button className="btn btn-ghost" onClick={() => setVerdict({ kind: 'idle' })}>
+                Réessayer
+              </button>
             </div>
           )}
 
