@@ -18,8 +18,9 @@ const ACCEPT_MARGIN_CP = 50;
 type Verdict =
   | { kind: 'idle' }
   | { kind: 'checking' }
-  | { kind: 'correct'; playedCp: number; bestCp: number; usi: string; pv: string[] }
-  | { kind: 'wrong'; playedCp: number; bestCp: number; usi: string; pv: string[] }
+  /** `exact` : le coup proposé *est* celui du moteur, pas seulement un coup toléré. */
+  | { kind: 'correct'; playedCp: number; bestCp: number; usi: string; pv: string[]; exact: boolean }
+  | { kind: 'wrong'; playedCp: number; bestCp: number; usi: string; pv: string[]; exact: false }
   /** Le moteur n'a pas pu démarrer : sans lui, impossible de juger un coup. */
   | { kind: 'engineError'; message: string }
   | { kind: 'revealed' };
@@ -142,8 +143,9 @@ export function TrainingMode({
      * gaffe. Et jouer exactement le coup recommandé n'a plus besoin d'être
      * mesuré du tout : il est juste par définition.
      */
+    const exact = !!current.bestMove && usi === current.bestMove;
     let bestCp: number;
-    if (current.bestMove && usi === current.bestMove) {
+    if (exact) {
       bestCp = playedCp;
     } else if (current.bestMove) {
       const cached = baselineRef.current.get(current.ply);
@@ -163,21 +165,10 @@ export function TrainingMode({
     // elle qui montre ce que devient la partie, et donc pourquoi le coup tient.
     if (correct) {
       setSolved((s) => new Set(s).add(idx));
-      setVerdict({ kind: 'correct', playedCp, bestCp, usi, pv: after.pv });
+      setVerdict({ kind: 'correct', playedCp, bestCp, usi, pv: after.pv, exact });
     } else {
       flashError(usiToSquare(usi.slice(2, 4)));
-      setVerdict({ kind: 'wrong', playedCp, bestCp, usi, pv: after.pv });
-    }
-  };
-
-  /** Position obtenue après un coup joué depuis la position de l'exercice. */
-  const sfenAfterUsi = (usi: string): string | null => {
-    try {
-      const p = Position.fromSfen(current.sfenBefore);
-      p.applyUsiMove(usi);
-      return p.toSfen();
-    } catch {
-      return null;
+      setVerdict({ kind: 'wrong', playedCp, bestCp, usi, pv: after.pv, exact: false });
     }
   };
 
@@ -248,13 +239,19 @@ export function TrainingMode({
   // elles donneraient la réponse.
   const lines: Line[] = [];
   if (verdict.kind === 'correct' || verdict.kind === 'wrong') {
-    const base = sfenAfterUsi(verdict.usi);
-    if (base && verdict.pv.length) {
+    /*
+     * Les deux variantes partent de la *même* position, celle de l'exercice, et
+     * commencent chacune par son propre coup. Auparavant « Meilleure suite »
+     * incluait le coup du moteur tandis que celle-ci démarrait après le coup
+     * proposé : on comparait donc deux colonnes décalées d'un demi-coup, l'une
+     * ouvrant sur un coup de Sente et l'autre sur la réponse de Gote.
+     */
+    if (verdict.pv.length) {
       lines.push({
         label: verdict.kind === 'correct' ? 'Votre coup, la suite' : 'Après votre coup',
         tone: verdict.kind === 'correct' ? 'best' : 'played',
-        baseSfen: base,
-        moves: verdict.pv,
+        baseSfen: current.sfenBefore,
+        moves: [verdict.usi, ...verdict.pv],
       });
     }
   }
@@ -436,12 +433,40 @@ export function TrainingMode({
           {(verdict.kind === 'correct' || verdict.kind === 'wrong') && (
             <div className={`verdict verdict-${verdict.kind}`}>
               <strong>
-                {verdict.kind === 'correct' ? '✓ Bien joué' : '✗ Insuffisant'} — {playedLabel}
+                {verdict.kind === 'wrong'
+                  ? '✗ Insuffisant'
+                  : verdict.exact
+                    ? '✓ C’est le coup du moteur'
+                    : '✓ Coup acceptable'}{' '}
+                — {playedLabel}
               </strong>
+              {/*
+               * Ne jamais laisser croire qu'un coup toléré est *le* coup du
+               * moteur : la suite affichée plus bas part d'un autre coup, et
+               * l'écart est incompréhensible tant qu'on n'a pas dit lequel.
+               */}
+              {!verdict.exact && current.bestMove && (
+                <span>
+                  Le moteur jouait <strong className="training-best">{bestLabel}</strong>
+                </span>
+              )}
               <span>
-                Votre coup : {Math.round(verdict.playedCp)} · Meilleur :{' '}
-                {Math.round(verdict.bestCp)}
+                Votre coup : {Math.round(verdict.playedCp)}
+                {!verdict.exact && ` · ${bestLabel} : ${Math.round(verdict.bestCp)}`}
               </span>
+              {/*
+               * Les deux nombres sortent de deux recherches distinctes, de même
+               * durée mais pas du même arbre. Un écart de quelques dizaines de
+               * centièmes est du bruit, et il arrive que le coup proposé mesure
+               * *mieux* que celui du moteur. Sans cette phrase, l'utilisateur y
+               * lit une contradiction — à raison.
+               */}
+              {!verdict.exact && current.bestMove && (
+                <span className="verdict-note">
+                  Deux mesures indépendantes de même durée : un écart de cet ordre ne départage
+                  pas les deux coups.
+                </span>
+              )}
               {verdict.kind === 'wrong' && (
                 <button className="btn btn-ghost" onClick={() => setVerdict({ kind: 'idle' })}>
                   Réessayer

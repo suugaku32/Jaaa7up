@@ -216,6 +216,22 @@
   color: var(--status-blunder);
 }
 
+.training-best {
+  color: var(--status-good);
+}
+
+/* Le coup cité dans une phrase reste à la taille de la phrase : la règle
+   `.verdict strong` vise le titre du verdict, pas les incises. */
+.verdict .training-best {
+  font-size: inherit;
+}
+
+.verdict-note {
+  color: var(--dim);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .training-lines {
   display: flex;
   flex-direction: column;
