@@ -7,6 +7,13 @@
   gap: 16px;
 }
 
+.app-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .app-header h1 {
   font-size: 22px;
   font-weight: 700;
@@ -17,6 +24,60 @@
   font-size: 13px;
   color: var(--dim);
   margin-top: 4px;
+}
+
+/* Réglages repliés. Ancrés au coin de l'en-tête, ils n'occupent aucune rangée
+   propre : le bandeau passe de trois barres à une. */
+.options {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.options-toggle {
+  list-style: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.options-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.options[open] .options-toggle {
+  background: var(--surface2);
+}
+
+.options-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+.options-panel .btn {
+  width: 100%;
+  text-align: left;
+}
+
+.options-danger {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .banner {
@@ -243,43 +304,27 @@
     white-space: nowrap;
   }
 
-  /* Aucune de ces commandes ne sert coup par coup : elles peuvent être
-     discrètes, mais pas occuper deux rangées au-dessus du plateau. */
-  /* Ces commandes tenaient sur deux rangées faute de place. Une rangée qui
-     défile latéralement rend les 55 px au plateau sans rien rendre
-     inatteignable. */
-  .toolbar-actions {
-    gap: 6px;
-    width: 100%;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    padding-bottom: 2px;
+  /* Le bouton se réduit à son icône. Il partage la rangée du titre, donc le
+     bandeau ne coûte plus aucune ligne à lui seul. */
+  .options-toggle {
+    padding: 7px 11px;
+    font-size: 15px;
   }
 
-  .toolbar-actions::-webkit-scrollbar {
+  .options-word {
     display: none;
   }
 
-  .toolbar-actions .btn,
-  .focus-control {
-    flex: 0 0 auto;
-    white-space: nowrap;
-  }
-
-  .toolbar-actions .btn {
-    padding: 6px 10px;
-    font-size: 12px;
-    border-radius: 8px;
+  .options-panel {
+    min-width: 0;
+    width: calc(100vw - 28px);
+    max-width: 300px;
   }
 
   .focus-control {
-    font-size: 12px;
+    flex-direction: column;
+    align-items: stretch;
     gap: 4px;
-  }
-
-  .focus-control select {
-    padding: 5px 6px;
     font-size: 12px;
   }
 

@@ -303,15 +303,21 @@ export function TsumeMode({
           <span className="training-solved">{solvedSet.size} résolu(s)</span>
         </div>
         <div className="training-nav">
-          <button className="btn btn-ghost" onClick={() => goTo(idx - 1)} disabled={idx === 0}>
-            ‹ Précédent
+          <button
+            className="btn btn-ghost"
+            onClick={() => goTo(idx - 1)}
+            disabled={idx === 0}
+            aria-label="Tsume précédent"
+          >
+            ‹<span className="nav-word"> Précédent</span>
           </button>
           <button
             className="btn btn-ghost"
             onClick={() => goTo(idx + 1)}
             disabled={idx >= tsumes.length - 1}
+            aria-label="Tsume suivant"
           >
-            Suivant ›
+            <span className="nav-word">Suivant </span>›
           </button>
         </div>
       </div>

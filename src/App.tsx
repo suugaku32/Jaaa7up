@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Board } from './components/Board';
 import type { BoardArrow } from './components/Board';
 import { EvalGraph } from './components/EvalGraph';
@@ -64,6 +64,22 @@ export default function App() {
   const [history, setHistory] = useState<HistoryEntry[]>(() => listHistory());
   const [historyNote, setHistoryNote] = useState<string | null>(null);
   const engineRef = useRef<UsiEngine | null>(null);
+  const optionsRef = useRef<HTMLDetailsElement>(null);
+
+  const closeOptions = useCallback(() => {
+    if (optionsRef.current) optionsRef.current.open = false;
+  }, []);
+
+  // Un panneau replié qui ne se referme qu'en recliquant son propre bouton est
+  // une chausse-trape sur mobile : il masque le contenu qu'on cherche à voir.
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent) => {
+      const el = optionsRef.current;
+      if (el?.open && !el.contains(e.target as Node)) el.open = false;
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, []);
 
   const historyAvailable = useMemo(() => isHistoryAvailable(), []);
 
@@ -244,10 +260,61 @@ export default function App() {
   return (
     <div className="app">
       <header className={`app-header${phase.kind === 'done' ? ' compact' : ''}`}>
-        <h1>将棋 — Analyseur de parties</h1>
-        <p className="app-tagline">
-          Collez un kifu, obtenez la courbe d'évaluation, repérez vos gaffes et rejouez-les.
-        </p>
+        <div className="app-title">
+          <h1>将棋 — Analyseur de parties</h1>
+          <p className="app-tagline">
+            Collez un kifu, obtenez la courbe d'évaluation, repérez vos gaffes et rejouez-les.
+          </p>
+        </div>
+
+        {/* Ces réglages ne changent jamais d'un coup à l'autre : ils ne méritent
+            pas une barre permanente au-dessus du plateau. Repliés ici, ils
+            libèrent une rangée entière sans rien rendre inatteignable. */}
+        {phase.kind === 'done' && game && (
+          <details className="options" ref={optionsRef}>
+            <summary className="options-toggle" title="Réglages d'affichage">
+              ⚙<span className="options-word"> Réglages</span>
+            </summary>
+            <div className="options-panel">
+              <label className="focus-control">
+                Suivre
+                <select
+                  value={focusSide}
+                  onChange={(e) => setFocusSide(e.target.value as 'both' | 'b' | 'w')}
+                >
+                  <option value="both">Les deux joueurs</option>
+                  <option value="b">▲ {game.black || 'Sente'}</option>
+                  <option value="w">△ {game.white || 'Gote'}</option>
+                </select>
+              </label>
+              <button
+                className="btn btn-ghost"
+                onClick={() => setFlipped((f) => !f)}
+                title="Voir le plateau depuis l'autre camp"
+              >
+                ⇅ {flipped ? 'Vue Gote' : 'Vue Sente'}
+              </button>
+              <button
+                className="btn btn-ghost"
+                onClick={() => setShowBestArrow((v) => !v)}
+                title="Flèche verte : le coup recommandé depuis la position affichée"
+              >
+                {showBestArrow ? '↗ Flèches affichées' : '↗ Flèches masquées'}
+              </button>
+              <button
+                className="btn btn-ghost options-danger"
+                onClick={() => {
+                  closeOptions();
+                  setPhase({ kind: 'input' });
+                  setResult(null);
+                  setGame(null);
+                }}
+              >
+                Nouvelle partie
+              </button>
+            </div>
+          </details>
+        )}
       </header>
 
       {env.messages.length > 0 && (
@@ -327,43 +394,6 @@ export default function App() {
                 onClick={() => setTab('tsume')}
               >
                 Tsume ({focusedTsumes.length})
-              </button>
-            </div>
-            <div className="toolbar-actions">
-              <label className="focus-control">
-                Suivre :
-                <select
-                  value={focusSide}
-                  onChange={(e) => setFocusSide(e.target.value as 'both' | 'b' | 'w')}
-                >
-                  <option value="both">Les deux joueurs</option>
-                  <option value="b">▲ {game.black || 'Sente'}</option>
-                  <option value="w">△ {game.white || 'Gote'}</option>
-                </select>
-              </label>
-              <button
-                className="btn btn-ghost"
-                onClick={() => setFlipped((f) => !f)}
-                title="Voir le plateau depuis l'autre camp"
-              >
-                ⇅ {flipped ? 'Vue Gote' : 'Vue Sente'}
-              </button>
-              <button
-                className="btn btn-ghost"
-                onClick={() => setShowBestArrow((v) => !v)}
-                title="Flèche verte : le coup recommandé depuis la position affichée"
-              >
-                {showBestArrow ? '↗ Flèches' : '↗ Sans flèches'}
-              </button>
-              <button
-                className="btn btn-ghost"
-                onClick={() => {
-                  setPhase({ kind: 'input' });
-                  setResult(null);
-                  setGame(null);
-                }}
-              >
-                Nouvelle partie
               </button>
             </div>
           </div>

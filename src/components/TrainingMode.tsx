@@ -285,15 +285,21 @@ export function TrainingMode({
           <span className="training-solved">{solved.size} résolue(s)</span>
         </div>
         <div className="training-nav">
-          <button className="btn btn-ghost" onClick={() => goTo(idx - 1)} disabled={idx === 0}>
-            ‹ Précédente
+          <button
+            className="btn btn-ghost"
+            onClick={() => goTo(idx - 1)}
+            disabled={idx === 0}
+            aria-label="Gaffe précédente"
+          >
+            ‹<span className="nav-word"> Précédente</span>
           </button>
           <button
             className="btn btn-ghost"
             onClick={() => goTo(idx + 1)}
             disabled={idx >= blunders.length - 1}
+            aria-label="Gaffe suivante"
           >
-            Suivante ›
+            <span className="nav-word">Suivante </span>›
           </button>
         </div>
       </div>

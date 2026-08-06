@@ -69,13 +69,22 @@
     gap: 8px;
   }
 
+  /* Compteur et navigation tenaient sur deux lignes ; réduits à leurs chevrons,
+     les boutons rentrent à côté du compteur. Les libellés partent dans
+     `aria-label`, donc rien n'est perdu pour un lecteur d'écran. */
   .training-head {
     gap: 8px;
+    flex-wrap: nowrap;
   }
 
   .training-nav .btn {
-    padding: 6px 10px;
-    font-size: 12px;
+    padding: 8px 14px;
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  .nav-word {
+    display: none;
   }
 
   .training-prompt {
