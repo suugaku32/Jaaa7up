@@ -209,6 +209,16 @@
   cursor: pointer;
 }
 
+/* Au doigt, 30 px se ratent : les pièces en main sont la cible la plus
+   sollicitée en entraînement et en tsume. On agrandit la zone tactile sans
+   grossir le glyphe. */
+@media (pointer: coarse) {
+  .hp.clickable {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 .hp.sel {
   background: rgba(0, 255, 120, 0.2);
   outline: 2px solid rgba(0, 255, 120, 0.7);

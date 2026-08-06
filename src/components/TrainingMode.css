@@ -52,6 +52,49 @@
   flex-wrap: wrap;
 }
 
+/*
+ * Sur téléphone, le panneau latéral passe sous le plateau. Il vivait ~600 px
+ * plus bas, ce qui imposait un aller-retour de défilement à chaque coup ; une
+ * fois le bandeau du haut dégraissé, il remonte à 746 px et tient dans l'écran
+ * sans rien coller.
+ *
+ * `position: sticky; bottom: 0` avait été essayé et retiré : un élément collant
+ * en bas est tiré hors de son flux et recouvre ce qui le précède — en
+ * l'occurrence la main de Sente, c'est-à-dire les pièces à poser. Masquer une
+ * cible tactile pour épargner un demi-écran de défilement est un mauvais
+ * échange.
+ */
+@media (max-width: 640px) {
+  .training {
+    gap: 8px;
+  }
+
+  .training-head {
+    gap: 8px;
+  }
+
+  .training-nav .btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .training-prompt {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  .training-body {
+    gap: 8px;
+  }
+
+  .training-side {
+    min-width: 0;
+    width: 100%;
+    gap: 6px;
+    padding-top: 6px;
+  }
+}
+
 .training-side {
   flex: 1;
   min-width: 240px;

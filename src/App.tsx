@@ -243,7 +243,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="app-header">
+      <header className={`app-header${phase.kind === 'done' ? ' compact' : ''}`}>
         <h1>将棋 — Analyseur de parties</h1>
         <p className="app-tagline">
           Collez un kifu, obtenez la courbe d'évaluation, repérez vos gaffes et rejouez-les.
@@ -368,7 +368,10 @@ export default function App() {
             </div>
           </div>
 
-          {summary && (
+          {/* Le bilan par joueur appartient à l'analyse. En entraînement et en
+              tsume, il n'ajoute rien que les compteurs des onglets ne disent
+              déjà, et sur téléphone il repousse le plateau de 290 px. */}
+          {summary && tab === 'analysis' && (
             <div className="summary">
               {(['b', 'w'] as const).map((side) => (
                 <div className="summary-card" key={side}>

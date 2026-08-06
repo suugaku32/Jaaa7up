@@ -325,14 +325,18 @@ export function TsumeMode({
         peut mater en <strong className="tsume-count">{current.mateIn}</strong> demi-coups.{' '}
         {current.delivered ? (
           <span className="tsume-found">Le mat a été porté dans la partie.</span>
-        ) : current.found ? (
+        ) : current.lostAtPly === current.ply ? (
+          <span className="tsume-missed">
+            Dans la partie : <strong>{playedLabel}</strong> — le mat a été laissé passer.
+          </span>
+        ) : current.lostAtPly !== null ? (
           <span className="tsume-missed">
             Dans la partie : <strong>{playedLabel}</strong> gardait le mat, mais il a été perdu au
             coup {current.lostAtPly}.
           </span>
         ) : (
           <span className="tsume-missed">
-            Dans la partie : <strong>{playedLabel}</strong> — le mat a été laissé passer.
+            Le mat était encore là quand la partie s’arrête, sans avoir été porté.
           </span>
         )}{' '}
         <strong>Portez-le.</strong>

@@ -65,7 +65,11 @@ export interface Tsume {
   repeats: number;
   /** Dernier coup de la partie où cette même occasion était encore là. */
   lastPly: number;
-  /** Le mat a-t-il fini par être porté ? */
+  /**
+   * Le mat a-t-il été effectivement donné dans la partie ? À ne pas confondre
+   * avec « le mat était encore forcé au dernier coup connu » : un kifu peut
+   * s'arrêter (abandon, partie tronquée) alors que le mat tenait toujours.
+   */
   delivered: boolean;
   /** Coup où le mat a été perdu, si le joueur l'a laissé filer en route. */
   lostAtPly: number | null;
@@ -308,7 +312,10 @@ export function collectTsumes(plies: PlyEval[], refinedPlies?: Set<number>): Tsu
 
   for (const p of plies) {
     if (p.mateBefore === null || p.mateBefore <= 0) continue;
-    const kept = deliveredMate(p.sfenAfter) || (p.mateAfter !== null && p.mateAfter > 0);
+    // Deux choses distinctes, qu'il ne faut pas confondre : le coup a-t-il
+    // *donné* le mat, ou seulement gardé le mat forcé pour plus tard ?
+    const mated = deliveredMate(p.sfenAfter);
+    const kept = mated || (p.mateAfter !== null && p.mateAfter > 0);
 
     // Porter un mat forcé le laisse disponible au coup suivant du même camp : la
     // position d'après est la même occasion, pas une nouvelle. On ne rattache
@@ -319,7 +326,7 @@ export function collectTsumes(plies: PlyEval[], refinedPlies?: Set<number>): Tsu
       const e = previous.entry;
       e.repeats += 1;
       e.lastPly = p.ply;
-      e.delivered = kept;
+      if (mated) e.delivered = true;
       if (!kept && e.lostAtPly === null) e.lostAtPly = p.ply;
       chain.set(p.color, { entry: e, ply: p.ply });
       continue;
@@ -336,7 +343,7 @@ export function collectTsumes(plies: PlyEval[], refinedPlies?: Set<number>): Tsu
       refined: refinedPlies ? refinedPlies.has(p.ply) : (p.refined ?? false),
       repeats: 0,
       lastPly: p.ply,
-      delivered: kept,
+      delivered: mated,
       lostAtPly: kept ? null : p.ply,
     };
     out.push(entry);

@@ -205,3 +205,96 @@
   flex-direction: column;
   gap: 6px;
 }
+
+/*
+ * Sur un écran de téléphone, l'app se lisait de haut en bas sans jamais
+ * s'adapter : titre, accroche, onglets sur trois lignes, actions sur deux
+ * rangées et deux cartes de résumé passaient avant le plateau — environ
+ * 1 150 px à faire défiler avant d'apercevoir une case, en mode entraînement
+ * où seul le plateau compte. Tout ce qui suit ne fait que rendre son rang au
+ * contenu.
+ */
+@media (max-width: 640px) {
+  .app {
+    padding: 10px 10px 24px;
+    gap: 10px;
+  }
+
+  /* Une fois la partie chargée, le titre n'apprend plus rien. */
+  .app-header.compact h1 {
+    font-size: 15px;
+    letter-spacing: 0.5px;
+  }
+
+  .app-header.compact .app-tagline {
+    display: none;
+  }
+
+  /* Les onglets portent déjà les compteurs : ils méritent la pleine largeur,
+     sur une seule ligne. */
+  .tabs {
+    width: 100%;
+  }
+
+  .tabs .tab {
+    flex: 1;
+    padding: 9px 4px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* Aucune de ces commandes ne sert coup par coup : elles peuvent être
+     discrètes, mais pas occuper deux rangées au-dessus du plateau. */
+  /* Ces commandes tenaient sur deux rangées faute de place. Une rangée qui
+     défile latéralement rend les 55 px au plateau sans rien rendre
+     inatteignable. */
+  .toolbar-actions {
+    gap: 6px;
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .toolbar-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toolbar-actions .btn,
+  .focus-control {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .toolbar-actions .btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  .focus-control {
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .focus-control select {
+    padding: 5px 6px;
+    font-size: 12px;
+  }
+
+  .summary {
+    gap: 6px;
+  }
+
+  .summary-card {
+    min-width: 0;
+    flex-basis: 100%;
+    padding: 7px 10px;
+    gap: 2px;
+  }
+
+  .app-footer {
+    font-size: 10px;
+  }
+}
