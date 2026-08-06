@@ -8,81 +8,89 @@ amont ne peut modifier ce qui est déployé.
 
 | Fichier | Source | Version |
 |---|---|---|
-| `yaneuraou.js` | npm [`yaneuraou.wasm`](https://www.npmjs.com/package/yaneuraou.wasm) | 0.1.2 |
-| `yaneuraou.wasm` | idem | 0.1.2 |
-| `yaneuraou.data` | idem | 0.1.2 |
-| `yaneuraou.worker.js` | idem | 0.1.2 |
+| `yaneuraou.k-p.js` | npm [`@mizarjp/yaneuraou.k-p`](https://www.npmjs.com/package/@mizarjp/yaneuraou.k-p) | 7.6.3-alpha.0 |
+| `yaneuraou.k-p.wasm` | idem | 7.6.3-alpha.0 |
+| `yaneuraou.k-p.worker.js` | idem | 7.6.3-alpha.0 |
+| `LICENSE-yaneuraou.md` | idem | GPL-3.0 |
 | `../coi-serviceworker.js` | npm [`coi-serviceworker`](https://www.npmjs.com/package/coi-serviceworker) | 0.1.7 |
 
-Dépôt amont du moteur : <https://github.com/arashigaoka/YaneuraOu.wasm>,
-lui-même port de <https://github.com/yaneurao/YaneuraOu> (GPL-3.0, voir `COPYING.txt`).
+Dépôt amont : <https://github.com/mizar/YaneuraOu.wasm> (branche `wasm`), port de
+<https://github.com/yaneurao/YaneuraOu> (GPL-3.0).
 
 ## Empreintes
 
 ```
-b8d7c8a614ac50fd7b2f0337605e16a1dc9fe36cb48ba87e93aece92e212b67d  yaneuraou.js
-ba9bd600d048e9b3e43eec8a155883815a5620f4adf61f659faa1b7c0dd65f1b  yaneuraou.wasm
-cf7645f64bf6baa5c74612799ce562752f7985923b1f0fc2e6092c998ed867f9  yaneuraou.data
-35171fbc913a33e143f881f1fe840757277efc5d53014ff3b6bc568d52874f3a  yaneuraou.worker.js
+108ac00b15b03c7068f235700acf720460e4da06ebfa7cd507c0152374cb0226  yaneuraou.k-p.js
+7a302cd6fae269aac49f0b3447678d930f3c7e4153b0d72aef7655fb18d7139e  yaneuraou.k-p.wasm
+0565ebd7d471d3487f09d3e4b4ad555f33d600469d3419f42670123834d04e54  yaneuraou.k-p.worker.js
 d12bd536e27e39a773d7dc7adb1a1167d24002293e97ac81c995fb00cf8d4d5a  ../coi-serviceworker.js
 ```
 
-Pour revérifier : `sha256sum public/engine/* public/coi-serviceworker.js`
+Pour revérifier : `sha256sum public/engine/*.js public/engine/*.wasm public/coi-serviceworker.js`
 
-Pour comparer à npm sans rien remplacer :
+Ces empreintes sont **identiques** à celles des fichiers du paquet npm
+(`node_modules/@mizarjp/yaneuraou.k-p/lib/`) : la copie est bit à bit, sans
+retouche. Pour comparer sans rien remplacer :
 
 ```bash
-npm pack yaneuraou.wasm@0.1.2 && tar xzf yaneuraou.wasm-0.1.2.tgz
-sha256sum package/yaneuraou.*
+npm pack @mizarjp/yaneuraou.k-p@7.6.3-alpha.0 && tar xzf mizarjp-yaneuraou.k-p-7.6.3-alpha.0.tgz
+sha256sum package/lib/yaneuraou.k-p.*
 ```
 
-## Ce que fait `yaneuraou.data`
+## Pourquoi ce paquet plutôt que `yaneuraou.wasm@0.1.2`
 
-C'est le fichier NNUE brut, sans emballage emscripten : il est préchargé dans le
-système de fichiers virtuel sous `/eval/nn.bin`. Son en-tête annonce
-`Features=K+P[1710->256x2]`. Techniquement, le remplacer par un autre réseau de la
-**même architecture** suffit à changer la fonction d'évaluation sans retoucher au
-binaire.
+Le paquet précédent (port d'`arashigaoka`, YaneuraOu ~2019) a été remplacé par le
+fork de `mizar`, nettement plus récent et toujours maintenu. Trois différences
+concrètes :
 
-### SuishoPetite (2021) a été testé, et n'est pas retenu
+- **Le réseau d'évaluation est embarqué dans le wasm** (`EvalDir` vaut
+  `<internal>`, et le moteur annonce `info string loading eval file : <internal>`).
+  Plus de `yaneuraou.data` à charger, et plus de risque de désaccord entre binaire
+  et réseau — c'est précisément ce qui avait fait échouer la tentative de changer
+  le réseau seul (voir `../../nets/README.md`).
+- **`FV_SCALE` est exposé et vaut 24 par défaut**, la valeur attendue par les
+  réseaux de la famille Suisho. L'ancien binaire le figeait à 16.
+- Des années de développement de la recherche entre les deux versions.
 
-Le fichier est archivé dans [`nets/`](../../nets/) pour rester disponible sans
-retéléchargement ; il n'est pas servi par le site.
+Le fichier est plus gros : 1 446 554 octets contre 514 999 + 893 917 (wasm +
+réseau) auparavant, soit un total comparable.
 
-L'hypothèse « réseau plus récent = moteur plus fort » a été mesurée, pas supposée.
-SuishoPetite (`suishopetite_20211123.k_p`, même architecture, empreinte
-`39a295d3…`) a été chargé dans ce binaire et confronté au réseau actuel :
+## Réglage imposé : `USI_Hash`
 
-- **Match : 8–4 pour le réseau de 2019** (12 parties, 200 ms/coup, couleurs
-  alternées, adjudication à ±3000 cp sur 6 demi-coups). Sente gagne 8 fois sur 12,
-  soit l'avantage du trait attendu : pas de biais de couleur.
-- Les deux réseaux se chargent correctement et évaluent sainement ; ils divergent
-  sur le meilleur coup dans 14 positions sur 32.
+Ce build annonce `USI_Hash type spin default 1024`, et l'allouer fait grossir le
+tas WebAssembly à **~1,2 Go dès `isready`** — intenable dans un onglet mobile.
+`src/engine/UsiEngine.ts` envoie donc `setoption name USI_Hash value 32` avant
+`isready`. Mesures (tas après quelques recherches) :
 
-12 parties ne suffisent pas à conclure que le réseau de 2019 est *meilleur*
-(8–4 n'est pas significatif), mais la charge de la preuve portait sur SuishoPetite,
-et elle n'est pas remplie. Le réseau actuel reste en place.
+| `USI_Hash` | Tas WebAssembly |
+|---|---|
+| 1024 (défaut) | 1 239 Mo |
+| 128 | 297 Mo |
+| 64 | 220 Mo |
+| 32 | 168 Mo |
+| 16 | 140 Mo (plancher) |
 
-**Piste écartée faute de preuve :** `FV_SCALE` vaut 16 par défaut alors que les
-réseaux de la famille Suisho veulent 24 (voir `eval/nnue/evaluate_nnue.cpp` en
-amont), et ce binaire fige la valeur sans exposer l'option — un mauvais calibrage
-était donc plausible. Mais le ratio des évaluations B/A mesuré sur 28 positions
-donne une médiane de 0,69 (étalement 0,42–1,11), loin du 1,50 qu'impliquerait un
-facteur 24/16. Le test ne tranche pas vraiment — il compare deux réseaux
-différents, donc l'écart de calibrage et l'écart de jugement se confondent — mais
-rien ne soutient l'explication.
+32 Mo suffisent : aux temps de réflexion utilisés ici (200 ms à 2 s, soit ~10⁶
+nœuds au plus), la table ne se remplit pas.
 
-Pour utiliser un réseau de la famille Suisho proprement, il faut recompiler le
-moteur avec `FV_SCALE` configurable, ce que fait le script officiel
-`script/wasm_build.js` (`-DENGINE_OPTIONS="option=name=FV_SCALE=…=default=24…"`).
+`Threads` reste à 1. Testé à 2 et 4 sur trois positions à 1 s : la profondeur
+gagne au mieux un demi-coup, pour 245 puis 352 Mo de tas. Le compromis ne vaut pas
+le coût mémoire sur mobile.
 
 ## Capacités du binaire (audit)
 
-Un module WebAssembly ne peut faire que ce que ses imports lui accordent. Les 33
-imports de `yaneuraou.wasm` couvrent le système de fichiers virtuel, les threads,
-le temps et la mémoire — **aucune primitive réseau**. La glue JS ne contient aucune
-URL absolue hors un lien de documentation dans un message d'erreur, et n'utilise ni
-`fetch`, ni WebSocket, ni `localStorage`, ni les cookies. Les seuls XHR chargent les
-fichiers voisins (`.wasm`, `.data`) par chemin relatif.
+Un module WebAssembly ne peut faire que ce que ses imports lui accordent. Les **29
+imports** de `yaneuraou.k-p.wasm` couvrent le système de fichiers virtuel
+(`__syscall_openat`, `fd_read`/`fd_write`/`fd_seek`/`fd_close`, `__syscall_getcwd`),
+les threads (`__pthread_create_js`, `__emscripten_thread_cleanup`, …), le temps
+(`_emscripten_date_now`, `emscripten_get_now`) et la mémoire
+(`emscripten_resize_heap`, `env.memory`) — **aucune primitive réseau**, aucun
+socket.
+
+La glue JS n'utilise ni WebSocket, ni `localStorage`, ni les cookies. Elle utilise
+`fetch` et `XMLHttpRequest` **uniquement** pour charger `yaneuraou.k-p.wasm` par
+chemin relatif (`credentials: "same-origin"`), et `importScripts` pour le worker
+voisin. La seule URL absolue du fichier est un lien de documentation emscripten
+dans un message d'erreur (`emscripten.org/docs/porting/pthreads.html`).
 
 La CSP déclarée dans `index.html` (`connect-src 'self'`) ferme la porte de toute façon.

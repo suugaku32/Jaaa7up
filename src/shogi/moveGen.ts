@@ -217,6 +217,20 @@ function dropMoves(pos: Position, color: Color): Move[] {
 
 /** Fully legal moves (own king never left in check) for `color` in `pos`. */
 export function generateLegalMoves(pos: Position, color: Color): Move[] {
+  return legalMoves(pos, color, true);
+}
+
+/**
+ * `enforceUchifuzume` n'est faux que pour l'appel récursif interne.
+ *
+ * 打ち歩詰め : on n'a pas le droit de mater en *droppant* un pion — le même mat
+ * porté par un pion qui avance est parfaitement légal. Vérifier la règle demande
+ * de savoir si l'adversaire serait mat, donc de générer ses coups ; sans ce
+ * drapeau, cette génération revérifierait à son tour ses propres drops de pion
+ * et la récursion ne s'arrêterait pas. Au second niveau, la question ne se pose
+ * plus : on cherche seulement si une réponse existe.
+ */
+function legalMoves(pos: Position, color: Color, enforceUchifuzume: boolean): Move[] {
   const pseudo: Move[] = [];
   for (let file = 1; file <= 9; file++) {
     for (let rank = 1; rank <= 9; rank++) {
@@ -228,7 +242,7 @@ export function generateLegalMoves(pos: Position, color: Color): Move[] {
   }
   pseudo.push(...dropMoves(pos, color));
 
-  return pseudo.filter((m) => {
+  const legal = pseudo.filter((m) => {
     // Capturing the enemy king is never a move we offer, and applying it would be
     // rejected outright — that shape only appears when the opponent already left
     // their king en prise, i.e. the position itself is illegal.
@@ -243,6 +257,24 @@ export function generateLegalMoves(pos: Position, color: Color): Move[] {
     const king = clone.findKing(color);
     if (!king) return true;
     return !isSquareAttacked(clone, king, otherColor(color));
+  });
+
+  if (!enforceUchifuzume) return legal;
+
+  return legal.filter((m) => {
+    if (m.from || m.piece !== 'P') return true;
+    const after = pos.clone();
+    after.turn = color;
+    try {
+      after.applyUsiMove(moveToUsi(m));
+    } catch {
+      return false;
+    }
+    const opponent = otherColor(color);
+    // Un drop de pion qui ne donne pas échec ne peut pas mater : rien à vérifier.
+    if (!isKingCapturable(after, opponent)) return true;
+    // Échec : le coup n'est interdit que s'il est mat.
+    return legalMoves(after, opponent, false).length > 0;
   });
 }
 

@@ -5,13 +5,90 @@
   align-items: center;
 }
 
+.board-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.board-body {
+  display: flex;
+  align-items: stretch;
+}
+
+/* Numéros de colonne (筋) au-dessus, kanji de rangée (段) à droite : convention shogi. */
+.coords-files {
+  display: flex;
+  font-size: 10px;
+  color: var(--dim);
+}
+
+.coords-files span {
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.coords-ranks {
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+  color: var(--dim);
+  padding-left: 3px;
+}
+
+.coords-ranks span {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .goban {
+  position: relative;
   background: var(--board-bg);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   border: 1px solid var(--border);
   border-radius: 6px;
   overflow: hidden;
+}
+
+/* Couche de flèches : purement indicative, ne doit pas voler les clics. */
+.arrow-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.arrow-line {
+  stroke-width: 4;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+
+.arrow-drop {
+  fill: none;
+  stroke-width: 4;
+  opacity: 0.9;
+}
+
+.arrow-best,
+.arrow-line.arrow-best {
+  stroke: var(--status-good);
+}
+
+.arrow-head.arrow-best {
+  fill: var(--status-good);
+  stroke: none;
+}
+
+.arrow-played,
+.arrow-line.arrow-played {
+  stroke: var(--status-blunder);
+}
+
+.arrow-head.arrow-played {
+  fill: var(--status-blunder);
+  stroke: none;
 }
 
 .board-row {
@@ -32,22 +109,22 @@
 
 .cell.ht {
   background: var(--sq-to);
-  box-shadow: inset 0 0 8px rgba(255, 196, 0, 0.3);
+  box-shadow: var(--sq-to-inset);
 }
 
 .cell.hf {
   background: var(--sq-from);
-  box-shadow: inset 0 0 8px rgba(100, 149, 255, 0.25);
+  box-shadow: var(--sq-from-inset);
 }
 
 .cell.sel {
   background: var(--sq-sel);
-  box-shadow: inset 0 0 10px rgba(0, 255, 120, 0.5);
+  box-shadow: var(--sq-sel-inset);
 }
 
 .cell.hint {
   background: var(--sq-hint);
-  box-shadow: inset 0 0 6px rgba(0, 200, 100, 0.35);
+  box-shadow: var(--sq-hint-inset);
 }
 
 .cell.err {
@@ -132,9 +209,19 @@
   cursor: pointer;
 }
 
+/* Au doigt, 30 px se ratent : les pièces en main sont la cible la plus
+   sollicitée en entraînement et en tsume. On agrandit la zone tactile sans
+   grossir le glyphe. */
+@media (pointer: coarse) {
+  .hp.clickable {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 .hp.sel {
-  background: rgba(0, 255, 120, 0.2);
-  outline: 2px solid rgba(0, 255, 120, 0.7);
+  background: var(--sq-sel);
+  outline: 2px solid var(--sq-sel-outline);
 }
 
 .hpc {
@@ -143,7 +230,7 @@
   right: -2px;
   font-size: 9px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: 50%;
   width: 13px;
   height: 13px;

@@ -78,3 +78,7 @@
   align-items: center;
   gap: 4px;
 }
+
+.eval-area {
+  fill-opacity: var(--area-opacity, 0.18);
+}

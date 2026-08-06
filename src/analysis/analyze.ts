@@ -1,5 +1,6 @@
 import type { UsiEngine } from '../engine/UsiEngine';
 import { Position } from '../shogi/position';
+import { generateLegalMoves, isKingCapturable } from '../shogi/moveGen';
 import type { Color } from '../shogi/types';
 import { classifyLoss, cpToWinPercent, scoreToCp, type MoveQuality } from './classify';
 
@@ -14,11 +15,64 @@ export interface PlyEval {
   /** Engine cp score at sfenAfter, converted to the mover's perspective. */
   evalAfterCp: number;
   bestMove: string | null;
+  /** Ce que le moteur aurait joué à la place, et la suite qu'il envisage. */
   bestMovePv: string[];
+  /** La suite après le coup réellement joué : c'est elle qui montre pourquoi il est mauvais. */
+  refutationPv: string[];
   centipawnLoss: number;
   quality: MoveQuality;
   /** True once the second pass has re-examined this ply at the deeper time control. */
   refined?: boolean;
+  /**
+   * Mat forcé disponible avant ce coup, du point de vue du joueur au trait :
+   * positif = il mate en N, négatif = il se fait mater en N. `null` = pas de mat vu.
+   */
+  mateBefore: number | null;
+  /** Idem après le coup joué, ramené au point de vue du joueur qui vient de jouer. */
+  mateAfter: number | null;
+}
+
+/**
+ * Une position de la partie où le joueur au trait disposait d'un mat forcé.
+ *
+ * Détecté via le `score mate` de la recherche normale : ce build du moteur
+ * n'expose pas `go mate` (la commande y tombe dans une recherche *sans limite
+ * de temps*, vérifié). Un score de mat est une ligne prouvée par la recherche,
+ * donc les faux positifs sont exclus ; en revanche un balayage court rate les
+ * mats profonds, d'où la troisième passe qui reprend ces positions plus
+ * longtemps.
+ */
+export interface Tsume {
+  /** Coup de la partie où l'occasion s'est présentée (1-indexé). */
+  ply: number;
+  color: Color;
+  sfen: string;
+  /** Nombre de demi-coups jusqu'au mat, tel que vu par le moteur. */
+  mateIn: number;
+  /** La séquence de mat : c'est la solution. */
+  solution: string[];
+  /** Le coup effectivement joué dans la partie. */
+  playedUsi: string;
+  /** Vrai si le coup joué à `ply` conservait le mat forcé. */
+  found: boolean;
+  /** Vrai si la position a été revue à la cadence longue. */
+  refined: boolean;
+  /**
+   * Positions supplémentaires absorbées : un mat forcé reste disponible tant
+   * qu'on le porte, donc la même occasion réapparaît à chaque coup suivant. Les
+   * lister séparément produirait une file de tsume quasi identiques.
+   */
+  repeats: number;
+  /** Dernier coup de la partie où cette même occasion était encore là. */
+  lastPly: number;
+  /**
+   * Le mat a-t-il été effectivement donné dans la partie ? À ne pas confondre
+   * avec « le mat était encore forcé au dernier coup connu » : un kifu peut
+   * s'arrêter (abandon, partie tronquée) alors que le mat tenait toujours.
+   */
+  delivered: boolean;
+  /** Coup où le mat a été perdu, si le joueur l'a laissé filer en route. */
+  lostAtPly: number | null;
 }
 
 export interface EvalPoint {
@@ -33,9 +87,10 @@ export interface AnalysisResult {
   evalCurve: EvalPoint[];
   blunders: PlyEval[];
   mistakes: PlyEval[];
+  tsumes: Tsume[];
 }
 
-export type AnalysisPhase = 'scan' | 'refine';
+export type AnalysisPhase = 'scan' | 'refine' | 'tsume';
 
 export interface AnalyzeGameOptions {
   /** Time per position for the first pass, which sweeps the whole game. */
@@ -49,6 +104,15 @@ export interface AnalyzeGameOptions {
 
 /** Qualities worth spending the second pass on. */
 const REFINED_QUALITIES: MoveQuality[] = ['inaccuracy', 'mistake', 'blunder'];
+
+/** Ce que le moteur rapporte pour une position donnée. */
+interface PositionEval {
+  cp: number;
+  /** `score mate N` brut, du point de vue du joueur au trait. */
+  mate: number | null;
+  bestMove: string | null;
+  pv: string[];
+}
 
 export async function analyzeGame(
   engine: UsiEngine,
@@ -65,7 +129,7 @@ export async function analyzeGame(
 
   // Pass 1 — sweep every position quickly, just to locate the suspect moves.
   const total = sfens.length;
-  const evals: { cp: number; bestMove: string | null; pv: string[] }[] = [];
+  const evals: PositionEval[] = [];
   for (let i = 0; i < sfens.length; i++) {
     if (opts.signal?.aborted) throw new DOMException('Analyse annulée', 'AbortError');
     const result = await engine.analyze(sfens[i], [], {
@@ -74,6 +138,7 @@ export async function analyzeGame(
     });
     evals.push({
       cp: scoreToCp(result.scoreCp, result.scoreMate),
+      mate: result.scoreMate,
       bestMove: result.bestMove,
       pv: result.pv,
     });
@@ -112,8 +177,13 @@ export async function analyzeGame(
       evalAfterCp,
       bestMove: evals[i].bestMove,
       bestMovePv: evals[i].pv,
+      refutationPv: evals[i + 1].pv,
       centipawnLoss: loss,
       quality: classifyLoss(winDrop),
+      mateBefore: evals[i].mate,
+      // Le moteur parle du point de vue du joueur au trait, qui est l'adversaire
+      // après le coup : on inverse pour rester du côté de celui qui a joué.
+      mateAfter: evals[i + 1].mate === null ? null : -evals[i + 1].mate!,
     });
 
     posAt.applyUsiMove(moveUsi);
@@ -127,6 +197,9 @@ export async function analyzeGame(
   // The first pass is too shallow to be trusted as the answer key in training
   // mode, and it also mislabels some moves in both directions.
   const deepMs = opts.deepMovetimeMs;
+  // Partagée avec la passe tsume plus bas : une position déjà creusée ici n'a pas
+  // à l'être une seconde fois.
+  const deep = new Map<number, PositionEval>();
   if (deepMs && deepMs > (opts.movetimeMs ?? 0)) {
     const candidates = plies.filter((p) => REFINED_QUALITIES.includes(p.quality));
     // A ply needs its own position and the one after it; consecutive candidates share.
@@ -136,7 +209,6 @@ export async function analyzeGame(
       needed.add(p.ply);
     }
     const indices = [...needed].sort((a, b) => a - b);
-    const deep = new Map<number, { cp: number; bestMove: string | null; pv: string[] }>();
 
     for (let k = 0; k < indices.length; k++) {
       if (opts.signal?.aborted) throw new DOMException('Analyse annulée', 'AbortError');
@@ -144,6 +216,7 @@ export async function analyzeGame(
       const r = await engine.analyze(sfens[i], [], { movetimeMs: deepMs });
       deep.set(i, {
         cp: scoreToCp(r.scoreCp, r.scoreMate),
+        mate: r.scoreMate,
         bestMove: r.bestMove,
         pv: r.pv,
       });
@@ -158,6 +231,9 @@ export async function analyzeGame(
       p.evalAfterCp = -after.cp;
       p.bestMove = before.bestMove;
       p.bestMovePv = before.pv;
+      p.refutationPv = after.pv;
+      p.mateBefore = before.mate;
+      p.mateAfter = after.mate === null ? null : -after.mate;
       p.centipawnLoss = Math.max(0, p.evalBeforeCp - p.evalAfterCp);
       p.quality = classifyLoss(
         Math.max(0, cpToWinPercent(p.evalBeforeCp) - cpToWinPercent(p.evalAfterCp)),
@@ -172,8 +248,152 @@ export async function analyzeGame(
     }
   }
 
+  // Pass 3 — les positions où un mat forcé a été aperçu méritent une vraie
+  // séquence de solution. Le balayage court donne le verdict « il y a un mat »
+  // mais souvent une variante tronquée ; on reprend donc ces positions à la
+  // cadence longue, en sautant celles que la passe 2 a déjà traitées.
+  if (deepMs && deepMs > (opts.movetimeMs ?? 0)) {
+    const toDeepen = plies
+      .filter((p) => p.mateBefore !== null && p.mateBefore > 0)
+      .map((p) => p.ply - 1)
+      .filter((i) => !deep.has(i));
+    const unique = [...new Set(toDeepen)];
+
+    for (let k = 0; k < unique.length; k++) {
+      if (opts.signal?.aborted) throw new DOMException('Analyse annulée', 'AbortError');
+      const i = unique[k];
+      const r = await engine.analyze(sfens[i], [], { movetimeMs: deepMs });
+      deep.set(i, {
+        cp: scoreToCp(r.scoreCp, r.scoreMate),
+        mate: r.scoreMate,
+        bestMove: r.bestMove,
+        pv: r.pv,
+      });
+      opts.onProgress?.('tsume', k + 1, unique.length);
+    }
+
+    for (const p of plies) {
+      const d = deep.get(p.ply - 1);
+      if (!d || p.mateBefore === null || p.mateBefore <= 0) continue;
+      // Un mat vu à 200 ms est une ligne prouvée : il ne disparaît pas en
+      // cherchant plus longtemps. Si la passe longue rend malgré tout un score
+      // en centipions (itération interrompue), on garde la détection initiale
+      // plutôt que de perdre le tsume.
+      if (d.mate !== null && d.mate > 0) {
+        p.mateBefore = d.mate;
+        p.bestMove = d.bestMove;
+        p.bestMovePv = d.pv;
+      }
+    }
+  }
+
   const blunders = plies.filter((p) => p.quality === 'blunder');
   const mistakes = plies.filter((p) => p.quality === 'mistake');
+  const tsumes = collectTsumes(
+    plies,
+    new Set([...deep.keys()].map((i) => i + 1)),
+  );
 
-  return { startSfen, plies, evalCurve, blunders, mistakes };
+  return { startSfen, plies, evalCurve, blunders, mistakes, tsumes };
+}
+
+/**
+ * Un tsume = une position de la partie où le joueur au trait avait un mat forcé.
+ *
+ * `found` distingue les deux cas intéressants : le mat a été porté, ou il a été
+ * laissé passer. Le critère est simple et ne dépend que de ce qu'on a déjà —
+ * après le coup joué, l'adversaire est-il *encore* en train de se faire mater ?
+ * Peu importe que le joueur ait choisi le mat le plus court.
+ */
+export function collectTsumes(plies: PlyEval[], refinedPlies?: Set<number>): Tsume[] {
+  const out: Tsume[] = [];
+  /** Dernier tsume retenu pour chaque camp, avec le coup où on l'a laissé. */
+  const chain = new Map<Color, { entry: Tsume; ply: number }>();
+
+  for (const p of plies) {
+    if (p.mateBefore === null || p.mateBefore <= 0) continue;
+    if (!isCheckingSequence(p.sfenBefore, p.bestMovePv)) continue;
+    // Deux choses distinctes, qu'il ne faut pas confondre : le coup a-t-il
+    // *donné* le mat, ou seulement gardé le mat forcé pour plus tard ?
+    const mated = deliveredMate(p.sfenAfter);
+    const kept = mated || (p.mateAfter !== null && p.mateAfter > 0);
+
+    // Porter un mat forcé le laisse disponible au coup suivant du même camp : la
+    // position d'après est la même occasion, pas une nouvelle. On ne rattache
+    // que les coups strictement consécutifs (ply + 2) — si le mat disparaît puis
+    // réapparaît, c'est bien deux chances distinctes.
+    const previous = chain.get(p.color);
+    if (previous && previous.ply === p.ply - 2) {
+      const e = previous.entry;
+      e.repeats += 1;
+      e.lastPly = p.ply;
+      if (mated) e.delivered = true;
+      if (!kept && e.lostAtPly === null) e.lostAtPly = p.ply;
+      chain.set(p.color, { entry: e, ply: p.ply });
+      continue;
+    }
+
+    const entry: Tsume = {
+      ply: p.ply,
+      color: p.color,
+      sfen: p.sfenBefore,
+      mateIn: p.mateBefore,
+      solution: p.bestMovePv,
+      playedUsi: p.moveUsi,
+      found: kept,
+      refined: refinedPlies ? refinedPlies.has(p.ply) : (p.refined ?? false),
+      repeats: 0,
+      lastPly: p.ply,
+      delivered: mated,
+      lostAtPly: kept ? null : p.ply,
+    };
+    out.push(entry);
+    chain.set(p.color, { entry, ply: p.ply });
+  }
+  return out;
+}
+
+/**
+ * Le coup a-t-il mis fin à la partie ?
+ *
+ * Sans ce test, un mat effectivement porté serait compté comme manqué : sur la
+ * position finale le moteur répond `bestmove resign` sans score de mat, donc
+ * `mateAfter` vaut `null` et le critère habituel échoue précisément dans le cas
+ * le plus favorable au joueur.
+ */
+function deliveredMate(sfenAfter: string): boolean {
+  try {
+    const pos = Position.fromSfen(sfenAfter);
+    // En échec *et* sans réponse : le pat perd aussi au shogi, mais ce n'est
+    // pas un mat, et l'annoncer comme tel serait faux.
+    return isKingCapturable(pos, pos.turn) && generateLegalMoves(pos, pos.turn).length === 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * La séquence annoncée est-elle un vrai tsume ?
+ *
+ * Un mat forcé n'en est pas forcément un : la variante du moteur peut contenir
+ * un coup tranquille, alors qu'un tsume donne échec à chaque coup de
+ * l'attaquant. Comme le mode de résolution impose cette règle, garder ces
+ * positions produirait des exercices insolubles selon leur propre énoncé.
+ *
+ * La variante peut être tronquée par la recherche ; on vérifie alors ce qui est
+ * disponible, ce qui suffit à écarter les cas manifestes.
+ */
+function isCheckingSequence(sfen: string, solution: string[]): boolean {
+  if (solution.length === 0) return false;
+  try {
+    const pos = Position.fromSfen(sfen);
+    for (let i = 0; i < solution.length; i++) {
+      pos.applyUsiMove(solution[i]);
+      // Les coups d'indice pair sont ceux de l'attaquant.
+      if (i % 2 === 0 && !isKingCapturable(pos, pos.turn)) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
