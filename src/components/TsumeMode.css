@@ -1,0 +1,27 @@
+/* Le mode tsume réutilise la mise en page de l'entraînement (.training-*) et
+   n'ajoute ici que ce qui lui est propre. */
+
+.tsume-count {
+  color: var(--accent);
+}
+
+.tsume-found {
+  color: var(--status-good);
+}
+
+.tsume-missed {
+  color: var(--status-blunder);
+}
+
+.tsume-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tsume-note {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--dim);
+  margin: 0;
+}

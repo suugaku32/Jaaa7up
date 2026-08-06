@@ -1,3 +1,4 @@
+import { collectTsumes } from '../analysis/analyze';
 import type { AnalysisResult, EvalPoint, PlyEval } from '../analysis/analyze';
 import type { MoveQuality } from '../analysis/classify';
 import type { KifuFormat, ParsedGame } from '../shogi/parser';
@@ -20,6 +21,10 @@ interface StoredPly {
   p: string[]; // bestMovePv
   r: string[]; // refutationPv
   f?: 1; // refined
+  // Mats forcés. Absents des parties enregistrées avant l'ajout du mode tsume :
+  // ces entrées se rechargent alors sans tsume plutôt que d'être rejetées.
+  mb?: number; // mateBefore
+  ma?: number; // mateAfter
 }
 
 export interface StoredGame {
@@ -120,6 +125,8 @@ export function saveGame(
       p: p.bestMovePv,
       r: p.refutationPv,
       ...(p.refined ? { f: 1 as const } : {}),
+      ...(p.mateBefore !== null ? { mb: p.mateBefore } : {}),
+      ...(p.mateAfter !== null ? { ma: p.mateAfter } : {}),
     })),
   };
 
@@ -180,6 +187,8 @@ export function loadGame(
       centipawnLoss: s.l,
       quality: s.q,
       refined: s.f === 1,
+      mateBefore: s.mb ?? null,
+      mateAfter: s.ma ?? null,
     }));
 
     const game: ParsedGame = {
@@ -195,6 +204,7 @@ export function loadGame(
       evalCurve: stored.evalCurve,
       blunders: plies.filter((p) => p.quality === 'blunder'),
       mistakes: plies.filter((p) => p.quality === 'mistake'),
+      tsumes: collectTsumes(plies),
     };
     return {
       game,

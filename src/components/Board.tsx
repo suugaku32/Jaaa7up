@@ -241,6 +241,7 @@ function HandRow({
             className={`hp${selectedType === type ? ' sel' : ''}${interactive ? ' clickable' : ''}`}
             onClick={() => interactive && onClick?.(type)}
             role={interactive ? 'button' : undefined}
+            aria-label={`${pieceGlyph(type, false)} en main`}
           >
             <span className={`pc${upsideDown ? ' gote' : ''}`} style={{ fontSize: 20 }}>
               {pieceGlyph(type, false)}

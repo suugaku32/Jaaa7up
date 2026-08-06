@@ -5,6 +5,7 @@ import { EvalGraph } from './components/EvalGraph';
 import { KifuInput } from './components/KifuInput';
 import { MoveList } from './components/MoveList';
 import { TrainingMode } from './components/TrainingMode';
+import { TsumeMode } from './components/TsumeMode';
 import { VariationBar } from './components/VariationBar';
 import { HistoryList } from './components/HistoryList';
 import {
@@ -28,7 +29,7 @@ import type { Square } from './shogi/types';
 import { usiToSquare } from './shogi/types';
 import './App.css';
 
-type Tab = 'analysis' | 'training';
+type Tab = 'analysis' | 'training' | 'tsume';
 
 type Phase =
   | { kind: 'input' }
@@ -38,6 +39,7 @@ type Phase =
 const PHASE_LABEL: Record<AnalysisPhase, string> = {
   scan: 'Balayage de la partie',
   refine: 'Étude des coups suspects',
+  tsume: 'Vérification des mats',
 };
 
 export default function App() {
@@ -217,6 +219,13 @@ export default function App() {
     () => focusedPlies.filter((p) => p.quality === 'blunder'),
     [focusedPlies],
   );
+  const focusedTsumes = useMemo(
+    () =>
+      result
+        ? result.tsumes.filter((t) => focusSide === 'both' || t.color === focusSide)
+        : [],
+    [result, focusSide],
+  );
 
   const summary = useMemo(() => {
     if (!result) return null;
@@ -312,6 +321,12 @@ export default function App() {
                 onClick={() => setTab('training')}
               >
                 Entraînement ({focusedBlunders.length})
+              </button>
+              <button
+                className={`tab${tab === 'tsume' ? ' active' : ''}`}
+                onClick={() => setTab('tsume')}
+              >
+                Tsume ({focusedTsumes.length})
               </button>
             </div>
             <div className="toolbar-actions">
@@ -492,9 +507,18 @@ export default function App() {
                 </div>
               </div>
             </>
-          ) : (
+          ) : tab === 'training' ? (
             <TrainingMode
               blunders={focusedBlunders}
+              engine={engineRef.current}
+              movetimeMs={deepMovetimeMs > 0 ? deepMovetimeMs : movetimeMs}
+              flipped={flipped}
+              blackName={game.black}
+              whiteName={game.white}
+            />
+          ) : (
+            <TsumeMode
+              tsumes={focusedTsumes}
               engine={engineRef.current}
               movetimeMs={deepMovetimeMs > 0 ? deepMovetimeMs : movetimeMs}
               flipped={flipped}

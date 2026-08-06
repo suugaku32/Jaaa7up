@@ -23,6 +23,9 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
 - **Mode entraînement** : sur chaque gaffe, on rejoue la position ; le coup joué est
   montré (flèche rouge), le coup proposé est réévalué par le moteur et accepté s'il
   perd au plus 50 centipions par rapport au meilleur coup.
+- **Détection des tsume** : les positions où un mat forcé était disponible sont
+  repérées, distinguées selon qu'il a été porté ou laissé passer, et rejouables —
+  on joue le mat, le moteur défend, jusqu'au mat ou jusqu'à ce qu'il s'échappe.
 - **Historique local** : les parties analysées sont conservées en `localStorage`
   (30 au plus, sans aucune synchronisation) et rechargeables sans réanalyse.
 
@@ -53,6 +56,32 @@ côté, et pas de risque de désaccord entre binaire et réseau. Une seule optio
 forcée, `USI_Hash = 32` : le défaut du moteur est 1024 Mo, ce qui fait grossir le
 tas WebAssembly à ~1,2 Go dès `isready` et rend l'onglet intenable sur mobile.
 Détails et mesures dans [`public/engine/PROVENANCE.md`](public/engine/PROVENANCE.md).
+
+### Détection des mats
+
+`go mate`, la commande USI dédiée aux tsume, **n'existe pas dans ce build** : elle
+y tombe dans une recherche normale *sans limite de temps* (vérifié — parti jusqu'à
+la profondeur 24 sans jamais s'arrêter). La détection s'appuie donc sur le
+`score mate` que la recherche ordinaire renvoie déjà.
+
+Conséquence sur ce qu'on peut en dire : un score de mat est une ligne **prouvée**
+par la recherche, donc pas de faux positif ; en revanche un balayage de 200 ms
+rate les mats profonds, donc pas d'exhaustivité. C'est pourquoi une troisième
+passe reprend les positions concernées à la cadence longue, pour obtenir une
+séquence de mat complète et non tronquée.
+
+Deux cas particuliers qu'il a fallu traiter :
+
+- **Le mat effectivement porté.** Sur la position finale le moteur répond
+  `bestmove resign` sans score de mat. Le critère naturel (« l'adversaire est-il
+  encore maté après le coup ? ») échouait donc précisément dans le cas le plus
+  favorable au joueur, et comptait un mat réussi comme manqué. On teste
+  explicitement l'absence de coup légal.
+- **La vérification pendant la résolution.** Elle commence courte (400 ms) pour
+  ne pas faire attendre entre deux coups, mais un silence à cette cadence ne peut
+  pas valoir verdict d'échec : après un coup juste dans un mat en 9, il reste un
+  mat en 8 qu'une recherche brève ne verra pas forcément. Toute annonce
+  d'échec est donc reconfirmée à la cadence de l'analyse.
 
 ### COOP / COEP sur GitHub Pages
 
