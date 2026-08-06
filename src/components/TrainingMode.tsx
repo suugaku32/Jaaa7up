@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Board } from './Board';
 import { VariationBar } from './VariationBar';
 import type { BoardArrow } from './Board';
@@ -61,13 +61,6 @@ export function TrainingMode({
   const [solved, setSolved] = useState<Set<number>>(new Set());
   /** Suite en cours de lecture : quelle ligne, et combien de coups rejoués. */
   const [replay, setReplay] = useState<{ line: Line; index: number } | null>(null);
-  /**
-   * Score de référence par gaffe, indexé par numéro de coup : celui du meilleur
-   * coup, mesuré dans les mêmes conditions que la proposition de l'utilisateur.
-   * Une gaffe garde le sien tant qu'on y revient.
-   */
-  const baselineRef = useRef<Map<number, number>>(new Map());
-
   const current = blunders[idx];
 
   const position = useMemo(
@@ -131,35 +124,25 @@ export function TrainingMode({
     const playedCp = -scoreToCp(after.scoreCp, after.scoreMate);
 
     /*
-     * La référence doit venir de la *même* mesure que la proposition.
+     * Une seule mesure, jamais deux.
      *
-     * Elle valait `current.evalBeforeCp`, c'est-à-dire le score de la position
-     * d'avant, issu de l'analyse. On comparait donc deux recherches portant sur
-     * deux positions différentes : jouer le meilleur coup pouvait rendre un
-     * score inférieur au score de la position de départ — instabilité ordinaire
-     * de la recherche — et se faire refuser. Le bon coup était rejeté.
+     * La référence est `current.evalBeforeCp` : le score de la position d'avant,
+     * établi par l'analyse elle-même. C'est par définition la valeur du meilleur
+     * coup, puisque c'est cette recherche qui l'a désigné. La recalculer en
+     * jouant `bestMove` produisait un second chiffre, voisin mais différent, qui
+     * contredisait la valeur affichée dans l'onglet Analyse — et pouvait rendre
+     * un coup toléré « meilleur » que le meilleur. Deux mesures d'une même chose
+     * ne s'accordent pas au centième près ; il n'y avait aucune raison d'en
+     * produire une seconde.
      *
-     * On évalue donc le meilleur coup dans les mêmes conditions, une fois par
-     * gaffe. Et jouer exactement le coup recommandé n'a plus besoin d'être
-     * mesuré du tout : il est juste par définition.
+     * Jouer exactement le coup recommandé ne demande alors plus de mesure du
+     * tout : il est juste par construction. C'était le vrai défaut d'origine —
+     * la recherche partant de la position d'après pouvait rendre un score
+     * inférieur à celui de la position de départ, instabilité ordinaire, et le
+     * bon coup se faisait refuser.
      */
     const exact = !!current.bestMove && usi === current.bestMove;
-    let bestCp: number;
-    if (exact) {
-      bestCp = playedCp;
-    } else if (current.bestMove) {
-      const cached = baselineRef.current.get(current.ply);
-      if (cached !== undefined) {
-        bestCp = cached;
-      } else {
-        const ref = await engine.analyze(current.sfenBefore, [current.bestMove], { movetimeMs });
-        bestCp = -scoreToCp(ref.scoreCp, ref.scoreMate);
-        baselineRef.current.set(current.ply, bestCp);
-      }
-    } else {
-      // Pas de coup recommandé connu : faute de mieux, l'ancienne référence.
-      bestCp = current.evalBeforeCp;
-    }
+    const bestCp = exact ? playedCp : current.evalBeforeCp;
     const correct = bestCp - playedCp <= ACCEPT_MARGIN_CP;
     // La variante renvoyée part de la position d'après le coup proposé : c'est
     // elle qui montre ce que devient la partie, et donc pourquoi le coup tient.
@@ -452,19 +435,20 @@ export function TrainingMode({
               )}
               <span>
                 Votre coup : {Math.round(verdict.playedCp)}
-                {!verdict.exact && ` · ${bestLabel} : ${Math.round(verdict.bestCp)}`}
+                {!verdict.exact && ` · analyse : ${Math.round(verdict.bestCp)}`}
               </span>
               {/*
-               * Les deux nombres sortent de deux recherches distinctes, de même
-               * durée mais pas du même arbre. Un écart de quelques dizaines de
-               * centièmes est du bruit, et il arrive que le coup proposé mesure
-               * *mieux* que celui du moteur. Sans cette phrase, l'utilisateur y
-               * lit une contradiction — à raison.
+               * Le second chiffre n'est pas une nouvelle mesure : c'est celui de
+               * l'analyse, le même que dans l'onglet Analyse. Le premier vient
+               * d'être établi. Deux recherches ne s'accordent pas au centième
+               * près, et le coup proposé peut afficher un point de plus sans
+               * pour autant valoir mieux — le dire évite d'y lire une
+               * contradiction.
                */}
               {!verdict.exact && current.bestMove && (
                 <span className="verdict-note">
-                  Deux mesures indépendantes de même durée : un écart de cet ordre ne départage
-                  pas les deux coups.
+                  Le second chiffre vient de l’analyse, pas d’un nouveau calcul. Un écart de cet
+                  ordre ne départage pas les deux coups.
                 </span>
               )}
               {verdict.kind === 'wrong' && (
