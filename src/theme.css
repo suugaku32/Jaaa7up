@@ -149,10 +149,17 @@
 }
 
 /*
- * Classiques. Palettes officielles, reprises telles quelles pour le fond et le
- * texte ; les rôles (gaffe, erreur, imprécision) sont mappés sur les couleurs
- * sémantiques de chaque palette plutôt que réinventés. Aucun halo : ces thèmes
- * valent par leurs teintes, pas par des effets.
+ * Classiques. Palettes officielles pour le fond et le texte ; les rôles (gaffe,
+ * erreur, imprécision) sont mappés sur les couleurs sémantiques de chaque
+ * palette plutôt que réinventés. Aucun halo : ces thèmes valent par leurs
+ * teintes, pas par des effets.
+ *
+ * Quelques couleurs de statut ont dû être décalées en luminance — mesuré, pas
+ * supposé : ces palettes sont conçues pour de la coloration syntaxique, où 3:1
+ * est courant, alors qu'ici elles portent du texte d'interface qui demande
+ * 4,5:1. Le décalage est le minimum nécessaire pour atteindre le seuil, la
+ * teinte est conservée. Concernés : latte (erreur, imprécision, bon coup),
+ * nord (gaffe, erreur), gruvbox et solarized (gaffe, erreur).
  */
 
 /* Catppuccin Mocha — https://catppuccin.com */
@@ -189,7 +196,7 @@
   --surface: #e6e9ef;
   --surface2: #ccd0da;
   --text: #4c4f69;
-  --dim: #6c6f85;
+  --dim: #5c5f77;
   --border: rgba(76, 79, 105, 0.22);
   --accent: #d20f39;
   --gold: #df8e1d;
@@ -200,9 +207,9 @@
   --gridline: rgba(76, 79, 105, 0.12);
   --baseline: rgba(76, 79, 105, 0.35);
   --status-blunder: #d20f39;
-  --status-mistake: #e64553;
-  --status-inaccuracy: #8c6d1f;
-  --status-good: #40a02b;
+  --status-mistake: #c03945;
+  --status-inaccuracy: #84671d;
+  --status-good: #317a21;
   --board-bg: rgba(76, 79, 105, 0.05);
   --board-line: rgba(76, 79, 105, 0.5);
   --piece-text: #4c4f69;
@@ -226,8 +233,8 @@
   --diverging-neg: #bf616a;
   --gridline: rgba(236, 239, 244, 0.1);
   --baseline: rgba(236, 239, 244, 0.3);
-  --status-blunder: #bf616a;
-  --status-mistake: #d08770;
+  --status-blunder: #d18e94;
+  --status-mistake: #d38e78;
   --status-inaccuracy: #ebcb8b;
   --status-good: #a3be8c;
   --board-bg: rgba(236, 239, 244, 0.04);
@@ -280,7 +287,7 @@
   --diverging-neg: #fb4934;
   --gridline: rgba(235, 219, 178, 0.1);
   --baseline: rgba(235, 219, 178, 0.3);
-  --status-blunder: #fb4934;
+  --status-blunder: #fb5946;
   --status-mistake: #fe8019;
   --status-inaccuracy: #fabd2f;
   --status-good: #b8bb26;
@@ -307,8 +314,8 @@
   --diverging-neg: #dc322f;
   --gridline: rgba(238, 232, 213, 0.1);
   --baseline: rgba(238, 232, 213, 0.3);
-  --status-blunder: #dc322f;
-  --status-mistake: #cb4b16;
+  --status-blunder: #e56866;
+  --status-mistake: #d7764e;
   --status-inaccuracy: #b58900;
   --status-good: #859900;
   --board-bg: rgba(238, 232, 213, 0.04);
