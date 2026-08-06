@@ -138,6 +138,12 @@ export function EvalGraph({ evalCurve, plies, moveLabels, currentPly, onSelectPl
   );
 }
 
+/**
+ * Échelle brute, comme le shogi la lit — c'est ce que le moteur émet en USI
+ * (`score cp 1234`) et ce qu'affichent ShogiGUI ou Shogidokoro. La division par
+ * 100 des interfaces d'échecs était un emprunt malheureux : elle donnait
+ * « +2.45 » là où tout le reste de l'écosystème dit « +245 ».
+ */
 function formatCp(cpForBlack: number): string {
   const abs = Math.abs(cpForBlack);
   if (abs >= 100000 - 2000) {
@@ -145,7 +151,7 @@ function formatCp(cpForBlack: number): string {
     return cpForBlack > 0 ? 'Sente mate' : 'Gote mate';
   }
   const sign = cpForBlack > 0 ? '+' : '';
-  return `${sign}${(cpForBlack / 100).toFixed(2)}`;
+  return `${sign}${Math.round(cpForBlack)}`;
 }
 
 function MarkerShape({ x, y, quality }: { x: number; y: number; quality: MoveQuality }) {

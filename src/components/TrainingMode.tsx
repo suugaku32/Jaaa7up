@@ -77,9 +77,9 @@ export function TrainingMode({
       blunders.map((b) => {
         const at = Position.fromSfen(b.sfenBefore);
         const side = b.color === 'b' ? '▲' : '△';
-        return `${b.ply}. ${side}${formatUsiMoveAsKif(at, b.moveUsi, null)} −${(
-          b.centipawnLoss / 100
-        ).toFixed(1)}`;
+        return `${b.ply}. ${side}${formatUsiMoveAsKif(at, b.moveUsi, null)} −${Math.round(
+          b.centipawnLoss,
+        )}`;
       }),
     [blunders],
   );
@@ -339,7 +339,7 @@ export function TrainingMode({
             : ''}
         </strong>{' '}
         de jouer. Dans la partie : <strong className="training-played">{actualLabel}</strong>, qui a
-        coûté <strong>{(current.centipawnLoss / 100).toFixed(1)}</strong> points.{' '}
+        coûté <strong>{Math.round(current.centipawnLoss)}</strong> centipions.{' '}
         <strong>Trouvez mieux.</strong>
       </p>
 
@@ -395,8 +395,8 @@ export function TrainingMode({
                 {verdict.kind === 'correct' ? '✓ Bien joué' : '✗ Insuffisant'} — {playedLabel}
               </strong>
               <span>
-                Votre coup : {(verdict.playedCp / 100).toFixed(2)} · Meilleur :{' '}
-                {(verdict.bestCp / 100).toFixed(2)}
+                Votre coup : {Math.round(verdict.playedCp)} · Meilleur :{' '}
+                {Math.round(verdict.bestCp)}
               </span>
               {verdict.kind === 'wrong' && (
                 <button className="btn btn-ghost" onClick={() => setVerdict({ kind: 'idle' })}>

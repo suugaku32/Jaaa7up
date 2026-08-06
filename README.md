@@ -16,6 +16,9 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
 - **Classement des coups** à la façon lichess : la perte est mesurée en points de
   *win %* (et non en centipions bruts), ce qui évite de qualifier de « gaffe » un
   coup joué dans une position déjà gagnée ou perdue.
+- **Échelle brute** à l'affichage (`+245`, pas `+2.45`) : c'est ce que le moteur
+  émet en USI et ce que lisent ShogiGUI ou Shogidokoro. Voir la réserve sur la
+  calibration plus bas.
 - **Analyse en deux passes** : un balayage rapide repère les coups suspects, puis
   une passe lente ne réexamine que ceux-là — l'essentiel du temps va là où il sert.
 - **Variantes** : la suite prévue par le moteur est affichée et rejouable coup par
@@ -56,6 +59,38 @@ côté, et pas de risque de désaccord entre binaire et réseau. Une seule optio
 forcée, `USI_Hash = 32` : le défaut du moteur est 1024 Mo, ce qui fait grossir le
 tas WebAssembly à ~1,2 Go dès `isready` et rend l'onglet intenable sur mobile.
 Détails et mesures dans [`public/engine/PROVENANCE.md`](public/engine/PROVENANCE.md).
+
+### Échelle d'évaluation, et une réserve sur sa calibration
+
+L'affichage est en **centipions bruts**, comme le reste de l'écosystème shogi.
+Les interfaces d'échecs divisent par 100 (`+2.45`) ; c'était un emprunt, corrigé.
+
+En revanche le **classement** des coups ne se fait pas sur les centipions mais
+sur la chute de *win %*, via la sigmoïde de lichess :
+
+```
+winPercent(cp) = 50 + 50 · (2 / (1 + e^(−0,00368208 · cp)) − 1),  cp borné à ±1000
+```
+
+**Cette constante est ajustée sur des parties d'échecs**, et rien n'a été fait
+pour vérifier qu'elle transpose au shogi. Ce qu'elle implique aujourd'hui :
+
+| évaluation | win % | | chute de win % | seuil en cp (depuis 0) |
+|---|---|---|---|---|
+| +100 | 59 % | | 2 % → imprécision | 22 |
+| +300 | 75 % | | 5 % → imprécision | 55 |
+| +500 | 86 % | | 10 % → erreur | 111 |
+| +1000 et au-delà | 97,5 % | | 20 % → gaffe | 231 |
+
+Deux points discutables. La borne à ±1000 vient des échecs : au-delà, toutes les
+positions sont traitées comme identiques, alors que le shogi vit couramment à
+±2000–3000 dans les finales tranchantes. Et la pente de la sigmoïde décide seule
+de ce qui devient une « gaffe » — 231 cp perdus depuis l'égalité, ici.
+
+Calibrer proprement demanderait un corpus de parties **avec leur résultat**, pour
+ajuster la courbe sur la fréquence de victoire réelle. Tant que ce corpus
+n'existe pas, la courbe reste celle des échecs, et c'est une hypothèse, pas une
+mesure.
 
 ### Détection des mats
 

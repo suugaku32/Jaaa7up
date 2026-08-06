@@ -57,8 +57,9 @@ export function MoveList({
   );
 }
 
+/** Échelle brute du moteur, comme ShogiGUI — voir `EvalGraph.formatCp`. */
 function formatSigned(cpForMover: number, color: 'b' | 'w'): string {
   const cpForBlack = color === 'b' ? cpForMover : -cpForMover;
   const sign = cpForBlack > 0 ? '+' : '';
-  return `${sign}${(cpForBlack / 100).toFixed(1)}`;
+  return `${sign}${Math.round(cpForBlack)}`;
 }
