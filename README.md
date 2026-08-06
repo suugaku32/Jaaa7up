@@ -31,6 +31,10 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   on joue le mat, le moteur défend, jusqu'au mat ou jusqu'à ce qu'il s'échappe.
 - **Historique local** : les parties analysées sont conservées en `localStorage`
   (30 au plus, sans aucune synchronisation) et rechargeables sans réanalyse.
+- **Réanalyse à la demande** : la cadence est réglable depuis le panneau ⚙ et
+  `↻ Réanalyser` rejoue l'analyse sur la partie affichée. Sans cela, une partie
+  rouverte depuis l'historique restait figée sur la cadence de son analyse
+  d'origine — donc sur les gaffes et les tsume que cette cadence avait su voir.
 
 ## Développement
 

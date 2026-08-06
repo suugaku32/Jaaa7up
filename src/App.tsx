@@ -155,6 +155,37 @@ export default function App() {
     return list;
   }, [game]);
 
+  /** Analyse une partie déjà lue — le kifu n'a rien à voir avec l'affaire ici. */
+  const analyseParsedGame = useCallback(
+    async (parsed: ParsedGame) => {
+      setError(null);
+      setGame(parsed);
+      setCurrentPly(0);
+      setVariation(null);
+      setPhase({ kind: 'analyzing', step: 'scan', done: 0, total: parsed.moves.length + 1 });
+
+      try {
+        const engine = await ensureEngine();
+        const res = await analyzeGame(engine, parsed.startSfen, parsed.moves, {
+          movetimeMs,
+          deepMovetimeMs,
+          onProgress: (step, done, total) => setPhase({ kind: 'analyzing', step, done, total }),
+        });
+        setResult(res);
+        setPhase({ kind: 'done' });
+        // Une analyse coûte des dizaines de secondes : la conserver évite de la
+        // refaire pour revoir une partie.
+        const saved = saveGame(parsed, res, movetimeMs, deepMovetimeMs);
+        setHistory(listHistory());
+        setHistoryNote(saved.reason ?? null);
+      } catch (e) {
+        setError(`Analyse interrompue : ${(e as Error).message}`);
+        setPhase({ kind: 'input' });
+      }
+    },
+    [movetimeMs, deepMovetimeMs, ensureEngine],
+  );
+
   const runAnalysis = useCallback(async () => {
     setError(null);
     let parsed: ParsedGame;
@@ -168,29 +199,22 @@ export default function App() {
       setError("Aucun coup n'a pu être lu dans ce kifu.");
       return;
     }
-    setGame(parsed);
-    setCurrentPly(0);
-    setPhase({ kind: 'analyzing', step: 'scan', done: 0, total: parsed.moves.length + 1 });
+    await analyseParsedGame(parsed);
+  }, [kifuText, analyseParsedGame]);
 
-    try {
-      const engine = await ensureEngine();
-      const res = await analyzeGame(engine, parsed.startSfen, parsed.moves, {
-        movetimeMs,
-        deepMovetimeMs,
-        onProgress: (step, done, total) => setPhase({ kind: 'analyzing', step, done, total }),
-      });
-      setResult(res);
-      setPhase({ kind: 'done' });
-      // Une analyse coûte des dizaines de secondes : la conserver évite de la
-      // refaire pour revoir une partie.
-      const saved = saveGame(parsed, res, movetimeMs, deepMovetimeMs);
-      setHistory(listHistory());
-      setHistoryNote(saved.reason ?? null);
-    } catch (e) {
-      setError(`Analyse interrompue : ${(e as Error).message}`);
-      setPhase({ kind: 'input' });
-    }
-  }, [kifuText, movetimeMs, deepMovetimeMs, ensureEngine]);
+  /*
+   * Rejouer l'analyse sur la partie déjà à l'écran, à la cadence courante.
+   *
+   * Sans ça, une partie rouverte depuis l'historique restait figée sur la
+   * cadence de son analyse d'origine — et donc sur les gaffes et les tsume que
+   * cette cadence avait su voir. Or c'est précisément le réglage qu'on veut
+   * pouvoir monter quand une position mérite mieux.
+   */
+  const reanalyse = useCallback(() => {
+    if (!game) return;
+    closeOptions();
+    void analyseParsedGame(game);
+  }, [game, analyseParsedGame, closeOptions]);
 
   const openFromHistory = useCallback((id: string) => {
     const loaded = loadGame(id);
@@ -357,6 +381,35 @@ export default function App() {
                   title="Flèche verte : le coup recommandé depuis la position affichée"
                 >
                   {showBestArrow ? '↗ Flèches affichées' : '↗ Flèches masquées'}
+                </button>
+                {/* La cadence est ici, et pas seulement sur l'écran de saisie :
+                    sans elle, « réanalyser » referait exactement la même chose. */}
+                <label className="focus-control">
+                  Balayage
+                  <select
+                    value={movetimeMs}
+                    onChange={(e) => changeMovetime(Number(e.target.value))}
+                  >
+                    <option value={100}>100 ms</option>
+                    <option value={200}>200 ms</option>
+                    <option value={400}>400 ms</option>
+                    <option value={800}>800 ms</option>
+                  </select>
+                </label>
+                <label className="focus-control">
+                  Étude des gaffes
+                  <select
+                    value={deepMovetimeMs}
+                    onChange={(e) => changeDeepMovetime(Number(e.target.value))}
+                  >
+                    <option value={0}>désactivée</option>
+                    <option value={1000}>1 s</option>
+                    <option value={2000}>2 s</option>
+                    <option value={4000}>4 s</option>
+                  </select>
+                </label>
+                <button className="btn btn-primary" onClick={reanalyse}>
+                  ↻ Réanalyser
                 </button>
                 <button
                   className="btn btn-ghost options-danger"
