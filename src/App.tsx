@@ -27,6 +27,7 @@ import { Position } from './shogi/position';
 import { formatUsiMoveAsKif } from './shogi/notation';
 import type { Square } from './shogi/types';
 import { usiToSquare } from './shogi/types';
+import { loadSettings, saveSettings } from './storage/settings';
 import { THEMES, THEME_LABEL_FR, applyTheme, loadTheme } from './theme';
 import type { Theme } from './theme';
 import './App.css';
@@ -46,16 +47,17 @@ const PHASE_LABEL: Record<AnalysisPhase, string> = {
 
 export default function App() {
   const [kifuText, setKifuText] = useState('');
-  const [movetimeMs, setMovetimeMs] = useState(200);
-  const [deepMovetimeMs, setDeepMovetimeMs] = useState(2000);
+  const [initialSettings] = useState(loadSettings);
+  const [movetimeMs, setMovetimeMs] = useState(initialSettings.movetimeMs);
+  const [deepMovetimeMs, setDeepMovetimeMs] = useState(initialSettings.deepMovetimeMs);
   const [phase, setPhase] = useState<Phase>({ kind: 'input' });
   const [game, setGame] = useState<ParsedGame | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [currentPly, setCurrentPly] = useState(0);
   const [tab, setTab] = useState<Tab>('analysis');
-  const [flipped, setFlipped] = useState(false);
-  const [showBestArrow, setShowBestArrow] = useState(true);
-  const [focusSide, setFocusSide] = useState<'both' | 'b' | 'w'>('both');
+  const [flipped, setFlipped] = useState(initialSettings.flipped);
+  const [showBestArrow, setShowBestArrow] = useState(initialSettings.showBestArrow);
+  const [focusSide, setFocusSide] = useState<'both' | 'b' | 'w'>(initialSettings.focusSide);
   /** Variante rejouée par-dessus la partie : d'où elle part, ses coups, et où on en est. */
   const [variation, setVariation] = useState<{
     baseSfen: string;
@@ -72,6 +74,29 @@ export default function App() {
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  // Ces trois-là ne changent que par une action explicite : les suivre par effet
+  // est sans surprise.
+  useEffect(() => {
+    saveSettings({ flipped, showBestArrow, focusSide });
+  }, [flipped, showBestArrow, focusSide]);
+
+  /*
+   * Les temps de réflexion, eux, sont aussi réécrits par l'ouverture d'une
+   * partie de l'historique, qui restitue la cadence à laquelle elle avait été
+   * analysée. Les enregistrer par effet ferait donc silencieusement d'une
+   * vieille cadence la nouvelle préférence — d'où la sauvegarde ici, au moment
+   * du choix, et pas ailleurs.
+   */
+  const changeMovetime = useCallback((ms: number) => {
+    setMovetimeMs(ms);
+    saveSettings({ movetimeMs: ms });
+  }, []);
+
+  const changeDeepMovetime = useCallback((ms: number) => {
+    setDeepMovetimeMs(ms);
+    saveSettings({ deepMovetimeMs: ms });
+  }, []);
 
   const closeOptions = useCallback(() => {
     if (optionsRef.current) optionsRef.current.open = false;
@@ -355,9 +380,9 @@ export default function App() {
           onChange={setKifuText}
           onAnalyze={runAnalysis}
           movetimeMs={movetimeMs}
-          onMovetimeChange={setMovetimeMs}
+          onMovetimeChange={changeMovetime}
           deepMovetimeMs={deepMovetimeMs}
-          onDeepMovetimeChange={setDeepMovetimeMs}
+          onDeepMovetimeChange={changeDeepMovetime}
           disabled={phase.kind === 'analyzing' || env.blocking}
         />
       )}
