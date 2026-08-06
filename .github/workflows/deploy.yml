@@ -39,3 +39,11 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # Le défaut de l'action est de 10 minutes. Deux déploiements ont
+          # échoué sur `Timeout reached` alors que le build était vert, la
+          # publication restant bloquée sur `deployment_queued` — un autre avait
+          # mis 6 min 18 là où il en prend 6 d'ordinaire. Attendre plus coûte du
+          # temps de runner ; échouer coûte un site qui reste en arrière sans
+          # que rien ne l'indique.
+          timeout: 1800000
