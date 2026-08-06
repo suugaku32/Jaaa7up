@@ -1,6 +1,6 @@
 import type { UsiEngine } from '../engine/UsiEngine';
 import { Position } from '../shogi/position';
-import { generateLegalMoves } from '../shogi/moveGen';
+import { generateLegalMoves, isKingCapturable } from '../shogi/moveGen';
 import type { Color } from '../shogi/types';
 import { classifyLoss, cpToWinPercent, scoreToCp, type MoveQuality } from './classify';
 
@@ -312,6 +312,7 @@ export function collectTsumes(plies: PlyEval[], refinedPlies?: Set<number>): Tsu
 
   for (const p of plies) {
     if (p.mateBefore === null || p.mateBefore <= 0) continue;
+    if (!isCheckingSequence(p.sfenBefore, p.bestMovePv)) continue;
     // Deux choses distinctes, qu'il ne faut pas confondre : le coup a-t-il
     // *donné* le mat, ou seulement gardé le mat forcé pour plus tard ?
     const mated = deliveredMate(p.sfenAfter);
@@ -363,7 +364,35 @@ export function collectTsumes(plies: PlyEval[], refinedPlies?: Set<number>): Tsu
 function deliveredMate(sfenAfter: string): boolean {
   try {
     const pos = Position.fromSfen(sfenAfter);
-    return generateLegalMoves(pos, pos.turn).length === 0;
+    // En échec *et* sans réponse : le pat perd aussi au shogi, mais ce n'est
+    // pas un mat, et l'annoncer comme tel serait faux.
+    return isKingCapturable(pos, pos.turn) && generateLegalMoves(pos, pos.turn).length === 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * La séquence annoncée est-elle un vrai tsume ?
+ *
+ * Un mat forcé n'en est pas forcément un : la variante du moteur peut contenir
+ * un coup tranquille, alors qu'un tsume donne échec à chaque coup de
+ * l'attaquant. Comme le mode de résolution impose cette règle, garder ces
+ * positions produirait des exercices insolubles selon leur propre énoncé.
+ *
+ * La variante peut être tronquée par la recherche ; on vérifie alors ce qui est
+ * disponible, ce qui suffit à écarter les cas manifestes.
+ */
+function isCheckingSequence(sfen: string, solution: string[]): boolean {
+  if (solution.length === 0) return false;
+  try {
+    const pos = Position.fromSfen(sfen);
+    for (let i = 0; i < solution.length; i++) {
+      pos.applyUsiMove(solution[i]);
+      // Les coups d'indice pair sont ceux de l'attaquant.
+      if (i % 2 === 0 && !isKingCapturable(pos, pos.turn)) return false;
+    }
+    return true;
   } catch {
     return false;
   }

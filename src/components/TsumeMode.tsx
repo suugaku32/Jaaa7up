@@ -5,7 +5,7 @@ import type { BoardArrow } from './Board';
 import type { Tsume } from '../analysis/analyze';
 import type { UsiEngine } from '../engine/UsiEngine';
 import { Position } from '../shogi/position';
-import { generateLegalMoves, moveToUsi } from '../shogi/moveGen';
+import { generateLegalMoves, isKingCapturable, moveToUsi } from '../shogi/moveGen';
 import { formatUsiMoveAsKif } from '../shogi/notation';
 import type { Move, PieceType, Square } from '../shogi/types';
 import { sameSquare, usiToSquare } from '../shogi/types';
@@ -29,6 +29,8 @@ type State =
   | { kind: 'checking' }
   /** Le coup proposé laisse échapper le mat ; il reste posé jusqu'au retour en arrière. */
   | { kind: 'escaped'; label: string }
+  /** Coup légal mais sans échec : un tsume ne s'y résout pas. */
+  | { kind: 'noCheck'; label: string }
   | { kind: 'solved' }
   /** Le moteur n'a pas pu démarrer : sans lui, impossible de juger un coup. */
   | { kind: 'engineError'; message: string }
@@ -164,9 +166,16 @@ export function TsumeMode({
     setTimeout(() => setErrorSquare(null), 450);
   };
 
-  /** Le camp au trait est-il mat ? Pas de coup légal = fin de partie. */
+  /** Le camp au trait est-il en échec ? */
+  const inCheck = (pos: Position): boolean => isKingCapturable(pos, pos.turn);
+
+  /**
+   * Mat, au sens strict : en échec *et* sans réponse. Se contenter de l'absence
+   * de coup légal confondrait le mat avec le pat — qui perd aussi au shogi, mais
+   * qui n'est pas ce qu'un tsume demande de trouver.
+   */
   const isMated = (pos: Position): boolean =>
-    generateLegalMoves(pos, pos.turn).length === 0;
+    inCheck(pos) && generateLegalMoves(pos, pos.turn).length === 0;
 
   const submitMove = async (usi: string) => {
     const afterOurs = line.concat(usi);
@@ -196,6 +205,18 @@ export function TsumeMode({
       return;
     }
 
+    /*
+     * Un tsume se résout en donnant échec à chaque coup : c'est la règle du
+     * genre, et sans elle on accepterait des coups tranquilles qui conservent
+     * un mat forcé sans rien y faire avancer. Le test précède la consultation
+     * du moteur — inutile de le déranger pour un coup déjà hors sujet.
+     */
+    if (!inCheck(posAfterOurs)) {
+      flashError(usiToSquare(usi.slice(2, 4)));
+      setState({ kind: 'noCheck', label });
+      return;
+    }
+
     let engine: UsiEngine;
     try {
       engine = await ensureEngine();
@@ -220,14 +241,19 @@ export function TsumeMode({
       return;
     }
 
-    // Coup juste : le moteur défend, et on rend la main.
-    // `bestMove` null signifie `bestmove resign`, que ce moteur ne renvoie qu'à
-    // court de coups légaux — cas déjà intercepté plus haut, mais on le traite
-    // comme un mat plutôt que de bloquer l'exercice.
-    const defence = verdict.bestMove;
+    /*
+     * Le moteur défend, et on rend la main.
+     *
+     * `bestMove` peut être null : c'est `bestmove resign`, l'abandon. Ce n'est
+     * pas un mat — le défenseur a encore des coups, il les juge seulement
+     * perdus. Le compter comme une réussite créditerait une solution qui n'en
+     * est pas une ; on choisit donc nous-mêmes une défense et l'exercice
+     * continue jusqu'au vrai mat.
+     */
+    const defence =
+      verdict.bestMove ?? verdict.pv[0] ?? moveToUsi(generateLegalMoves(posAfterOurs, posAfterOurs.turn)[0]);
     if (!defence) {
-      setSolvedSet((s) => new Set(s).add(idx));
-      setState({ kind: 'solved' });
+      setState({ kind: 'solving' });
       return;
     }
     const afterDefence = afterOurs.concat(defence);
@@ -518,6 +544,21 @@ export function TsumeMode({
               <span>{state.message}</span>
               <span>
                 Sans lui, un coup ne peut pas être vérifié — sauf s’il donne mat immédiatement.
+              </span>
+              <div className="tsume-actions">
+                <button className="btn btn-ghost" onClick={retry}>
+                  Réessayer ce coup
+                </button>
+              </div>
+            </div>
+          )}
+
+          {state.kind === 'noCheck' && (
+            <div className="verdict verdict-wrong">
+              <strong>✗ Pas d’échec — {state.label}</strong>
+              <span>
+                Un tsume se résout en donnant échec à chaque coup. Ce coup est légal, mais il
+                laisse le roi adverse tranquille.
               </span>
               <div className="tsume-actions">
                 <button className="btn btn-ghost" onClick={retry}>
