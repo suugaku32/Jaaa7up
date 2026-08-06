@@ -119,6 +119,46 @@ ajuster la courbe sur la fréquence de victoire réelle. Tant que ce corpus
 n'existe pas, la courbe reste celle des échecs, et c'est une hypothèse, pas une
 mesure.
 
+### Règles du tsume
+
+Un tsume n'est pas seulement un mat forcé. Trois règles s'y ajoutent, et les
+trois manquaient :
+
+- **Échec à chaque coup de l'attaquant.** Sans elle, un coup tranquille qui
+  conserve le mat était accepté alors qu'il ne résout rien. Le test précède la
+  consultation du moteur.
+- **L'abandon n'est pas un mat.** `bestmove resign` dit seulement que le moteur
+  juge la position perdue ; le défenseur a encore des coups. Le compter comme
+  une réussite validait des solutions qui n'en étaient pas.
+- **Mat ≠ pat.** « Aucun coup légal » ne suffit pas : le pat perd aussi au
+  shogi, mais ce n'est pas ce qu'un tsume demande de trouver.
+
+Conséquence sur la détection : une position dont la variante du moteur contient
+un coup tranquille est un mat forcé, pas un tsume — elle serait insoluble selon
+sa propre règle, donc elle est écartée de l'onglet.
+
+À quoi a servi la lecture de [`suugaku32/tsume`](https://github.com/suugaku32/tsume) :
+son `_mateSearch` ne génère lui aussi **que des coups d'échec**, ce qui confirme
+la règle. En revanche il ne traite pas le 打ち歩詰め non plus — sa génération de
+drops s'arrête au nifu et aux dernières rangées, exactement comme la nôtre le
+faisait.
+
+### 打ち歩詰め
+
+Mater en **droppant** un pion est interdit ; le même mat porté par un pion qui
+avance est légal. `generateLegalMoves` connaissait le nifu et les dernières
+rangées, pas cette règle-là — elle proposait donc le coup, et le mode tsume
+l'aurait accepté comme solution.
+
+La vérification demande de savoir si l'adversaire serait mat, donc de générer ses
+coups. Un drapeau interne coupe la récursion au second niveau, où la question ne
+se pose plus : on ne cherche alors qu'à savoir si une réponse existe.
+
+`test/uchifuzume.ts` couvre les trois cas, sur des positions construites à la
+main : le cas est trop rare pour sortir d'un tirage aléatoire — **7 200 positions
+comparées à shogiops ne l'ont jamais rencontré**, ce qui explique qu'il ait
+survécu si longtemps.
+
 ### Détection des mats
 
 `go mate`, la commande USI dédiée aux tsume, **n'existe pas dans ce build** : elle
