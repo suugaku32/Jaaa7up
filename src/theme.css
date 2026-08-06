@@ -325,13 +325,44 @@
   --on-accent: #002b36;
 }
 
+/* Tokyo Night — https://github.com/enkia/tokyo-night-vscode-theme
+   Seule palette de la série à passer telle quelle : mesurée sur son fond
+   #1a1b26, la plus faible de ses couleurs de statut (gaffe, #f7768e) est à
+   6,5:1, et le texte secondaire à 7:1. Aucun décalage de luminance nécessaire. */
+:root[data-theme='tokyo-night'] {
+  --bg: #1a1b26;
+  --surface: #1f2335;
+  --surface2: #292e42;
+  --text: #c0caf5;
+  --dim: #9aa5ce;
+  --border: rgba(192, 202, 245, 0.18);
+  --accent: #7aa2f7;
+  --gold: #e0af68;
+  --green: #9ece6a;
+  --blue: #7dcfff;
+  --diverging-pos: #7aa2f7;
+  --diverging-neg: #f7768e;
+  --gridline: rgba(192, 202, 245, 0.1);
+  --baseline: rgba(192, 202, 245, 0.3);
+  --status-blunder: #f7768e;
+  --status-mistake: #ff9e64;
+  --status-inaccuracy: #e0af68;
+  --status-good: #9ece6a;
+  --board-bg: rgba(192, 202, 245, 0.04);
+  --board-line: rgba(192, 202, 245, 0.5);
+  --piece-text: #c0caf5;
+  --piece-promoted: #bb9af7;
+  --on-accent: #1a1b26;
+}
+
 /* Les thèmes classiques partagent l'absence de halo et de lueur interne. */
 :root[data-theme='catppuccin-mocha'],
 :root[data-theme='catppuccin-latte'],
 :root[data-theme='nord'],
 :root[data-theme='dracula'],
 :root[data-theme='gruvbox'],
-:root[data-theme='solarized'] {
+:root[data-theme='solarized'],
+:root[data-theme='tokyo-night'] {
   --glow-normal: none;
   --glow-promoted: none;
   --sq-to-inset: none;
@@ -351,7 +382,8 @@
 :root[data-theme='nord'] .pc.promoted,
 :root[data-theme='dracula'] .pc.promoted,
 :root[data-theme='gruvbox'] .pc.promoted,
-:root[data-theme='solarized'] .pc.promoted {
+:root[data-theme='solarized'] .pc.promoted,
+:root[data-theme='tokyo-night'] .pc.promoted {
   color: var(--piece-promoted);
 }
 

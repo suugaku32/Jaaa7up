@@ -15,6 +15,7 @@
       'dracula',
       'gruvbox',
       'solarized',
+      'tokyo-night',
     ];
     var t = localStorage.getItem('jaaa7up-theme');
     if (known.indexOf(t) !== -1) document.documentElement.dataset.theme = t;
