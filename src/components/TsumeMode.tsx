@@ -80,6 +80,18 @@ export function TsumeMode({
     [current],
   );
 
+  // Un tsume se choisit sur son énoncé — qui mate, en combien, et si l'occasion
+  // a été saisie — pas en défilant à l'aveugle.
+  const labels = useMemo(
+    () =>
+      tsumes.map(
+        (t) =>
+          `${t.ply}. ${t.color === 'b' ? '▲' : '△'} mat en ${t.mateIn}` +
+          (t.delivered ? ' · porté' : ' · manqué'),
+      ),
+    [tsumes],
+  );
+
   if (!current || !startPosition) {
     return (
       <div className="training-empty">
@@ -297,9 +309,21 @@ export function TsumeMode({
     <div className="training tsume">
       <div className="training-head">
         <div className="training-progress">
-          <strong>
-            Tsume {idx + 1} / {tsumes.length}
-          </strong>
+          <label className="picker">
+            <span className="picker-label">Tsume</span>
+            <select
+              value={idx}
+              onChange={(e) => goTo(Number(e.target.value))}
+              aria-label="Choisir un tsume"
+            >
+              {labels.map((text, i) => (
+                <option key={i} value={i}>
+                  {i + 1}/{tsumes.length} · {text}
+                  {solvedSet.has(i) ? ' ✓' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
           <span className="training-solved">{solvedSet.size} résolu(s)</span>
         </div>
         <div className="training-nav">

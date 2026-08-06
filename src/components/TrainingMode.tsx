@@ -70,6 +70,20 @@ export function TrainingMode({
     [position],
   );
 
+  // Atteindre la 7e gaffe demandait six appuis sur « suivante », sans jamais
+  // voir ce que contenait la liste. Ces libellés la rendent consultable.
+  const labels = useMemo(
+    () =>
+      blunders.map((b) => {
+        const at = Position.fromSfen(b.sfenBefore);
+        const side = b.color === 'b' ? '▲' : '△';
+        return `${b.ply}. ${side}${formatUsiMoveAsKif(at, b.moveUsi, null)} −${(
+          b.centipawnLoss / 100
+        ).toFixed(1)}`;
+      }),
+    [blunders],
+  );
+
   if (!current || !position) {
     return (
       <div className="training-empty">
@@ -279,9 +293,21 @@ export function TrainingMode({
     <div className="training">
       <div className="training-head">
         <div className="training-progress">
-          <strong>
-            Gaffe {idx + 1} / {blunders.length}
-          </strong>
+          <label className="picker">
+            <span className="picker-label">Gaffe</span>
+            <select
+              value={idx}
+              onChange={(e) => goTo(Number(e.target.value))}
+              aria-label="Choisir une gaffe"
+            >
+              {labels.map((text, i) => (
+                <option key={i} value={i}>
+                  {i + 1}/{blunders.length} · {text}
+                  {solved.has(i) ? ' ✓' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
           <span className="training-solved">{solved.size} résolue(s)</span>
         </div>
         <div className="training-nav">
