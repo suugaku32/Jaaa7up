@@ -424,6 +424,14 @@ export default function App() {
                 </button>
               </>
             )}
+            {/*
+             * Dernière ligne du panneau, volontairement discrète. Elle répond à
+             * une question qu'on se pose sans arrêt quand le site est publié
+             * par une chaîne qui traîne : est-ce que ce que je regarde est bien
+             * la dernière version ? Sans elle, un correctif absent et un cache
+             * périmé se ressemblent trait pour trait.
+             */}
+            <p className="options-build">Version : {__BUILD_STAMP__}</p>
           </div>
         </details>
       </header>

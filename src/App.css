@@ -80,6 +80,16 @@
   color: var(--accent);
 }
 
+.options-build {
+  color: var(--dim);
+  font-size: 11px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  /* Sélectionnable : la première chose qu'on fait avec, c'est la recopier
+     dans un message pour dire quelle version on regarde. */
+  user-select: text;
+}
+
 .banner {
   padding: 10px 14px;
   border-radius: 10px;
