@@ -43,7 +43,7 @@ export interface PlyEval {
  * longtemps.
  */
 export interface Tsume {
-  /** Coup de la partie où le mat était disponible (1-indexé). */
+  /** Coup de la partie où l'occasion s'est présentée (1-indexé). */
   ply: number;
   color: Color;
   sfen: string;
@@ -53,10 +53,22 @@ export interface Tsume {
   solution: string[];
   /** Le coup effectivement joué dans la partie. */
   playedUsi: string;
-  /** Vrai si le coup joué conservait un mat forcé. */
+  /** Vrai si le coup joué à `ply` conservait le mat forcé. */
   found: boolean;
   /** Vrai si la position a été revue à la cadence longue. */
   refined: boolean;
+  /**
+   * Positions supplémentaires absorbées : un mat forcé reste disponible tant
+   * qu'on le porte, donc la même occasion réapparaît à chaque coup suivant. Les
+   * lister séparément produirait une file de tsume quasi identiques.
+   */
+  repeats: number;
+  /** Dernier coup de la partie où cette même occasion était encore là. */
+  lastPly: number;
+  /** Le mat a-t-il fini par être porté ? */
+  delivered: boolean;
+  /** Coup où le mat a été perdu, si le joueur l'a laissé filer en route. */
+  lostAtPly: number | null;
 }
 
 export interface EvalPoint {
@@ -291,18 +303,44 @@ export async function analyzeGame(
  */
 export function collectTsumes(plies: PlyEval[], refinedPlies?: Set<number>): Tsume[] {
   const out: Tsume[] = [];
+  /** Dernier tsume retenu pour chaque camp, avec le coup où on l'a laissé. */
+  const chain = new Map<Color, { entry: Tsume; ply: number }>();
+
   for (const p of plies) {
     if (p.mateBefore === null || p.mateBefore <= 0) continue;
-    out.push({
+    const kept = deliveredMate(p.sfenAfter) || (p.mateAfter !== null && p.mateAfter > 0);
+
+    // Porter un mat forcé le laisse disponible au coup suivant du même camp : la
+    // position d'après est la même occasion, pas une nouvelle. On ne rattache
+    // que les coups strictement consécutifs (ply + 2) — si le mat disparaît puis
+    // réapparaît, c'est bien deux chances distinctes.
+    const previous = chain.get(p.color);
+    if (previous && previous.ply === p.ply - 2) {
+      const e = previous.entry;
+      e.repeats += 1;
+      e.lastPly = p.ply;
+      e.delivered = kept;
+      if (!kept && e.lostAtPly === null) e.lostAtPly = p.ply;
+      chain.set(p.color, { entry: e, ply: p.ply });
+      continue;
+    }
+
+    const entry: Tsume = {
       ply: p.ply,
       color: p.color,
       sfen: p.sfenBefore,
       mateIn: p.mateBefore,
       solution: p.bestMovePv,
       playedUsi: p.moveUsi,
-      found: deliveredMate(p.sfenAfter) || (p.mateAfter !== null && p.mateAfter > 0),
+      found: kept,
       refined: refinedPlies ? refinedPlies.has(p.ply) : (p.refined ?? false),
-    });
+      repeats: 0,
+      lastPly: p.ply,
+      delivered: kept,
+      lostAtPly: kept ? null : p.ply,
+    };
+    out.push(entry);
+    chain.set(p.color, { entry, ply: p.ply });
   }
   return out;
 }

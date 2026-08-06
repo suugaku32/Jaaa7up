@@ -323,8 +323,13 @@ export function TsumeMode({
           {playerName ? ` (${playerName})` : ''}
         </strong>{' '}
         peut mater en <strong className="tsume-count">{current.mateIn}</strong> demi-coups.{' '}
-        {current.found ? (
+        {current.delivered ? (
           <span className="tsume-found">Le mat a été porté dans la partie.</span>
+        ) : current.found ? (
+          <span className="tsume-missed">
+            Dans la partie : <strong>{playedLabel}</strong> gardait le mat, mais il a été perdu au
+            coup {current.lostAtPly}.
+          </span>
         ) : (
           <span className="tsume-missed">
             Dans la partie : <strong>{playedLabel}</strong> — le mat a été laissé passer.
@@ -332,6 +337,13 @@ export function TsumeMode({
         )}{' '}
         <strong>Portez-le.</strong>
       </p>
+
+      {current.repeats > 0 && (
+        <p className="tsume-note tsume-span">
+          La même occasion revenait encore au coup {current.lastPly} ({current.repeats} position
+          {current.repeats > 1 ? 's regroupées' : ' regroupée'} ici).
+        </p>
+      )}
 
       <div className="training-body">
         <div className="training-board">

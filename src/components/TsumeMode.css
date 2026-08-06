@@ -13,6 +13,11 @@
   color: var(--status-blunder);
 }
 
+.tsume-span {
+  margin: -2px 0 4px;
+  padding-left: 2px;
+}
+
 .tsume-actions {
   display: flex;
   flex-wrap: wrap;
