@@ -400,6 +400,30 @@ function deliveredMate(sfenAfter: string): boolean {
  * La variante peut être tronquée par la recherche ; on vérifie alors ce qui est
  * disponible, ce qui suffit à écarter les cas manifestes.
  */
+/**
+ * Rang du premier coup de l'attaquant qui ne donne pas échec, ou `-1` si la
+ * séquence est bien une suite d'échecs. Compté en coups, comme le reste : le
+ * premier coup est le n° 1.
+ *
+ * `isCheckingSequence` ne peut se prononcer que sur ce qu'elle voit. Une
+ * variante tronquée par la recherche cache sa queue, et un coup tranquille
+ * peut s'y trouver : l'exercice est alors un mat forcé, mais pas un tsume. Le
+ * dire vaut mieux que le taire — c'est une différence que le joueur ressent
+ * immédiatement, puisqu'il cherche un échec qui n'existe pas.
+ */
+export function firstQuietAttackerMove(sfen: string, solution: string[]): number {
+  try {
+    const pos = Position.fromSfen(sfen);
+    for (let i = 0; i < solution.length; i++) {
+      pos.applyUsiMove(solution[i]);
+      if (i % 2 === 0 && !isKingCapturable(pos, pos.turn)) return i + 1;
+    }
+  } catch {
+    // Séquence invalide : rien à signaler ici, l'affichage s'en chargera.
+  }
+  return -1;
+}
+
 function isCheckingSequence(sfen: string, solution: string[]): boolean {
   if (solution.length === 0) return false;
   try {

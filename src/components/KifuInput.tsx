@@ -1,5 +1,15 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { parseKifu } from '../shogi/parser';
 import './KifuInput.css';
+
+/** `95000` → `1 min 35 s`. Au-delà de la minute, les secondes seules ne parlent plus. */
+function duration(ms: number): string {
+  const total = Math.round(ms / 1000);
+  if (total < 60) return `${total} s`;
+  const m = Math.floor(total / 60);
+  const r = total % 60;
+  return r ? `${m} min ${r} s` : `${m} min`;
+}
 
 const EXAMPLE_KIF = `手合割：平手
 先手：Sente
@@ -37,6 +47,24 @@ export function KifuInput({
 }: KifuInputProps) {
   const [showHelp, setShowHelp] = useState(false);
 
+  /*
+   * Combien de temps ça va prendre. La question se pose depuis que le balayage
+   * monte à 2 s : sur une partie de 120 coups, c'est quatre minutes d'attente
+   * qu'on peut lancer sans le savoir. Le calcul est exact — une recherche par
+   * position, positions = coups + 1 — donc autant l'annoncer.
+   *
+   * Le kifu est relu à chaque frappe. C'est sans conséquence : quelques
+   * centaines de coups s'analysent en une fraction de milliseconde, et le
+   * résultat n'est de toute façon utilisé que pour ce chiffre.
+   */
+  const positions = useMemo(() => {
+    try {
+      return parseKifu(value).moves.length + 1;
+    } catch {
+      return null;
+    }
+  }, [value]);
+
   return (
     <div className="kifu-input">
       <textarea
@@ -56,26 +84,29 @@ export function KifuInput({
         </button>
         <label className="movetime-control">
           Balayage :
-          <select
+          {/*
+            Un curseur plutôt qu'une liste : entre 800 ms et 1,2 s il n'y a
+            aucune raison de ne pas pouvoir demander 1 s.
+          */}
+          <input
+            type="range"
+            min={100}
+            max={2000}
+            step={100}
             value={movetimeMs}
             onChange={(e) => onMovetimeChange(parseInt(e.target.value, 10))}
             disabled={disabled}
-          >
-            {/*
-              Jusqu'à 2 s. Un balayage à 200 ms classait mal : sur une partie de
-              80 coups il marquait 44 coups comme imprécision ou pire, soit plus
-              de la moitié, et la seconde passe se retrouvait à réexaminer la
-              partie entière au lieu de quelques points douteux. Mieux vaut
-              chercher correctement une fois.
-            */}
-            <option value={100}>100 ms</option>
-            <option value={200}>200 ms</option>
-            <option value={400}>400 ms</option>
-            <option value={800}>800 ms</option>
-            <option value={1200}>1,2 s</option>
-            <option value={2000}>2 s</option>
-          </select>
+            aria-label="Temps par position, premier balayage"
+          />
+          <output className="movetime-value">
+            {movetimeMs < 1000 ? `${movetimeMs} ms` : `${(movetimeMs / 1000).toFixed(1).replace('.', ',')} s`}
+          </output>
         </label>
+        {positions !== null && positions > 1 && (
+          <span className="movetime-estimate">
+            {positions} positions — environ {duration(positions * movetimeMs)}
+          </span>
+        )}
         <label className="movetime-control">
           Étude des gaffes :
           <select

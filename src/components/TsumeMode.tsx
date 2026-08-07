@@ -4,6 +4,7 @@ import { VariationBar } from './VariationBar';
 import { DeepenControl } from './DeepenControl';
 import type { BoardArrow } from './Board';
 import type { Tsume } from '../analysis/analyze';
+import { firstQuietAttackerMove } from '../analysis/analyze';
 import type { UsiEngine } from '../engine/UsiEngine';
 import { Position } from '../shogi/position';
 import { generateLegalMoves, isKingCapturable, moveToUsi } from '../shogi/moveGen';
@@ -96,6 +97,13 @@ export function TsumeMode({
    */
   const [exploring, setExploring] = useState(false);
   const [exploreNote, setExploreNote] = useState<string | null>(null);
+  /**
+   * Comment le mat se poursuit après la défense qu'on vient d'éprouver.
+   * Annoncer « le mat tient » sans montrer par quoi ne répond qu'à la moitié de
+   * la question : ce qu'on veut savoir, c'est *comment*.
+   */
+  const [exploreLine, setExploreLine] = useState<{ base: string; moves: string[] } | null>(null);
+  const [exploreReplay, setExploreReplay] = useState<number | null>(null);
 
   const current = tsumes[idx];
 
@@ -153,6 +161,15 @@ export function TsumeMode({
    *    être plus courte que le mat annoncé si la recherche l'a tronquée.
    * Et toujours un nombre pair, pour que le camp au trait reste le bon.
    */
+  /*
+   * Le filtre de détection ne se prononce que sur la variante qu'il voit :
+   * tronquée par la recherche, elle peut cacher un coup tranquille dans sa
+   * queue, et « Approfondir » la remplace sans repasser par lui. On revérifie
+   * donc ce qui est réellement affiché, et on le dit — chercher un échec qui
+   * n'existe pas est la pire façon de découvrir la nuance.
+   */
+  const quietAt = firstQuietAttackerMove(exerciseSfen, solution);
+
   const maxSkip =
     Math.floor(Math.min(current.mateIn - 1, current.solution.length - 1) / 2) * 2;
 
@@ -160,13 +177,22 @@ export function TsumeMode({
   // dévoilée prend la main sur le plateau quand on la parcourt.
   const solutionView =
     replayIndex === null ? null : replay(exerciseSfen, solution.slice(0, replayIndex));
+  /*
+   * La suite du mat après une défense éprouvée se déroule sur le plateau comme
+   * la solution : c'est ce qu'on est venu voir. Elle passe devant, étant la plus
+   * récemment demandée.
+   */
+  const exploreView =
+    exploreLine && exploreReplay !== null
+      ? replay(exploreLine.base, exploreLine.moves.slice(0, exploreReplay))
+      : null;
   const livePosition = replay(exerciseSfen, line) ?? startPosition;
-  const position = solutionView ?? livePosition;
+  const position = exploreView ?? solutionView ?? livePosition;
 
   const legalMoves = generateLegalMoves(position, position.turn);
   const attackerTurn = position.turn === current.color;
   const ourTurn =
-    state.kind === 'solving' && !solutionView && (exploring || attackerTurn);
+    state.kind === 'solving' && !solutionView && !exploreView && (exploring || attackerTurn);
 
   const destinations = (): Square[] => {
     if (!selected || !ourTurn) return [];
@@ -204,6 +230,8 @@ export function TsumeMode({
     const label = formatUsiMoveAsKif(livePosition, usi, null);
     setLine(afterDefence);
     setExploreNote(null);
+    setExploreLine(null);
+    setExploreReplay(null);
     setState({ kind: 'checking' });
 
     let engine: UsiEngine;
@@ -214,11 +242,15 @@ export function TsumeMode({
       return;
     }
     const r = await engine.analyze(exerciseSfen, afterDefence, { movetimeMs });
+    const tient = r.scoreMate !== null && r.scoreMate > 0;
     setExploreNote(
-      r.scoreMate !== null && r.scoreMate > 0
+      tient
         ? `${label} : le mat tient — mat en ${r.scoreMate}.`
         : `${label} : cette défense échappe au mat.`,
     );
+    const base = replay(exerciseSfen, afterDefence);
+    setExploreLine(tient && base && r.pv.length ? { base: base.toSfen(), moves: r.pv } : null);
+    setExploreReplay(null);
     setState({ kind: 'solving' });
   };
 
@@ -385,6 +417,8 @@ export function TsumeMode({
   const restart = () => {
     setLine([]);
     setExploreNote(null);
+    setExploreLine(null);
+    setExploreReplay(null);
     setState({ kind: 'solving' });
     setSelected(null);
     setPromptPromotion(null);
@@ -397,6 +431,8 @@ export function TsumeMode({
     setSkipped(0);
     setLine([]);
     setExploreNote(null);
+    setExploreLine(null);
+    setExploreReplay(null);
     setState({ kind: 'solving' });
     setSelected(null);
     setPromptPromotion(null);
@@ -409,6 +445,8 @@ export function TsumeMode({
     setSkipped(n);
     setLine([]);
     setExploreNote(null);
+    setExploreLine(null);
+    setExploreReplay(null);
     setState({ kind: 'solving' });
     setSelected(null);
     setPromptPromotion(null);
@@ -611,6 +649,8 @@ export function TsumeMode({
                 onChange={(e) => {
                   setExploring(e.target.checked);
                   setExploreNote(null);
+    setExploreLine(null);
+    setExploreReplay(null);
                 }}
               />
               Explorer les défenses
@@ -622,7 +662,28 @@ export function TsumeMode({
             )}
           </div>
 
+          {quietAt > 0 && (
+            <p className="tsume-note">
+              Mat forcé, mais pas un tsume au sens strict : le coup {quietAt} de la solution ne
+              donne pas échec. Un tsume en exige un à chaque coup de l’attaquant.
+            </p>
+          )}
+
           {exploreNote && <p className="tsume-explore-note">{exploreNote}</p>}
+
+          {exploreLine && (
+            <div className="training-lines">
+              <VariationBar
+                label="Le mat se poursuit"
+                tone="best"
+                baseSfen={exploreLine.base}
+                moves={exploreLine.moves}
+                maxMoves={exploreLine.moves.length}
+                activeIndex={exploreReplay}
+                onSelect={setExploreReplay}
+              />
+            </div>
+          )}
 
           {state.kind === 'solving' && !promptPromotion && (
             <p className="training-hint">
@@ -726,6 +787,8 @@ export function TsumeMode({
                 // la ligne jouée et le raccourci ne veulent plus rien dire.
                 setLine([]);
     setExploreNote(null);
+    setExploreLine(null);
+    setExploreReplay(null);
                 setSkipped(0);
                 setReplayIndex(null);
                 setState({ kind: 'solving' });
