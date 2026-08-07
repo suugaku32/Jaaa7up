@@ -1,15 +1,7 @@
 import { useMemo, useState } from 'react';
 import { parseKifu } from '../shogi/parser';
+import { MovetimeSlider } from './MovetimeSlider';
 import './KifuInput.css';
-
-/** `95000` → `1 min 35 s`. Au-delà de la minute, les secondes seules ne parlent plus. */
-function duration(ms: number): string {
-  const total = Math.round(ms / 1000);
-  if (total < 60) return `${total} s`;
-  const m = Math.floor(total / 60);
-  const r = total % 60;
-  return r ? `${m} min ${r} s` : `${m} min`;
-}
 
 const EXAMPLE_KIF = `手合割：平手
 先手：Sente
@@ -82,31 +74,13 @@ export function KifuInput({
         <button type="button" className="btn btn-ghost" onClick={() => onChange(EXAMPLE_KIF)} disabled={disabled}>
           Charger un exemple
         </button>
-        <label className="movetime-control">
-          Balayage :
-          {/*
-            Un curseur plutôt qu'une liste : entre 800 ms et 1,2 s il n'y a
-            aucune raison de ne pas pouvoir demander 1 s.
-          */}
-          <input
-            type="range"
-            min={100}
-            max={2000}
-            step={100}
-            value={movetimeMs}
-            onChange={(e) => onMovetimeChange(parseInt(e.target.value, 10))}
-            disabled={disabled}
-            aria-label="Temps par position, premier balayage"
-          />
-          <output className="movetime-value">
-            {movetimeMs < 1000 ? `${movetimeMs} ms` : `${(movetimeMs / 1000).toFixed(1).replace('.', ',')} s`}
-          </output>
-        </label>
-        {positions !== null && positions > 1 && (
-          <span className="movetime-estimate">
-            {positions} positions — environ {duration(positions * movetimeMs)}
-          </span>
-        )}
+        <MovetimeSlider
+          label="Balayage"
+          value={movetimeMs}
+          onChange={onMovetimeChange}
+          positions={positions}
+          disabled={disabled}
+        />
         <label className="movetime-control">
           Étude des gaffes :
           <select

@@ -3,6 +3,7 @@ import { Board } from './components/Board';
 import type { BoardArrow } from './components/Board';
 import { EvalGraph } from './components/EvalGraph';
 import { KifuInput } from './components/KifuInput';
+import { MovetimeSlider } from './components/MovetimeSlider';
 import { MoveList } from './components/MoveList';
 import { TrainingMode } from './components/TrainingMode';
 import { TsumeMode } from './components/TsumeMode';
@@ -441,19 +442,16 @@ export default function App() {
                   {showBestArrow ? '↗ Flèches affichées' : '↗ Flèches masquées'}
                 </button>
                 {/* La cadence est ici, et pas seulement sur l'écran de saisie :
-                    sans elle, « réanalyser » referait exactement la même chose. */}
-                <label className="focus-control">
-                  Balayage
-                  <select
-                    value={movetimeMs}
-                    onChange={(e) => changeMovetime(Number(e.target.value))}
-                  >
-                    <option value={100}>100 ms</option>
-                    <option value={200}>200 ms</option>
-                    <option value={400}>400 ms</option>
-                    <option value={800}>800 ms</option>
-                  </select>
-                </label>
+                    sans elle, « réanalyser » referait exactement la même chose.
+                    Le même composant des deux côtés — le menu qui vivait ici
+                    plafonnait à 800 ms, si bien qu'un réglage à 2 s n'y avait
+                    pas de valeur correspondante. */}
+                <MovetimeSlider
+                  label="Balayage"
+                  value={movetimeMs}
+                  onChange={changeMovetime}
+                  positions={game.moves.length + 1}
+                />
                 <label className="focus-control">
                   Étude des gaffes
                   <select
