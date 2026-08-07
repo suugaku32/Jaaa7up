@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { Board } from './Board';
 import { VariationBar } from './VariationBar';
 import { DeepenControl } from './DeepenControl';
-import type { BoardArrow } from './Board';
 import type { Tsume } from '../analysis/analyze';
 import { firstQuietAttackerMove } from '../analysis/analyze';
 import type { UsiEngine } from '../engine/UsiEngine';
@@ -474,34 +473,11 @@ export function TsumeMode({
     : null;
 
   /*
-   * Une flèche ne vaut que pour la position affichée. `solution[0]` était
-   * dessiné dès que la solution était dévoilée, sans regarder ce que montrait
-   * le plateau : après quelques coups joués, ou après avoir éprouvé une autre
-   * défense, elle annonçait un coup depuis une position qu'on ne regardait
-   * plus. Un parachutage s'y voyait particulièrement — le cercle se posait sur
-   * une case entre-temps occupée, et la pièce semblait collée là.
-   *
-   * La flèche suit donc ce qui est à l'écran : le coup suivant de la ligne
-   * qu'on parcourt, ou le premier coup de la solution mais seulement si le
-   * plateau est bien resté à la position de départ.
+   * Aucune flèche ici, à la différence de l'analyse et de l'étude des gaffes.
+   * Là-bas elle montre quelque chose qu'on ne demande pas de deviner — le coup
+   * recommandé, ou celui qui a été joué dans la partie. Dans un tsume, trouver
+   * le coup *est* l'exercice : le désigner le supprime.
    */
-  const arrows: BoardArrow[] = [];
-  const toArrow = (usi: string): BoardArrow => ({
-    from: usi[1] === '*' ? null : usiToSquare(usi.slice(0, 2)),
-    to: usiToSquare(usi.slice(2, 4)),
-    kind: 'best',
-    // `P*7f` : la lettre de tête est la pièce parachutée.
-    piece: usi[1] === '*' ? (usi[0] as PieceType) : undefined,
-  });
-  if (exploreView && exploreLine) {
-    const next = exploreLine.moves[exploreReplay ?? 0];
-    if (next) arrows.push(toArrow(next));
-  } else if (solutionView) {
-    const next = solution[replayIndex ?? 0];
-    if (next) arrows.push(toArrow(next));
-  } else if (state.kind === 'revealed' && line.length === 0 && !exploreLine && solution[0]) {
-    arrows.push(toArrow(solution[0]));
-  }
 
   const sideLabel = current.color === 'b' ? '▲ Sente' : '△ Gote';
   const playerName = current.color === 'b' ? blackName : whiteName;
@@ -625,7 +601,6 @@ export function TsumeMode({
             errorSquare={errorSquare}
             handSide={position.turn}
             flipped={flipped}
-            arrows={arrows}
             blackName={blackName}
             whiteName={whiteName}
             onSquareClick={onSquareClick}
