@@ -87,6 +87,15 @@ export function TsumeMode({
    * ce n'est plus le même problème.
    */
   const [skipped, setSkipped] = useState(0);
+  /*
+   * Exploration des défenses. Un tsume n'est prouvé que si *toutes* les
+   * réponses mènent au mat ; l'exercice n'en montre qu'une, celle que le moteur
+   * juge la meilleure. Ici on rend la main sur les deux camps : on joue une
+   * autre fuite du roi, une autre interposition, et le moteur dit si le mat
+   * tient encore. C'est la différence entre croire une solution et la vérifier.
+   */
+  const [exploring, setExploring] = useState(false);
+  const [exploreNote, setExploreNote] = useState<string | null>(null);
 
   const current = tsumes[idx];
 
@@ -155,7 +164,9 @@ export function TsumeMode({
   const position = solutionView ?? livePosition;
 
   const legalMoves = generateLegalMoves(position, position.turn);
-  const ourTurn = state.kind === 'solving' && !solutionView && position.turn === current.color;
+  const attackerTurn = position.turn === current.color;
+  const ourTurn =
+    state.kind === 'solving' && !solutionView && (exploring || attackerTurn);
 
   const destinations = (): Square[] => {
     if (!selected || !ourTurn) return [];
@@ -180,6 +191,36 @@ export function TsumeMode({
    */
   const isMated = (pos: Position): boolean =>
     inCheck(pos) && generateLegalMoves(pos, pos.turn).length === 0;
+
+  /*
+   * Défense jouée à la main, en mode exploration. On ne juge pas le coup — le
+   * défenseur a le droit de mal jouer — on demande seulement au moteur si le
+   * mat tient encore. Après la défense c'est l'attaquant au trait, donc un
+   * `score mate` positif signifie « oui, et en N ».
+   */
+  const submitDefence = async (usi: string) => {
+    const afterDefence = line.concat(usi);
+    if (!replay(exerciseSfen, afterDefence)) return;
+    const label = formatUsiMoveAsKif(livePosition, usi, null);
+    setLine(afterDefence);
+    setExploreNote(null);
+    setState({ kind: 'checking' });
+
+    let engine: UsiEngine;
+    try {
+      engine = await ensureEngine();
+    } catch (e) {
+      setState({ kind: 'engineError', message: (e as Error).message });
+      return;
+    }
+    const r = await engine.analyze(exerciseSfen, afterDefence, { movetimeMs });
+    setExploreNote(
+      r.scoreMate !== null && r.scoreMate > 0
+        ? `${label} : le mat tient — mat en ${r.scoreMate}.`
+        : `${label} : cette défense échappe au mat.`,
+    );
+    setState({ kind: 'solving' });
+  };
 
   const submitMove = async (usi: string) => {
     const afterOurs = line.concat(usi);
@@ -254,6 +295,14 @@ export function TsumeMode({
      * est pas une ; on choisit donc nous-mêmes une défense et l'exercice
      * continue jusqu'au vrai mat.
      */
+    // En exploration, la défense revient à l'utilisateur : c'est tout l'objet
+    // du mode. On s'arrête là, le mat est confirmé tenu.
+    if (exploring) {
+      setExploreNote('À vous de choisir la défense.');
+      setState({ kind: 'solving' });
+      return;
+    }
+
     const defence =
       verdict.bestMove ?? verdict.pv[0] ?? moveToUsi(generateLegalMoves(posAfterOurs, posAfterOurs.turn)[0]);
     if (!defence) {
@@ -288,7 +337,8 @@ export function TsumeMode({
       setPromptPromotion({ from: plain[0].from!, to });
       return;
     }
-    void submitMove(moveToUsi(candidates[0]));
+    const chosen = moveToUsi(candidates[0]);
+    void (attackerTurn ? submitMove(chosen) : submitDefence(chosen));
   };
 
   const onSquareClick = (sq: Square) => {
@@ -321,7 +371,7 @@ export function TsumeMode({
     const move = legalMoves.find(
       (m) => m.from && sameSquare(m.from, from) && sameSquare(m.to, to) && m.promote === promote,
     );
-    if (move) void submitMove(moveToUsi(move));
+    if (move) void (attackerTurn ? submitMove(moveToUsi(move)) : submitDefence(moveToUsi(move)));
   };
 
   /** Retirer le coup fautif du plateau ; la progression acquise avant lui reste. */
@@ -334,6 +384,7 @@ export function TsumeMode({
 
   const restart = () => {
     setLine([]);
+    setExploreNote(null);
     setState({ kind: 'solving' });
     setSelected(null);
     setPromptPromotion(null);
@@ -345,6 +396,7 @@ export function TsumeMode({
     setIdx(next);
     setSkipped(0);
     setLine([]);
+    setExploreNote(null);
     setState({ kind: 'solving' });
     setSelected(null);
     setPromptPromotion(null);
@@ -356,6 +408,7 @@ export function TsumeMode({
   const changeSkipped = (n: number) => {
     setSkipped(n);
     setLine([]);
+    setExploreNote(null);
     setState({ kind: 'solving' });
     setSelected(null);
     setPromptPromotion(null);
@@ -543,16 +596,50 @@ export function TsumeMode({
             </div>
           )}
 
+          {/*
+            Un tsume n'est prouvé que si *toutes* les réponses mènent au mat.
+            L'exercice n'en joue qu'une, celle que le moteur préfère ; le doute
+            porte justement sur les autres — « et si le roi fuyait par là ? ».
+            En exploration, les deux camps sont jouables et le moteur se borne à
+            dire, après chaque défense, si le mat tient encore.
+          */}
+          <div className="tsume-explore">
+            <label>
+              <input
+                type="checkbox"
+                checked={exploring}
+                onChange={(e) => {
+                  setExploring(e.target.checked);
+                  setExploreNote(null);
+                }}
+              />
+              Explorer les défenses
+            </label>
+            {exploring && (
+              <span className="tsume-note">
+                Les deux camps sont jouables : essayez une autre fuite du roi.
+              </span>
+            )}
+          </div>
+
+          {exploreNote && <p className="tsume-explore-note">{exploreNote}</p>}
+
           {state.kind === 'solving' && !promptPromotion && (
             <p className="training-hint">
-              {ourMovesPlayed === 0
-                ? 'Sélectionnez une pièce puis sa case d’arrivée. Chaque coup doit conserver le mat forcé.'
-                : `${ourMovesPlayed * 2 - 1} coup${ourMovesPlayed > 1 ? 's' : ''} joué${
-                    ourMovesPlayed > 1 ? 's' : ''
-                  } sur ${mateIn}, le mat tient toujours. Continuez.`}
+              {exploring && !attackerTurn
+                ? 'À la défense de jouer — choisissez la réponse à éprouver.'
+                : ourMovesPlayed === 0
+                  ? 'Sélectionnez une pièce puis sa case d’arrivée. Chaque coup doit conserver le mat forcé.'
+                  : `${ourMovesPlayed * 2 - 1} coup${ourMovesPlayed > 1 ? 's' : ''} joué${
+                      ourMovesPlayed > 1 ? 's' : ''
+                    } sur ${mateIn}, le mat tient toujours. Continuez.`}
             </p>
           )}
-          {state.kind === 'checking' && <p className="training-hint">Le moteur cherche sa défense…</p>}
+          {state.kind === 'checking' && (
+            <p className="training-hint">
+              {exploring && attackerTurn ? 'Le moteur vérifie le mat…' : 'Le moteur cherche sa défense…'}
+            </p>
+          )}
 
           {state.kind === 'engineError' && (
             <div className="verdict verdict-wrong">
@@ -638,6 +725,7 @@ export function TsumeMode({
                 // L'exercice repart de zéro : la solution a pu s'allonger, donc
                 // la ligne jouée et le raccourci ne veulent plus rien dire.
                 setLine([]);
+    setExploreNote(null);
                 setSkipped(0);
                 setReplayIndex(null);
                 setState({ kind: 'solving' });

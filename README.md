@@ -45,6 +45,11 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
 - **Détection des tsume** : les positions où un mat forcé était disponible sont
   repérées, distinguées selon qu'il a été porté ou laissé passer, et rejouables —
   on joue le mat, le moteur défend, jusqu'au mat ou jusqu'à ce qu'il s'échappe.
+- **Exploration des défenses** : un tsume n'est prouvé que si *toutes* les
+  réponses mènent au mat, mais l'exercice n'en joue qu'une, celle que le moteur
+  préfère. Le doute porte sur les autres — « et si le roi fuyait par là ? ». En
+  exploration, les deux camps deviennent jouables et le moteur se borne à dire,
+  après chaque défense, si le mat tient et en combien de coups.
 - **Historique local** : les parties analysées sont conservées en `localStorage`
   (30 au plus, sans aucune synchronisation) et rechargeables sans réanalyse.
 - **Réanalyse à la demande** : la cadence est réglable depuis le panneau ⚙ et
