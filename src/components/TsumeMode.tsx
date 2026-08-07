@@ -454,8 +454,17 @@ export function TsumeMode({
     setReplayIndex(null);
   };
 
-  // Dernier coup joué, pour le surlignage du plateau.
-  const shownMoves = solutionView ? solution.slice(0, replayIndex ?? 0) : line;
+  /*
+   * Dernier coup joué, pour le surlignage du plateau. Il doit décrire la même
+   * position que celle affichée : en parcourant une suite, c'est le dernier
+   * coup de cette suite, pas le dernier coup qu'on avait joué soi-même.
+   */
+  const shownMoves =
+    exploreView && exploreLine
+      ? exploreLine.moves.slice(0, exploreReplay ?? 0)
+      : solutionView
+        ? solution.slice(0, replayIndex ?? 0)
+        : line;
   const lastUsi = shownMoves[shownMoves.length - 1] ?? null;
   const lastMove = lastUsi
     ? {
