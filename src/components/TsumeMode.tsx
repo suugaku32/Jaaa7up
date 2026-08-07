@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Board } from './Board';
 import { VariationBar } from './VariationBar';
+import { DeepenControl } from './DeepenControl';
 import type { BoardArrow } from './Board';
 import type { Tsume } from '../analysis/analyze';
 import type { UsiEngine } from '../engine/UsiEngine';
@@ -86,13 +87,6 @@ export function TsumeMode({
    * ce n'est plus le même problème.
    */
   const [skipped, setSkipped] = useState(0);
-  /*
-   * Approfondissement à la demande. Sur un tsume l'enjeu n'est pas le verdict —
-   * un mat annoncé est une ligne prouvée — mais la *séquence* : une recherche
-   * courte publie une variante tronquée, qui s'arrête avant le mat.
-   */
-  const [deepMs, setDeepMs] = useState(5000);
-  const [deepening, setDeepening] = useState(false);
 
   const current = tsumes[idx];
 
@@ -630,44 +624,25 @@ export function TsumeMode({
           )}
 
           {onDeepen && (
-            <div className="deepen">
-              <button
-                className="btn btn-ghost"
-                disabled={deepening}
-                onClick={async () => {
-                  setDeepening(true);
-                  try {
-                    await onDeepen(current.ply, deepMs);
-                    // L'exercice repart de zéro : la solution a pu s'allonger,
-                    // donc la ligne jouée et le raccourci ne veulent plus rien
-                    // dire tels quels.
-                    setLine([]);
-                    setSkipped(0);
-                    setReplayIndex(null);
-                    setState({ kind: 'solving' });
-                  } finally {
-                    setDeepening(false);
-                  }
-                }}
-              >
-                {deepening ? 'Analyse en cours…' : '⌛ Approfondir'}
-              </button>
-              <label className="deepen-time">
-                <span>Réflexion</span>
-                <select
-                  value={deepMs}
-                  onChange={(e) => setDeepMs(Number(e.target.value))}
-                  disabled={deepening}
-                >
-                  <option value={2000}>2 s</option>
-                  <option value={5000}>5 s</option>
-                  <option value={10000}>10 s</option>
-                  <option value={20000}>20 s</option>
-                  <option value={60000}>1 min</option>
-                </select>
-              </label>
-              {current.refined && <span className="deepen-done">position approfondie</span>}
-            </div>
+            /*
+             * Sur un tsume l'enjeu n'est pas le verdict — un mat annoncé est une
+             * ligne prouvée — mais la *séquence* : une recherche courte publie
+             * une variante tronquée, qui s'arrête avant le mat. Une seule
+             * position à reprendre, donc une seule recherche.
+             */
+            <DeepenControl
+              searches={1}
+              refined={current.refined}
+              onRun={async (ms) => {
+                await onDeepen(current.ply, ms);
+                // L'exercice repart de zéro : la solution a pu s'allonger, donc
+                // la ligne jouée et le raccourci ne veulent plus rien dire.
+                setLine([]);
+                setSkipped(0);
+                setReplayIndex(null);
+                setState({ kind: 'solving' });
+              }}
+            />
           )}
 
           {(state.kind === 'revealed' || state.kind === 'solved') && solution.length > 0 && (

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Board } from './Board';
 import { VariationBar } from './VariationBar';
+import { DeepenControl } from './DeepenControl';
 import type { BoardArrow } from './Board';
 import type { PlyEval } from '../analysis/analyze';
 import type { UsiEngine } from '../engine/UsiEngine';
@@ -62,13 +63,6 @@ export function TrainingMode({
   const [verdict, setVerdict] = useState<Verdict>({ kind: 'idle' });
   const [promptPromotion, setPromptPromotion] = useState<{ from: Square; to: Square } | null>(null);
   const [solved, setSolved] = useState<Set<number>>(new Set());
-  /*
-   * Approfondissement de la position courante. La durée est choisie plutôt
-   * qu'imposée : selon qu'on doute d'un demi-pion ou qu'on cherche à trancher
-   * une position fermée, cinq secondes ou trente n'ont pas le même sens.
-   */
-  const [deepMs, setDeepMs] = useState(5000);
-  const [deepening, setDeepening] = useState(false);
   /** Suite en cours de lecture : quelle ligne, et combien de coups rejoués. */
   const [replay, setReplay] = useState<{ line: Line; index: number } | null>(null);
   const current = blunders[idx];
@@ -506,42 +500,20 @@ export function TrainingMode({
              * douteux, on reprend *cette* position plus longtemps plutôt que de
              * relancer toute la partie. Le résultat écrase l'ancien, donc le
              * score de référence, le meilleur coup et les variantes repartent
-             * tous de la nouvelle mesure — il n'y a jamais deux chiffres
-             * concurrents pour la même position.
+             * tous de la nouvelle mesure — jamais deux chiffres concurrents
+             * pour la même position.
+             *
+             * Deux recherches : la position d'avant le coup et celle d'après.
              */
-            <div className="deepen">
-              <button
-                className="btn btn-ghost"
-                disabled={deepening}
-                onClick={async () => {
-                  setDeepening(true);
-                  try {
-                    await onDeepen(current.ply, deepMs);
-                    setVerdict({ kind: 'idle' });
-                    setReplay(null);
-                  } finally {
-                    setDeepening(false);
-                  }
-                }}
-              >
-                {deepening ? 'Analyse en cours…' : '⌛ Approfondir'}
-              </button>
-              <label className="deepen-time">
-                <span>Réflexion</span>
-                <select
-                  value={deepMs}
-                  onChange={(e) => setDeepMs(Number(e.target.value))}
-                  disabled={deepening}
-                >
-                  <option value={2000}>2 s</option>
-                  <option value={5000}>5 s</option>
-                  <option value={10000}>10 s</option>
-                  <option value={20000}>20 s</option>
-                  <option value={60000}>1 min</option>
-                </select>
-              </label>
-              {current.refined && <span className="deepen-done">position approfondie</span>}
-            </div>
+            <DeepenControl
+              searches={2}
+              refined={current.refined}
+              onRun={async (ms) => {
+                await onDeepen(current.ply, ms);
+                setVerdict({ kind: 'idle' });
+                setReplay(null);
+              }}
+            />
           )}
 
           {lines.length > 0 && (

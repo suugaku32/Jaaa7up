@@ -240,35 +240,3 @@
   flex-direction: column;
   gap: 6px;
 }
-
-/* Le bouton et sa durée forment un seul geste : on choisit combien de temps on
-   accorde, puis on lance. Ils restent sur une ligne, quitte à passer à la
-   suivante sur un écran étroit. */
-.deepen {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  font-size: 12px;
-}
-
-.deepen-time {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--dim);
-}
-
-.deepen-time select {
-  font: inherit;
-  font-size: 12px;
-  color: var(--text);
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 5px 7px;
-}
-
-.deepen-done {
-  color: var(--status-good);
-}
