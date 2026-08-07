@@ -126,8 +126,8 @@ export function TsumeMode({
   /*
    * Tout ce qui suit raisonne sur l'exercice *raccourci*, pas sur le tsume
    * d'origine : sa position de départ, sa solution restante, sa longueur. Un
-   * mat en 13 est illisible comme exercice ; ses cinq derniers demi-coups sont
-   * un vrai problème.
+   * mat en 13 est illisible comme exercice ; ses cinq derniers coups sont un
+   * vrai problème.
    */
   const exerciseSfen = startPosition.toSfen();
   const solution = current.solution.slice(skipped);
@@ -135,7 +135,7 @@ export function TsumeMode({
 
   /*
    * Jusqu'où on peut raccourcir. Deux plafonds :
-   *  — laisser au moins un demi-coup à trouver ;
+   *  — laisser au moins un coup à trouver ;
    *  — ne pas dépasser la variante que le moteur a réellement fournie, qui peut
    *    être plus courte que le mat annoncé si la recherche l'a tronquée.
    * Et toujours un nombre pair, pour que le camp au trait reste le bon.
@@ -444,7 +444,14 @@ export function TsumeMode({
           {sideLabel}
           {playerName ? ` (${playerName})` : ''}
         </strong>{' '}
-        peut mater en <strong className="tsume-count">{mateIn}</strong> demi-coups.{' '}
+        {/*
+          « Mat en N » se compte en coups au shogi, et N est impair : les coups
+          de l'attaquant et ceux du défenseur comptent pareil. C'est le nombre
+          que le moteur annonce, celui des recueils de tsume, et celui qu'on
+          annonce à voix haute. Parler de « demi-coups » ou diviser par deux
+          n'apportait qu'une conversion à refaire de tête.
+        */}
+        a un <strong className="tsume-count">mat en {mateIn}</strong>.{' '}
         {current.delivered ? (
           <span className="tsume-found">Le mat a été porté dans la partie.</span>
         ) : current.lostAtPly === current.ply ? (
@@ -488,7 +495,7 @@ export function TsumeMode({
           </label>
           {skipped > 0 && (
             <span className="tsume-note">
-              {skipped} demi-coup{skipped > 1 ? 's' : ''} de la solution déjà joué
+              {skipped} coup{skipped > 1 ? 's' : ''} de la solution déjà joué
               {skipped > 1 ? 's' : ''}.
             </span>
           )}
@@ -536,7 +543,9 @@ export function TsumeMode({
             <p className="training-hint">
               {ourMovesPlayed === 0
                 ? 'Sélectionnez une pièce puis sa case d’arrivée. Chaque coup doit conserver le mat forcé.'
-                : `${ourMovesPlayed} coup(s) joué(s), le mat tient toujours. Continuez.`}
+                : `${ourMovesPlayed * 2 - 1} coup${ourMovesPlayed > 1 ? 's' : ''} joué${
+                    ourMovesPlayed > 1 ? 's' : ''
+                  } sur ${mateIn}, le mat tient toujours. Continuez.`}
             </p>
           )}
           {state.kind === 'checking' && <p className="training-hint">Le moteur cherche sa défense…</p>}
@@ -594,8 +603,18 @@ export function TsumeMode({
           {state.kind === 'solved' && (
             <div className="verdict verdict-correct">
               <strong>✓ Mat</strong>
+              {/*
+                Compté comme le moteur et comme les recueils : en coups, les
+                deux camps confondus, donc un nombre impair. `ourMovesPlayed` ne
+                compte que les nôtres — la moitié de l'affaire.
+
+                La longueur obtenue est affichée plutôt que celle annoncée : les
+                deux coïncident quand la défense est la meilleure, et quand elles
+                divergent c'est la partie jouée qui fait foi.
+              */}
               <span>
-                Porté en {ourMovesPlayed} coup(s). Le moteur annonçait {mateIn} demi-coups.
+                Mat en {ourMovesPlayed * 2 - 1}.
+                {ourMovesPlayed * 2 - 1 !== mateIn && ` Le moteur en annonçait ${mateIn}.`}
               </span>
             </div>
           )}

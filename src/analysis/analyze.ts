@@ -47,7 +47,11 @@ export interface Tsume {
   ply: number;
   color: Color;
   sfen: string;
-  /** Nombre de demi-coups jusqu'au mat, tel que vu par le moteur. */
+  /**
+   * Longueur du mat, telle que le moteur l'annonce : en coups, les deux camps
+   * confondus, donc impaire. C'est le « mat en N » des recueils de tsume, et le
+   * nombre affiché tel quel dans l'interface.
+   */
   mateIn: number;
   /** La séquence de mat : c'est la solution. */
   solution: string[];
