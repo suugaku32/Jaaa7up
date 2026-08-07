@@ -453,3 +453,72 @@
   --sq-err: rgba(247, 118, 142, 0.5);
   --sq-sel-outline: rgba(158, 206, 106, 0.8);
 }
+
+:root[data-theme='catppuccin-mocha'] .pc.promoted,
+:root[data-theme='catppuccin-latte'] .pc.promoted,
+:root[data-theme='nord'] .pc.promoted,
+:root[data-theme='dracula'] .pc.promoted,
+:root[data-theme='gruvbox'] .pc.promoted,
+:root[data-theme='solarized'] .pc.promoted,
+:root[data-theme='tokyo-night'] .pc.promoted {
+  color: var(--piece-promoted);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+  line-height: 1.5;
+}
+
+.btn {
+  font: inherit;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface2);
+  transition: filter 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  filter: var(--btn-hover);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn-primary {
+  background: var(--blue);
+  color: #fff;
+}
+
+.btn-ghost {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.btn-link {
+  background: none;
+  color: var(--dim);
+  text-decoration: underline;
+  padding: 9px 4px;
+}

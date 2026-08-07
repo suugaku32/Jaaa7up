@@ -264,6 +264,14 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  /*
+   * Sans ça, le plateau ne rétrécit jamais. Un élément flex a `min-width: auto`,
+   * c'est-à-dire la largeur de son contenu : la colonne débordait de son parent
+   * au lieu de se laisser contraindre, et le plateau sortait de l'écran sur les
+   * téléphones étroits. Le `min-width: 0` rend la contrainte transmissible, et
+   * c'est ce que le plateau mesure pour dimensionner ses cases.
+   */
+  min-width: 0;
 }
 
 .variation-hint {

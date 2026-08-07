@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { Position } from '../shogi/position';
 import { pieceGlyph } from '../shogi/notation';
@@ -50,8 +51,36 @@ export function Board({
   whiteName,
   onSquareClick,
   onHandPieceClick,
-  cellSize = 40,
+  cellSize: maxCellSize = 40,
 }: BoardProps) {
+  /*
+   * Le plateau était figé à 40 px par case, soit 382 px avec la colonne des
+   * rangées. Sous 400 px de large — iPhone SE, mini, ou simplement un
+   * navigateur avec les marges du système — il débordait de l'écran, et la
+   * dernière colonne passait sous le bord.
+   *
+   * La case se règle donc sur la largeur réellement disponible, sans jamais
+   * dépasser la taille demandée. Le cadre vaut 9 cases plus 0,55 pour les
+   * kanji de rangée : c'est ce diviseur qu'on inverse.
+   */
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [available, setAvailable] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const measure = () => setAvailable(el.clientWidth);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  // Avant la première mesure on rend à la taille demandée : mieux vaut un
+  // plateau trop large le temps d'une image qu'un plateau qui grandit sous
+  // l'œil à chaque affichage.
+  const cellSize =
+    available === null ? maxCellSize : Math.max(18, Math.min(maxCellSize, Math.floor(available / 9.55)));
+
   const isLegalDest = (sq: Square) => (legalDestinations ?? []).some((d) => sameSquare(d, sq));
 
   // Unflipped the board reads rank 1→9 downwards and file 9→1 rightwards; flipping
@@ -140,7 +169,7 @@ export function Board({
   const nameOf = (c: Color) => (c === 'b' ? blackName : whiteName);
 
   return (
-    <div className="board-wrap">
+    <div className="board-wrap" ref={wrapRef}>
       <HandRow
         color={top}
         name={nameOf(top)}

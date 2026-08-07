@@ -210,6 +210,9 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  /* Voir `.analysis-board` : sans `min-width: 0`, un élément flex garde la
+     largeur de son contenu et le plateau déborde des écrans étroits. */
+  min-width: 0;
 }
 
 .training-played {
