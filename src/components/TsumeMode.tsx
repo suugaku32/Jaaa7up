@@ -799,7 +799,16 @@ export function TsumeMode({
             />
           )}
 
-          {(state.kind === 'revealed' || state.kind === 'solved') && solution.length > 0 && (
+          {/*
+            La séquence d'origine part de la position de l'exercice et suppose
+            la défense que le moteur préférait. Dès qu'on en a éprouvé une
+            autre, elle ne décrit plus la partie en cours : la montrer à côté de
+            la suite réelle met deux lignes concurrentes sous les yeux, dont une
+            caduque. `exploreLine` est justement le signe qu'on a dévié.
+          */}
+          {(state.kind === 'revealed' || state.kind === 'solved') &&
+            solution.length > 0 &&
+            !exploreLine && (
             <div className="training-lines">
               <VariationBar
                 label="Séquence de mat du moteur"
