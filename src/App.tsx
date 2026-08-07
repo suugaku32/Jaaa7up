@@ -787,8 +787,8 @@ export default function App() {
               <a href="https://github.com/WandererXII/shogiops" target="_blank" rel="noreferrer">
                 shogiops
               </a>{' '}
-              — sert d'oracle aux tests : 7200 positions comparées coup par coup. Ne fait pas
-              partie du site livré.
+              — sert d'oracle aux tests : 7200 positions comparées coup par coup. GPL-3.0-or-later,
+              mais ne fait pas partie du site livré.
             </li>
             <li>
               Thèmes d'après{' '}
@@ -833,6 +833,26 @@ export default function App() {
               .
             </li>
           </ul>
+          {/*
+            La licence du site lui-même, et non plus seulement celle de ce qu'il
+            embarque. Elle suit celle du moteur : la compatibilité est acquise,
+            et la frontière entre les deux cesse d'être une question.
+          */}
+          <p className="credits-licence">
+            Cette application est distribuée sous{' '}
+            <a
+              href="https://github.com/suugaku32/Jaaa7up/blob/main/LICENSE"
+              target="_blank"
+              rel="noreferrer"
+            >
+              GPL-3.0-or-later
+            </a>
+            . Son code source est disponible sur{' '}
+            <a href="https://github.com/suugaku32/Jaaa7up" target="_blank" rel="noreferrer">
+              GitHub
+            </a>
+            .
+          </p>
         </details>
       </footer>
     </div>

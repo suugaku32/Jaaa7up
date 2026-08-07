@@ -321,7 +321,7 @@ outils forment une famille visuelle.
 | [mizar/YaneuraOu.wasm](https://github.com/mizar/YaneuraOu.wasm) | compilation WebAssembly, paquet `@mizarjp/yaneuraou.k-p` 7.6.3 | GPL-3.0 |
 | [React](https://react.dev) · [Vite](https://vite.dev) | interface et compilation | MIT |
 | [coi-serviceworker](https://github.com/gzuidhof/coi-serviceworker) | en-têtes COOP/COEP, par Guido Zuidhof | MIT |
-| [shogiops](https://github.com/WandererXII/shogiops) | oracle des tests, hors site livré | — |
+| [shogiops](https://github.com/WandererXII/shogiops) | oracle des tests, **hors site livré** | GPL-3.0-or-later |
 
 Les thèmes reprennent les palettes de [Catppuccin](https://catppuccin.com),
 [Nord](https://nordtheme.com), [Dracula](https://draculatheme.com),
@@ -331,6 +331,27 @@ Les thèmes reprennent les palettes de [Catppuccin](https://catppuccin.com),
 des coups en points de *win %* suit la méthode de [lichess](https://lichess.org).
 Palette d'origine et durée des animations reprises de
 [l'app Tsume](https://github.com/suugaku32/tsume).
+
+### Licence de ce dépôt
+
+**GPL-3.0-or-later**, texte complet dans [`LICENSE`](LICENSE).
+
+    Copyright (C) 2026 suugaku32
+
+    Ce programme est un logiciel libre : vous pouvez le redistribuer et/ou le
+    modifier selon les termes de la GNU General Public License telle que
+    publiée par la Free Software Foundation, soit la version 3, soit (à votre
+    choix) toute version ultérieure.
+
+    Il est distribué dans l'espoir qu'il sera utile, mais SANS AUCUNE
+    GARANTIE ; sans même la garantie implicite de QUALITÉ MARCHANDE ou
+    d'ADÉQUATION À UN USAGE PARTICULIER. Voir la GNU General Public License
+    pour plus de détails.
+
+Le choix suit celui du moteur, qui est déjà distribué sous GPL-3.0 : la
+compatibilité est acquise, et la question de savoir où passe la frontière entre
+les deux ne se pose plus. La variante « or later » est celle que recommande la
+FSF ; elle laisse aux destinataires le bénéfice des versions futures.
 
 ### Sur la GPL du moteur
 
@@ -343,9 +364,9 @@ les dépôts amont ci-dessus et dans le pied de page du site.
 
 Le moteur tourne dans un worker séparé et ne communique que par des lignes de
 texte du protocole USI — la même relation qu'entre deux programmes reliés par un
-tuyau. Reste que ce dépôt n'a pas de licence propre : tant qu'il n'en a pas, le
-statut du code applicatif n'est pas déclaré. Si le site doit circuler au-delà
-d'un cercle privé, c'est le point à trancher.
+tuyau. Savoir si cela en fait deux œuvres distinctes ou une œuvre combinée fait
+l'objet de lectures divergentes ; placer ce dépôt sous la même licence rend la
+question sans objet.
 
 ## Pistes non implémentées
 
