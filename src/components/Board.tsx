@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { Position } from '../shogi/position';
 import { pieceGlyph } from '../shogi/notation';
 import type { Color, PieceType, Square } from '../shogi/types';
@@ -64,11 +65,34 @@ export function Board({
     y: (ranks.indexOf(sq.rank) + 0.5) * cellSize,
   });
 
+  /*
+   * Animation du coup. L'app Tsume fait voler une pièce en `position: fixed`
+   * par-dessus le plateau, puis reconstruit le DOM à la main — nécessaire quand
+   * on écrit le HTML soi-même. Ici la pièce est déjà rendue à l'arrivée : il
+   * suffit de la faire *entrer* depuis sa case de départ, en partant du décalage
+   * inverse pour revenir à zéro. Aucun élément en plus, aucune case à masquer.
+   *
+   * La clé porte le coup : sans elle React réutilise le même nœud d'un coup à
+   * l'autre et l'animation ne rejoue pas.
+   */
+  const flight = lastMove?.from
+    ? (() => {
+        const from = centreOf(lastMove.from);
+        const to = centreOf(lastMove.to);
+        return {
+          dx: from.x - to.x,
+          dy: from.y - to.y,
+          key: `${lastMove.from.file}${lastMove.from.rank}-${lastMove.to.file}${lastMove.to.rank}`,
+        };
+      })()
+    : null;
+
   const rows = ranks.map((rank) => (
     <div className="board-row" key={rank}>
       {files.map((file) => {
         const sq = { file, rank };
         const piece = position.pieceAt(sq);
+        const arriving = flight && lastMove && sameSquare(lastMove.to, sq);
         const classes = ['cell'];
         if (lastMove && sameSquare(lastMove.to, sq)) classes.push('ht');
         if (lastMove?.from && sameSquare(lastMove.from, sq)) classes.push('hf');
@@ -88,8 +112,19 @@ export function Board({
           >
             {piece && (
               <span
-                className={`pc${piece.promoted ? ' promoted' : ''}${upsideDown ? ' gote' : ''}`}
-                style={{ fontSize: Math.round(cellSize * 0.72) }}
+                key={arriving ? flight.key : undefined}
+                className={`pc${piece.promoted ? ' promoted' : ''}${upsideDown ? ' gote' : ''}${
+                  arriving ? ' pc-arriving' : ''
+                }`}
+                style={
+                  arriving
+                    ? ({
+                        fontSize: Math.round(cellSize * 0.72),
+                        '--fx': `${flight.dx}px`,
+                        '--fy': `${flight.dy}px`,
+                      } as CSSProperties)
+                    : { fontSize: Math.round(cellSize * 0.72) }
+                }
               >
                 {pieceGlyph(piece.type, piece.promoted)}
               </span>
