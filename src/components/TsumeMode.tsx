@@ -671,7 +671,14 @@ export function TsumeMode({
 
           {exploreNote && <p className="tsume-explore-note">{exploreNote}</p>}
 
-          {exploreLine && (
+          {/*
+            La suite du mat est une réponse, pas un commentaire : l'afficher
+            d'office éventait l'exercice au moment même où l'on cherchait à
+            l'éprouver. On voulait savoir *si* le mat tient — le verdict le dit
+            — et se réserver de chercher *comment*. Elle attend donc « Voir la
+            solution », comme la solution principale.
+          */}
+          {exploreLine && state.kind === 'revealed' && (
             <div className="training-lines">
               <VariationBar
                 label="Le mat se poursuit"
@@ -682,6 +689,19 @@ export function TsumeMode({
                 activeIndex={exploreReplay}
                 onSelect={setExploreReplay}
               />
+            </div>
+          )}
+
+          {/*
+            Éprouver une défense engage la partie : sans retour en arrière, il
+            fallait changer d'exercice pour en essayer une autre. Ce bouton
+            prend la place qu'occupait la suite du mat.
+          */}
+          {exploring && line.length > 0 && state.kind !== 'revealed' && (
+            <div className="tsume-actions">
+              <button className="btn btn-ghost" onClick={restart}>
+                ↺ Recommencer
+              </button>
             </div>
           )}
 
