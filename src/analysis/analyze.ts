@@ -252,11 +252,24 @@ export async function analyzeGame(
     }
   }
 
-  // Pass 3 — les positions où un mat forcé a été aperçu méritent une vraie
-  // séquence de solution. Le balayage court donne le verdict « il y a un mat »
-  // mais souvent une variante tronquée ; on reprend donc ces positions à la
-  // cadence longue, en sautant celles que la passe 2 a déjà traitées.
-  if (deepMs && deepMs > (opts.movetimeMs ?? 0)) {
+  /*
+   * Pass 3 — les positions où un mat forcé a été aperçu méritent une vraie
+   * séquence de solution : le balayage donne le verdict « il y a un mat » mais
+   * souvent une variante tronquée. On reprend donc ces positions à la cadence
+   * la plus longue disponible, en sautant celles que la passe 2 a déjà traitées.
+   *
+   * Cette passe était gardée par la même condition que la passe 2,
+   * `deepMs > movetimeMs`. Conséquence : régler le balayage aussi haut que
+   * l'étude des gaffes désactivait les deux, et les tsume perdaient leur
+   * séquence sans que rien ne le dise. Les deux passes ne répondent pourtant
+   * pas à la même question — l'une réexamine un verdict douteux, l'autre
+   * complète une solution — et n'ont aucune raison de partager un interrupteur.
+   *
+   * Elle ne concerne qu'une poignée de positions : la garder allumée coûte
+   * quelques secondes, la perdre coûte l'onglet Tsume.
+   */
+  const tsumeMs = Math.max(deepMs ?? 0, opts.movetimeMs ?? 0);
+  if (tsumeMs > 0) {
     const toDeepen = plies
       .filter((p) => p.mateBefore !== null && p.mateBefore > 0)
       .map((p) => p.ply - 1)
@@ -266,7 +279,7 @@ export async function analyzeGame(
     for (let k = 0; k < unique.length; k++) {
       if (opts.signal?.aborted) throw new DOMException('Analyse annulée', 'AbortError');
       const i = unique[k];
-      const r = await engine.analyze(sfens[i], [], { movetimeMs: deepMs });
+      const r = await engine.analyze(sfens[i], [], { movetimeMs: tsumeMs });
       deep.set(i, {
         cp: scoreToCp(r.scoreCp, r.scoreMate),
         mate: r.scoreMate,

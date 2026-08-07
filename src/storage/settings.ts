@@ -17,12 +17,26 @@ export interface Settings {
   deepMovetimeMs: number;
 }
 
+/*
+ * Le balayage passe de 200 à 800 ms, et la seconde passe s'éteint.
+ *
+ * Mesuré sur une partie de 80 coups aux anciennes valeurs : 136 s au total,
+ * dont l'essentiel dans la « seconde passe ciblée » — qui rouvrait 44 des 80
+ * coups, parce qu'un balayage à 200 ms signale plus de la moitié de la partie.
+ * On payait donc une analyse longue sur toute la partie, en deux temps, avec
+ * l'instabilité en prime : deux exécutions identiques ne rendaient pas le même
+ * nombre de gaffes.
+ *
+ * Chercher correctement une fois coûte moins cher et rend un verdict plus
+ * stable. La seconde passe reste disponible d'un clic pour qui la veut, et la
+ * passe tsume tourne indépendamment.
+ */
 export const DEFAULT_SETTINGS: Settings = {
   flipped: false,
   showBestArrow: true,
   focusSide: 'both',
-  movetimeMs: 200,
-  deepMovetimeMs: 2000,
+  movetimeMs: 800,
+  deepMovetimeMs: 0,
 };
 
 const KEY = 'jaaa7up-settings-v1';

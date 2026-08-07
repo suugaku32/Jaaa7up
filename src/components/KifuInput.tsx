@@ -61,10 +61,19 @@ export function KifuInput({
             onChange={(e) => onMovetimeChange(parseInt(e.target.value, 10))}
             disabled={disabled}
           >
+            {/*
+              Jusqu'à 2 s. Un balayage à 200 ms classait mal : sur une partie de
+              80 coups il marquait 44 coups comme imprécision ou pire, soit plus
+              de la moitié, et la seconde passe se retrouvait à réexaminer la
+              partie entière au lieu de quelques points douteux. Mieux vaut
+              chercher correctement une fois.
+            */}
             <option value={100}>100 ms</option>
             <option value={200}>200 ms</option>
             <option value={400}>400 ms</option>
             <option value={800}>800 ms</option>
+            <option value={1200}>1,2 s</option>
+            <option value={2000}>2 s</option>
           </select>
         </label>
         <label className="movetime-control">

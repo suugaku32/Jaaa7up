@@ -19,8 +19,20 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
 - **Échelle brute** à l'affichage (`+245`, pas `+2.45`) : c'est ce que le moteur
   émet en USI et ce que lisent ShogiGUI ou Shogidokoro. Voir la réserve sur la
   calibration plus bas.
-- **Analyse en deux passes** : un balayage rapide repère les coups suspects, puis
-  une passe lente ne réexamine que ceux-là — l'essentiel du temps va là où il sert.
+- **Analyse en une passe, réglable de 100 ms à 2 s par position.** Une seconde
+  passe, qui reprend les coups suspects à une cadence longue, reste disponible
+  mais n'est plus activée par défaut : mesurée sur une partie de 80 coups, elle
+  rouvrait 44 positions — plus de la moitié — pour un coût dominant. Allonger le
+  balayage ne réduit pas ce nombre (43 coups signalés à 200 ms, 46 à 2 s) : dans
+  une partie d'amateurs, la moitié des coups perdent réellement assez de
+  pourcentage de victoire pour être marqués. Le seul levier sur ce décompte est
+  le seuil de classification, pas la profondeur ; la profondeur, elle, améliore
+  chaque verdict pris isolément.
+- **Passe tsume indépendante** : les positions où un mat forcé a été aperçu sont
+  reprises à la cadence la plus longue disponible, pour en obtenir la séquence
+  complète. Elle partageait auparavant son interrupteur avec la seconde passe,
+  si bien que régler le balayage aussi haut que celle-ci les éteignait toutes
+  les deux et privait les tsume de leur solution, sans que rien ne le signale.
 - **Variantes** : la suite prévue par le moteur est affichée et rejouable coup par
   coup, avec flèches sur le goban, pour voir *pourquoi* un coup est une gaffe. Les
   coups sont cliquables et deux flèches `‹ ›` permettent d'avancer d'un coup à la
