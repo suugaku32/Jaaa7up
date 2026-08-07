@@ -74,9 +74,11 @@
 /* Le kanji du parachutage tombe souvent sur une case occupée. Il est peint
    par-dessus son propre contour, dans la couleur du fond : un liseré le
    détache de la pièce en dessous sans avoir à masquer quoi que ce soit. */
+/* Le kanji occupe le centre du cercle, sur une case vide. Un liseré fin suffit
+   à le décoller des lignes du plateau qui passent dessous. */
 .arrow-drop-piece {
   font-weight: 700;
-  stroke-width: 3;
+  stroke-width: 2;
   paint-order: stroke fill;
 }
 

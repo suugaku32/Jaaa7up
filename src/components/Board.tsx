@@ -156,11 +156,10 @@ export function Board({
                   if (!a.from) {
                     /*
                      * Un parachutage n'a pas d'origine : on cercle la case au
-                     * lieu de pointer vers elle. Mais le cercle seul ne dit que
-                     * l'endroit — sur une case vide, rien n'indique *quelle*
-                     * pièce tombe, et il fallait aller lire la notation. Le
-                     * kanji est posé sous le cercle, débordant sur la case du
-                     * dessous, pour ne pas masquer la case visée.
+                     * lieu de pointer vers elle. Le cercle seul ne dit que
+                     * l'endroit, jamais quelle pièce tombe — le kanji va donc
+                     * au centre, où il ne masque rien : une pièce ne peut être
+                     * parachutée que sur une case vide.
                      */
                     return (
                       <g key={i}>
@@ -173,17 +172,11 @@ export function Board({
                         {a.piece && (
                           <text
                             x={to.x}
-                            // Sur la dernière rangée, sous la case c'est hors du
-                            // plateau : le kanji passe au-dessus.
-                            y={
-                              to.y + cellSize * 0.62 < boardPx
-                                ? to.y + cellSize * 0.62
-                                : to.y - cellSize * 0.62
-                            }
+                            y={to.y}
                             className={`arrow-drop-piece arrow-${a.kind}`}
                             textAnchor="middle"
-                            dominantBaseline="middle"
-                            fontSize={Math.round(cellSize * 0.42)}
+                            dominantBaseline="central"
+                            fontSize={Math.round(cellSize * 0.5)}
                           >
                             {pieceGlyph(a.piece, false)}
                           </text>
