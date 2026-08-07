@@ -22,10 +22,14 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
 - **Analyse en deux passes** : un balayage rapide repère les coups suspects, puis
   une passe lente ne réexamine que ceux-là — l'essentiel du temps va là où il sert.
 - **Variantes** : la suite prévue par le moteur est affichée et rejouable coup par
-  coup, avec flèches sur le goban, pour voir *pourquoi* un coup est une gaffe.
+  coup, avec flèches sur le goban, pour voir *pourquoi* un coup est une gaffe. Les
+  coups sont cliquables et deux flèches `‹ ›` permettent d'avancer d'un coup à la
+  fois — seules cibles dont la position ne bouge pas quand la variante défile.
 - **Mode entraînement** : sur chaque gaffe, on rejoue la position ; le coup joué est
-  montré (flèche rouge), le coup proposé est réévalué par le moteur et accepté s'il
-  perd au plus 50 centipions par rapport au meilleur coup.
+  montré (flèche rouge), le coup proposé est évalué par le moteur et accepté s'il
+  perd au plus 50 centipions par rapport à la valeur que l'analyse a établie pour
+  la position. Le verdict distingue le coup du moteur d'un coup simplement toléré,
+  et nomme le premier quand ils diffèrent.
 - **Détection des tsume** : les positions où un mat forcé était disponible sont
   repérées, distinguées selon qu'il a été porté ou laissé passer, et rejouables —
   on joue le mat, le moteur défend, jusqu'au mat ou jusqu'à ce qu'il s'échappe.
@@ -44,9 +48,19 @@ npm run dev
 npm run build      # produit dist/, prêt pour Pages
 ```
 
-Le workflow `.github/workflows/deploy.yml` publie `dist/` sur GitHub Pages à chaque
-push sur `main`. Vite est configuré avec `base: './'`, donc le site fonctionne aussi
-bien à la racine d'un domaine que sous `/<repo>/`.
+Le workflow `.github/workflows/deploy.yml` compile `dist/` à chaque push sur `main`
+et le pousse en force sur la branche `gh-pages`, d'où Pages le sert. Vite est
+configuré avec `base: './'`, donc le site fonctionne aussi bien à la racine d'un
+domaine que sous `/<repo>/`.
+
+Le panneau `⚙` affiche en dernière ligne l'estampille de compilation, injectée par
+Vite. C'est la seule façon de distinguer « le correctif ne marche pas » de « le
+navigateur sert encore l'ancienne page » — une distinction qui coûte cher à ne pas
+pouvoir faire quand la chaîne de publication prend du retard.
+
+Quand une construction Pages reste bloquée en `queued`, republier la même
+arborescence sous un nouveau commit (`git commit --allow-empty`) écarte celle qui
+est en souffrance et en déclenche une neuve.
 
 ## Notes techniques
 
@@ -66,10 +80,12 @@ Détails et mesures dans [`public/engine/PROVENANCE.md`](public/engine/PROVENANC
 
 ### Thèmes
 
-Trois jeux de couleurs, choisis dans le panneau `⚙` et conservés en
-`localStorage` : **Néon** (le halo d'origine, repris de l'app Tsume), **Sobre**
+Dix jeux de couleurs, choisis dans le panneau `⚙` et conservés en `localStorage`.
+Trois maison : **Néon** (le halo d'origine, repris de l'app Tsume), **Sobre**
 (même ossature sombre, halo supprimé) et **Bois** (plateau clair, kanji noirs,
-promues en rouge — la table traditionnelle).
+promues en rouge — la table traditionnelle). Sept classiques : **Catppuccin
+Mocha** et **Latte**, **Nord**, **Dracula**, **Gruvbox**, **Solarized** et
+**Tokyo Night**.
 
 Un thème n'est qu'un jeu de variables CSS dans `src/theme.css` ; aucune règle de
 mise en page n'est dupliquée. Ce qui a dû être corrigé pour que ça marche
@@ -86,6 +102,13 @@ Contrastes mesurés dans le rendu, pas calculés à la main :
 | Néon | `#1a1a2e` | 14,2 | 4,8 | 17,1 | 4,5 |
 | Sobre | `#14161a` | 14,5 | 6,3 | 16,2 | 4,7 |
 | Bois | `#efe6d5` | 13,4 | 4,9 | 13,8 | 5,3 |
+| Tokyo Night | `#1a1b26` | 10,6 | 7,0 | 10,6 | 6,5 |
+
+Plusieurs classiques ont demandé un décalage de luminance sur leurs couleurs de
+statut : ces palettes visent la coloration syntaxique, où 3:1 est courant, alors
+qu'ici elles portent du texte d'interface qui demande 4,5:1. Concernés : Latte
+(erreur, imprécision, bon coup), Nord (gaffe, erreur), Gruvbox et Solarized
+(gaffe, erreur). Tokyo Night est la seule reprise telle quelle.
 
 `public/theme-init.js` pose le thème avant le premier rendu — sans lui, un
 utilisateur ayant choisi « Bois » verrait clignoter le néon le temps que React
