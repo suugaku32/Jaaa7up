@@ -692,18 +692,6 @@ export function TsumeMode({
             </div>
           )}
 
-          {/*
-            Éprouver une défense engage la partie : sans retour en arrière, il
-            fallait changer d'exercice pour en essayer une autre. Ce bouton
-            prend la place qu'occupait la suite du mat.
-          */}
-          {exploring && line.length > 0 && state.kind !== 'revealed' && (
-            <div className="tsume-actions">
-              <button className="btn btn-ghost" onClick={restart}>
-                ↺ Recommencer
-              </button>
-            </div>
-          )}
 
           {state.kind === 'solving' && !promptPromotion && (
             <p className="training-hint">
@@ -763,11 +751,6 @@ export function TsumeMode({
                 <button className="btn btn-ghost" onClick={retry}>
                   Réessayer ce coup
                 </button>
-                {ourMovesPlayed > 0 && (
-                  <button className="btn btn-ghost" onClick={restart}>
-                    Recommencer le tsume
-                  </button>
-                )}
               </div>
             </div>
           )}
@@ -858,17 +841,37 @@ export function TsumeMode({
             </p>
           )}
 
-          {state.kind !== 'revealed' && state.kind !== 'solved' && (
+          {/*
+            Recommencer est toujours là, quel que soit l'état de l'exercice.
+            Le bouton n'existait qu'au fond des verdicts d'échec et, un temps,
+            dans le seul mode exploration : il fallait donc se tromper pour
+            avoir le droit de reprendre. Or on veut refaire un tsume qu'on vient
+            de résoudre, en essayer une autre défense, ou simplement effacer une
+            solution qu'on a dévoilée trop vite.
+
+            Désactivé quand il n'y a rien à défaire : un bouton qui ne fait rien
+            se remarque, un bouton grisé s'explique.
+          */}
+          <div className="tsume-actions">
             <button
               className="btn btn-ghost"
-              onClick={() => {
-                setState({ kind: 'revealed' });
-                setSelected(null);
-              }}
+              onClick={restart}
+              disabled={line.length === 0 && state.kind === 'solving'}
             >
-              Voir la solution
+              ↺ Recommencer
             </button>
-          )}
+            {state.kind !== 'revealed' && state.kind !== 'solved' && (
+              <button
+                className="btn btn-ghost"
+                onClick={() => {
+                  setState({ kind: 'revealed' });
+                  setSelected(null);
+                }}
+              >
+                Voir la solution
+              </button>
+            )}
+          </div>
 
           {(state.kind === 'solved' || state.kind === 'revealed') && idx < tsumes.length - 1 && (
             <button className="btn btn-primary" onClick={() => goTo(idx + 1)}>
