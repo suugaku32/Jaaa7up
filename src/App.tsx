@@ -18,7 +18,7 @@ import {
 } from './storage/history';
 import type { HistoryEntry } from './storage/history';
 import { UsiEngine, engineEnvironment } from './engine/UsiEngine';
-import { analyzeGame } from './analysis/analyze';
+import { analyzeGame, deepenPly, deepenTsume } from './analysis/analyze';
 import type { AnalysisPhase, AnalysisResult } from './analysis/analyze';
 import { QUALITY_LABEL_FR } from './analysis/classify';
 import { parseKifu } from './shogi/parser';
@@ -307,6 +307,38 @@ export default function App() {
     () => (result ? result.plies.filter((p) => focusSide === 'both' || p.color === focusSide) : []),
     [result, focusSide],
   );
+  /*
+   * Approfondir une position à la demande. Contrepartie d'une passe unique :
+   * le temps va à l'exercice qu'on regarde, pas à celui qu'une heuristique a
+   * deviné. Le résultat est réécrit sur place pour que tout ce qui en dérive —
+   * verdict, variantes, courbe — reparte de la nouvelle mesure.
+   */
+  const deepenBlunder = useCallback(
+    async (ply: number, movetimeMs: number) => {
+      const engine = await ensureEngine();
+      const target = result?.plies.find((p) => p.ply === ply);
+      if (!target) return;
+      const updated = await deepenPly(engine, target, movetimeMs);
+      setResult((r) =>
+        r ? { ...r, plies: r.plies.map((p) => (p.ply === ply ? updated : p)) } : r,
+      );
+    },
+    [result, ensureEngine],
+  );
+
+  const deepenTsumeAt = useCallback(
+    async (ply: number, movetimeMs: number) => {
+      const engine = await ensureEngine();
+      const target = result?.tsumes.find((t) => t.ply === ply);
+      if (!target) return;
+      const updated = await deepenTsume(engine, target, movetimeMs);
+      setResult((r) =>
+        r ? { ...r, tsumes: r.tsumes.map((t) => (t.ply === ply ? updated : t)) } : r,
+      );
+    },
+    [result, ensureEngine],
+  );
+
   const focusedBlunders = useMemo(
     () => focusedPlies.filter((p) => p.quality === 'blunder'),
     [focusedPlies],
@@ -689,6 +721,7 @@ export default function App() {
             <TrainingMode
               blunders={focusedBlunders}
               ensureEngine={ensureEngine}
+              onDeepen={deepenBlunder}
               movetimeMs={deepMovetimeMs > 0 ? deepMovetimeMs : movetimeMs}
               flipped={flipped}
               blackName={game.black}
@@ -698,6 +731,7 @@ export default function App() {
             <TsumeMode
               tsumes={focusedTsumes}
               ensureEngine={ensureEngine}
+              onDeepen={deepenTsumeAt}
               movetimeMs={deepMovetimeMs > 0 ? deepMovetimeMs : movetimeMs}
               flipped={flipped}
               blackName={game.black}

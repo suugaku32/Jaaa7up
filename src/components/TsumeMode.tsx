@@ -40,6 +40,8 @@ interface TsumeModeProps {
   tsumes: Tsume[];
   /** Fournit le moteur, en le démarrant s'il ne l'est pas encore. */
   ensureEngine: () => Promise<UsiEngine>;
+  /** Reprend ce tsume à la cadence demandée : c'est la séquence qu'on y gagne. */
+  onDeepen?: (ply: number, movetimeMs: number) => Promise<void>;
   /** Cadence de l'analyse : sert de recours quand la vérification rapide ne voit pas le mat. */
   movetimeMs: number;
   flipped?: boolean;
@@ -61,6 +63,7 @@ function replay(sfen: string, moves: string[]): Position | null {
 export function TsumeMode({
   tsumes,
   ensureEngine,
+  onDeepen,
   movetimeMs,
   flipped,
   blackName,
@@ -83,6 +86,13 @@ export function TsumeMode({
    * ce n'est plus le même problème.
    */
   const [skipped, setSkipped] = useState(0);
+  /*
+   * Approfondissement à la demande. Sur un tsume l'enjeu n'est pas le verdict —
+   * un mat annoncé est une ligne prouvée — mais la *séquence* : une recherche
+   * courte publie une variante tronquée, qui s'arrête avant le mat.
+   */
+  const [deepMs, setDeepMs] = useState(5000);
+  const [deepening, setDeepening] = useState(false);
 
   const current = tsumes[idx];
 
@@ -616,6 +626,47 @@ export function TsumeMode({
                 Mat en {ourMovesPlayed * 2 - 1}.
                 {ourMovesPlayed * 2 - 1 !== mateIn && ` Le moteur en annonçait ${mateIn}.`}
               </span>
+            </div>
+          )}
+
+          {onDeepen && (
+            <div className="deepen">
+              <button
+                className="btn btn-ghost"
+                disabled={deepening}
+                onClick={async () => {
+                  setDeepening(true);
+                  try {
+                    await onDeepen(current.ply, deepMs);
+                    // L'exercice repart de zéro : la solution a pu s'allonger,
+                    // donc la ligne jouée et le raccourci ne veulent plus rien
+                    // dire tels quels.
+                    setLine([]);
+                    setSkipped(0);
+                    setReplayIndex(null);
+                    setState({ kind: 'solving' });
+                  } finally {
+                    setDeepening(false);
+                  }
+                }}
+              >
+                {deepening ? 'Analyse en cours…' : '⌛ Approfondir'}
+              </button>
+              <label className="deepen-time">
+                <span>Réflexion</span>
+                <select
+                  value={deepMs}
+                  onChange={(e) => setDeepMs(Number(e.target.value))}
+                  disabled={deepening}
+                >
+                  <option value={2000}>2 s</option>
+                  <option value={5000}>5 s</option>
+                  <option value={10000}>10 s</option>
+                  <option value={20000}>20 s</option>
+                  <option value={60000}>1 min</option>
+                </select>
+              </label>
+              {current.refined && <span className="deepen-done">position approfondie</span>}
             </div>
           )}
 

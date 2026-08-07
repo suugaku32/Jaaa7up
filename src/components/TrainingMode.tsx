@@ -37,6 +37,8 @@ interface TrainingModeProps {
   blunders: PlyEval[];
   /** Fournit le moteur, en le démarrant s'il ne l'est pas encore. */
   ensureEngine: () => Promise<UsiEngine>;
+  /** Reprend cette position à la cadence demandée et met l'analyse à jour. */
+  onDeepen?: (ply: number, movetimeMs: number) => Promise<void>;
   movetimeMs: number;
   flipped?: boolean;
   blackName?: string;
@@ -46,6 +48,7 @@ interface TrainingModeProps {
 export function TrainingMode({
   blunders,
   ensureEngine,
+  onDeepen,
   movetimeMs,
   flipped,
   blackName,
@@ -59,6 +62,13 @@ export function TrainingMode({
   const [verdict, setVerdict] = useState<Verdict>({ kind: 'idle' });
   const [promptPromotion, setPromptPromotion] = useState<{ from: Square; to: Square } | null>(null);
   const [solved, setSolved] = useState<Set<number>>(new Set());
+  /*
+   * Approfondissement de la position courante. La durée est choisie plutôt
+   * qu'imposée : selon qu'on doute d'un demi-pion ou qu'on cherche à trancher
+   * une position fermée, cinq secondes ou trente n'ont pas le même sens.
+   */
+  const [deepMs, setDeepMs] = useState(5000);
+  const [deepening, setDeepening] = useState(false);
   /** Suite en cours de lecture : quelle ligne, et combien de coups rejoués. */
   const [replay, setReplay] = useState<{ line: Line; index: number } | null>(null);
   const current = blunders[idx];
@@ -487,6 +497,50 @@ export function TrainingMode({
             <div className="verdict verdict-revealed">
               <strong>Meilleur coup : {bestLabel}</strong>
               <span>Coup joué dans la partie : {actualLabel}</span>
+            </div>
+          )}
+
+          {onDeepen && (
+            /*
+             * Le complément d'une passe unique : quand un verdict paraît
+             * douteux, on reprend *cette* position plus longtemps plutôt que de
+             * relancer toute la partie. Le résultat écrase l'ancien, donc le
+             * score de référence, le meilleur coup et les variantes repartent
+             * tous de la nouvelle mesure — il n'y a jamais deux chiffres
+             * concurrents pour la même position.
+             */
+            <div className="deepen">
+              <button
+                className="btn btn-ghost"
+                disabled={deepening}
+                onClick={async () => {
+                  setDeepening(true);
+                  try {
+                    await onDeepen(current.ply, deepMs);
+                    setVerdict({ kind: 'idle' });
+                    setReplay(null);
+                  } finally {
+                    setDeepening(false);
+                  }
+                }}
+              >
+                {deepening ? 'Analyse en cours…' : '⌛ Approfondir'}
+              </button>
+              <label className="deepen-time">
+                <span>Réflexion</span>
+                <select
+                  value={deepMs}
+                  onChange={(e) => setDeepMs(Number(e.target.value))}
+                  disabled={deepening}
+                >
+                  <option value={2000}>2 s</option>
+                  <option value={5000}>5 s</option>
+                  <option value={10000}>10 s</option>
+                  <option value={20000}>20 s</option>
+                  <option value={60000}>1 min</option>
+                </select>
+              </label>
+              {current.refined && <span className="deepen-done">position approfondie</span>}
             </div>
           )}
 

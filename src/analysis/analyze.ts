@@ -414,3 +414,53 @@ function isCheckingSequence(sfen: string, solution: string[]): boolean {
     return false;
   }
 }
+
+/*
+ * Approfondissement à la demande, sur une seule position.
+ *
+ * C'est la contrepartie d'une passe unique : plutôt que de deviner à l'avance
+ * quelles positions méritent du temps, on en donne à celle qu'on regarde. Deux
+ * recherches suffisent — avant et après le coup joué.
+ *
+ * `quality` est délibérément conservée. La recalculer ferait sortir l'exercice
+ * de la liste sous les yeux de qui vient de demander à l'examiner de plus près,
+ * ce qui est la dernière chose à faire. Reclasser toute la partie, c'est le rôle
+ * de « Réanalyser ».
+ */
+export async function deepenPly(
+  engine: UsiEngine,
+  p: PlyEval,
+  movetimeMs: number,
+): Promise<PlyEval> {
+  const before = await engine.analyze(p.sfenBefore, [], { movetimeMs });
+  const after = await engine.analyze(p.sfenAfter, [], { movetimeMs });
+  const evalBeforeCp = scoreToCp(before.scoreCp, before.scoreMate);
+  const evalAfterCp = -scoreToCp(after.scoreCp, after.scoreMate);
+  return {
+    ...p,
+    evalBeforeCp,
+    evalAfterCp,
+    bestMove: before.bestMove,
+    bestMovePv: before.pv,
+    refutationPv: after.pv,
+    mateBefore: before.scoreMate,
+    mateAfter: after.scoreMate === null ? null : -after.scoreMate,
+    centipawnLoss: Math.max(0, evalBeforeCp - evalAfterCp),
+    refined: true,
+  };
+}
+
+/**
+ * Idem pour un tsume : une seule recherche, sur la position de l'exercice, dont
+ * on retient la longueur annoncée et la séquence. Une recherche plus longue
+ * publie une variante moins souvent tronquée — c'est tout l'intérêt ici.
+ */
+export async function deepenTsume(
+  engine: UsiEngine,
+  t: Tsume,
+  movetimeMs: number,
+): Promise<Tsume> {
+  const r = await engine.analyze(t.sfen, [], { movetimeMs });
+  if (r.scoreMate === null || r.scoreMate <= 0) return { ...t, refined: true };
+  return { ...t, mateIn: r.scoreMate, solution: r.pv, refined: true };
+}
