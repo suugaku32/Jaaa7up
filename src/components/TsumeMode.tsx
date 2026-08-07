@@ -628,9 +628,31 @@ export function TsumeMode({
                 moves={solution}
                 activeIndex={replayIndex}
                 onSelect={setReplayIndex}
+                /*
+                 * Pas de plafond ici. Les huit coups par défaut conviennent à
+                 * une variante d'analyse, dont la queue n'apprend rien — mais
+                 * une solution de tsume *est* la réponse : coupée, elle
+                 * s'arrête avant le mat, et le lecteur croit à une erreur.
+                 */
+                maxMoves={solution.length}
               />
             </div>
           )}
+
+          {/*
+           * Le moteur annonce la longueur du mat depuis son score, mais la
+           * variante qu'il publie peut être plus courte : la table de
+           * transposition en tronque la queue. Mieux vaut le dire que laisser
+           * croire à une séquence fausse.
+           */}
+          {(state.kind === 'revealed' || state.kind === 'solved') &&
+            solution.length > 0 &&
+            solution.length < mateIn && (
+              <p className="tsume-note">
+                Le moteur annonce un mat en {mateIn} mais n’a publié que {solution.length} coups :
+                sa recherche a tronqué la fin de la variante. Les coups montrés restent justes.
+              </p>
+            )}
 
           {!current.refined && (
             <p className="tsume-note">
