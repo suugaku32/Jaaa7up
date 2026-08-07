@@ -46,6 +46,12 @@
   --sq-hint-inset: inset 0 0 6px rgba(0, 200, 100, 0.35);
   --sq-sel-outline: rgba(0, 255, 120, 0.7);
   --on-accent: #fff;
+  /*
+   * Police des kanji. Aucune n'est téléchargée : la valeur par défaut est un
+   * mincho, le dessin des jeux de shogi traditionnels, avec repli sur la
+   * famille générique quand l'appareil n'a rien de mieux.
+   */
+  --piece-font: 'Hiragino Mincho ProN', 'Yu Mincho', YuMincho, 'Noto Serif JP', 'Songti SC', serif;
   --area-opacity: 0.18;
   --btn-hover: brightness(1.2);
 }
@@ -521,4 +527,14 @@ body {
   color: var(--dim);
   text-decoration: underline;
   padding: 9px 4px;
+}
+
+:root[data-piece-font='gothique'] {
+  --piece-font: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic', YuGothic,
+    'Noto Sans JP', sans-serif;
+}
+
+:root[data-piece-font='arrondie'] {
+  --piece-font: 'Hiragino Maru Gothic ProN', 'Zen Maru Gothic', 'YuGothic', 'Noto Sans JP',
+    sans-serif;
 }

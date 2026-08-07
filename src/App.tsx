@@ -30,6 +30,8 @@ import { usiToSquare } from './shogi/types';
 import { loadSettings, saveSettings } from './storage/settings';
 import { THEMES, THEME_LABEL_FR, applyTheme, loadTheme } from './theme';
 import type { Theme } from './theme';
+import { PIECE_FONTS, PIECE_FONT_LABEL_FR, applyPieceFont, loadPieceFont } from './pieceFont';
+import type { PieceFont } from './pieceFont';
 import './App.css';
 
 type Tab = 'analysis' | 'training' | 'tsume';
@@ -70,10 +72,15 @@ export default function App() {
   const engineRef = useRef<UsiEngine | null>(null);
   const optionsRef = useRef<HTMLDetailsElement>(null);
   const [theme, setTheme] = useState<Theme>(() => loadTheme());
+  const [pieceFont, setPieceFont] = useState<PieceFont>(() => loadPieceFont());
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    applyPieceFont(pieceFont);
+  }, [pieceFont]);
 
   // Ces trois-là ne changent que par une action explicite : les suivre par effet
   // est sans surprise.
@@ -352,6 +359,23 @@ export default function App() {
                 {THEMES.map((t) => (
                   <option key={t} value={t}>
                     {THEME_LABEL_FR[t]}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {/* Le dessin des kanji est affaire de goût, et ce qui se lit bien
+                dépend de l'écran : un mincho fin peut s'empâter sur un petit
+                plateau, là où un gothique reste net. */}
+            <label className="focus-control">
+              Police
+              <select
+                value={pieceFont}
+                onChange={(e) => setPieceFont(e.target.value as PieceFont)}
+              >
+                {PIECE_FONTS.map((f) => (
+                  <option key={f} value={f}>
+                    {PIECE_FONT_LABEL_FR[f]}
                   </option>
                 ))}
               </select>

@@ -241,6 +241,18 @@ export function Board({
                             textAnchor="middle"
                             dominantBaseline="central"
                             fontSize={Math.round(cellSize * 0.5)}
+                            /*
+                             * Une pièce parachutée se pose dans le sens de son
+                             * camp, comme toutes les autres. La flèche annonce
+                             * le coup du joueur au trait — c'est donc `turn` qui
+                             * décide, selon la même règle que les pièces du
+                             * plateau.
+                             */
+                            transform={
+                              (position.turn === 'w') !== flipped
+                                ? `rotate(180 ${to.x} ${to.y})`
+                                : undefined
+                            }
                           >
                             {pieceGlyph(a.piece, false)}
                           </text>

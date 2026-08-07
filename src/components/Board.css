@@ -77,6 +77,7 @@
 /* Le kanji occupe le centre du cercle, sur une case vide. Un liseré fin suffit
    à le décoller des lignes du plateau qui passent dessous. */
 .arrow-drop-piece {
+  font-family: var(--piece-font);
   font-weight: 700;
   stroke-width: 2;
   paint-order: stroke fill;
@@ -161,7 +162,7 @@
   text-shadow: var(--glow-normal);
   line-height: 1;
   font-weight: 700;
-  font-family: 'Hiragino Mincho ProN', 'Noto Serif JP', serif;
+  font-family: var(--piece-font);
   user-select: none;
 }
 
@@ -268,6 +269,7 @@
 }
 
 .hp {
+  font-family: var(--piece-font);
   position: relative;
   width: 30px;
   height: 30px;
