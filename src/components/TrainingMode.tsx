@@ -239,7 +239,19 @@ export function TrainingMode({
     }
   }
   if (verdict.kind === 'revealed' || verdict.kind === 'correct') {
-    if (current.bestMovePv.length) {
+    /*
+     * Quand le coup proposé *est* celui du moteur, « Meilleure suite » fait
+     * doublon avec « Votre coup, la suite » : même premier coup, donc même
+     * position. Les deux lignes divergent pourtant dès le deuxième coup, l'une
+     * venant de la recherche faite à l'instant et l'autre de celle de
+     * l'analyse. C'est une transposition, pas un désaccord — mais rien ne le
+     * dit à l'écran, et deux variantes pour un seul coup n'apprennent rien.
+     *
+     * On la garde partout ailleurs : dévoilée, elle *est* la réponse ; face à
+     * un coup différent, elle montre ce qu'il fallait jouer.
+     */
+    const redondante = verdict.kind === 'correct' && verdict.exact;
+    if (current.bestMovePv.length && !redondante) {
       lines.push({
         label: 'Meilleure suite',
         tone: 'best',
