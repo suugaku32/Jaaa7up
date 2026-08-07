@@ -71,6 +71,28 @@
   opacity: 0.9;
 }
 
+/* Le kanji du parachutage tombe souvent sur une case occupée. Il est peint
+   par-dessus son propre contour, dans la couleur du fond : un liseré le
+   détache de la pièce en dessous sans avoir à masquer quoi que ce soit. */
+.arrow-drop-piece {
+  font-weight: 700;
+  stroke-width: 3;
+  paint-order: stroke fill;
+}
+
+/* Le contour est repris dans les deux sélecteurs composés : `.arrow-best`
+   impose sinon sa propre couleur de trait, à égalité de spécificité et plus
+   bas dans le fichier. */
+.arrow-drop-piece.arrow-best {
+  fill: var(--status-good);
+  stroke: var(--bg);
+}
+
+.arrow-drop-piece.arrow-played {
+  fill: var(--status-blunder);
+  stroke: var(--bg);
+}
+
 .arrow-best,
 .arrow-line.arrow-best {
   stroke: var(--status-good);

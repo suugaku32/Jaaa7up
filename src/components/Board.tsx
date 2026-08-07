@@ -9,6 +9,9 @@ export interface BoardArrow {
   from: Square | null; // null = drop, marked on the destination instead
   to: Square;
   kind: 'best' | 'played';
+  /** Pièce parachutée. Renseignée pour un drop seulement : le cercle dit où,
+   *  il faut bien que quelque chose dise quoi. */
+  piece?: PieceType;
 }
 
 export interface BoardProps {
@@ -151,15 +154,41 @@ export function Board({
                 {arrows.map((a, i) => {
                   const to = centreOf(a.to);
                   if (!a.from) {
-                    // A drop has no origin: ring the square instead of pointing at it.
+                    /*
+                     * Un parachutage n'a pas d'origine : on cercle la case au
+                     * lieu de pointer vers elle. Mais le cercle seul ne dit que
+                     * l'endroit — sur une case vide, rien n'indique *quelle*
+                     * pièce tombe, et il fallait aller lire la notation. Le
+                     * kanji est posé sous le cercle, débordant sur la case du
+                     * dessous, pour ne pas masquer la case visée.
+                     */
                     return (
-                      <circle
-                        key={i}
-                        cx={to.x}
-                        cy={to.y}
-                        r={cellSize * 0.38}
-                        className={`arrow-drop arrow-${a.kind}`}
-                      />
+                      <g key={i}>
+                        <circle
+                          cx={to.x}
+                          cy={to.y}
+                          r={cellSize * 0.38}
+                          className={`arrow-drop arrow-${a.kind}`}
+                        />
+                        {a.piece && (
+                          <text
+                            x={to.x}
+                            // Sur la dernière rangée, sous la case c'est hors du
+                            // plateau : le kanji passe au-dessus.
+                            y={
+                              to.y + cellSize * 0.62 < boardPx
+                                ? to.y + cellSize * 0.62
+                                : to.y - cellSize * 0.62
+                            }
+                            className={`arrow-drop-piece arrow-${a.kind}`}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fontSize={Math.round(cellSize * 0.42)}
+                          >
+                            {pieceGlyph(a.piece, false)}
+                          </text>
+                        )}
+                      </g>
                     );
                   }
                   const from = centreOf(a.from);
