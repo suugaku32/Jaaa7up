@@ -744,6 +744,96 @@ export default function App() {
           Moteur : YaneuraOu compilé en WebAssembly — tout tourne dans votre navigateur, rien n'est
           envoyé sur un serveur.
         </span>
+        {/*
+          Crédits repliés mais présents sur chaque page. YaneuraOu est sous
+          GPL-3.0 : distribuer le binaire oblige à indiquer clairement où
+          trouver les sources correspondantes, ce que fait le lien ci-dessous.
+          Le reste est de la simple reconnaissance — ces outils ont fait le
+          travail, ils méritent d'être nommés.
+        */}
+        <details className="credits">
+          <summary>Crédits et licences</summary>
+          <ul>
+            <li>
+              <a href="https://github.com/yaneurao/YaneuraOu" target="_blank" rel="noreferrer">
+                YaneuraOu
+              </a>{' '}
+              — le moteur, par yaneurao. GPL-3.0. Compilé en WebAssembly par{' '}
+              <a href="https://github.com/mizar/YaneuraOu.wasm" target="_blank" rel="noreferrer">
+                mizar/YaneuraOu.wasm
+              </a>
+              , distribué ici via le paquet{' '}
+              <code>@mizarjp/yaneuraou.k-p</code> 7.6.3. Texte de la licence et empreintes des
+              fichiers dans <code>public/engine/</code>.
+            </li>
+            <li>
+              <a href="https://react.dev" target="_blank" rel="noreferrer">
+                React
+              </a>{' '}
+              et{' '}
+              <a href="https://vite.dev" target="_blank" rel="noreferrer">
+                Vite
+              </a>{' '}
+              — interface et compilation. MIT.
+            </li>
+            <li>
+              <a href="https://github.com/gzuidhof/coi-serviceworker" target="_blank" rel="noreferrer">
+                coi-serviceworker
+              </a>{' '}
+              de Guido Zuidhof — pose les en-têtes COOP/COEP que GitHub Pages ne permet pas de
+              configurer, sans lesquels le moteur ne peut pas utiliser plusieurs fils. MIT.
+            </li>
+            <li>
+              <a href="https://github.com/WandererXII/shogiops" target="_blank" rel="noreferrer">
+                shogiops
+              </a>{' '}
+              — sert d'oracle aux tests : 7200 positions comparées coup par coup. Ne fait pas
+              partie du site livré.
+            </li>
+            <li>
+              Thèmes d'après{' '}
+              <a href="https://catppuccin.com" target="_blank" rel="noreferrer">
+                Catppuccin
+              </a>
+              ,{' '}
+              <a href="https://nordtheme.com" target="_blank" rel="noreferrer">
+                Nord
+              </a>
+              ,{' '}
+              <a href="https://draculatheme.com" target="_blank" rel="noreferrer">
+                Dracula
+              </a>
+              ,{' '}
+              <a href="https://github.com/morhetz/gruvbox" target="_blank" rel="noreferrer">
+                Gruvbox
+              </a>
+              ,{' '}
+              <a href="https://ethanschoonover.com/solarized" target="_blank" rel="noreferrer">
+                Solarized
+              </a>{' '}
+              et{' '}
+              <a
+                href="https://github.com/enkia/tokyo-night-vscode-theme"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Tokyo Night
+              </a>
+              .
+            </li>
+            <li>
+              Le classement des coups en points de <em>win %</em> suit la méthode de{' '}
+              <a href="https://lichess.org" target="_blank" rel="noreferrer">
+                lichess
+              </a>
+              . Palette d'origine et durée des animations reprises de{' '}
+              <a href="https://github.com/suugaku32/tsume" target="_blank" rel="noreferrer">
+                l'app Tsume
+              </a>
+              .
+            </li>
+          </ul>
+        </details>
       </footer>
     </div>
   );

@@ -19,7 +19,7 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
 - **Échelle brute** à l'affichage (`+245`, pas `+2.45`) : c'est ce que le moteur
   émet en USI et ce que lisent ShogiGUI ou Shogidokoro. Voir la réserve sur la
   calibration plus bas.
-- **Analyse en une passe, réglable de 100 ms à 2 s par position.** Une seconde
+- **Analyse en une passe, réglable de 100 ms à 5 s par position.** Une seconde
   passe, qui reprend les coups suspects à une cadence longue, reste disponible
   mais n'est plus activée par défaut : mesurée sur une partie de 80 coups, elle
   rouvrait 44 positions — plus de la moitié — pour un coût dominant. Allonger le
@@ -312,6 +312,40 @@ La palette, les pièces en kanji avec halo néon (et les glyphes compacts 杏/�
 ainsi que le schéma d'interaction « sélectionner une pièce → cliquer la case »
 reprennent [`suugaku32/tsume`](https://github.com/suugaku32/tsume), pour que les deux
 outils forment une famille visuelle.
+
+## Crédits et licences
+
+| | | licence |
+|---|---|---|
+| [YaneuraOu](https://github.com/yaneurao/YaneuraOu) | le moteur, par yaneurao | **GPL-3.0** |
+| [mizar/YaneuraOu.wasm](https://github.com/mizar/YaneuraOu.wasm) | compilation WebAssembly, paquet `@mizarjp/yaneuraou.k-p` 7.6.3 | GPL-3.0 |
+| [React](https://react.dev) · [Vite](https://vite.dev) | interface et compilation | MIT |
+| [coi-serviceworker](https://github.com/gzuidhof/coi-serviceworker) | en-têtes COOP/COEP, par Guido Zuidhof | MIT |
+| [shogiops](https://github.com/WandererXII/shogiops) | oracle des tests, hors site livré | — |
+
+Les thèmes reprennent les palettes de [Catppuccin](https://catppuccin.com),
+[Nord](https://nordtheme.com), [Dracula](https://draculatheme.com),
+[Gruvbox](https://github.com/morhetz/gruvbox),
+[Solarized](https://ethanschoonover.com/solarized) et
+[Tokyo Night](https://github.com/enkia/tokyo-night-vscode-theme). Le classement
+des coups en points de *win %* suit la méthode de [lichess](https://lichess.org).
+Palette d'origine et durée des animations reprises de
+[l'app Tsume](https://github.com/suugaku32/tsume).
+
+### Sur la GPL du moteur
+
+Le binaire distribué est sous GPL-3.0, ce qui oblige à indiquer clairement où
+trouver les sources correspondantes. C'est fait à trois endroits : le texte de
+la licence dans [`public/engine/LICENSE-yaneuraou.md`](public/engine/LICENSE-yaneuraou.md),
+la provenance exacte et les empreintes des fichiers dans
+[`public/engine/PROVENANCE.md`](public/engine/PROVENANCE.md), et les liens vers
+les dépôts amont ci-dessus et dans le pied de page du site.
+
+Le moteur tourne dans un worker séparé et ne communique que par des lignes de
+texte du protocole USI — la même relation qu'entre deux programmes reliés par un
+tuyau. Reste que ce dépôt n'a pas de licence propre : tant qu'il n'en a pas, le
+statut du code applicatif n'est pas déclaré. Si le site doit circuler au-delà
+d'un cercle privé, c'est le point à trancher.
 
 ## Pistes non implémentées
 
