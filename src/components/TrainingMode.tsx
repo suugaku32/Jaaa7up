@@ -6,6 +6,7 @@ import type { BoardArrow } from './Board';
 import type { PlyEval } from '../analysis/analyze';
 import type { UsiEngine } from '../engine/UsiEngine';
 import { scoreToCp } from '../analysis/classify';
+import { explainMistake } from '../analysis/explain';
 import { Position } from '../shogi/position';
 import { generateLegalMoves, moveToUsi } from '../shogi/moveGen';
 import { formatUsiMoveAsKif } from '../shogi/notation';
@@ -65,6 +66,13 @@ export function TrainingMode({
   const [solved, setSolved] = useState<Set<number>>(new Set());
   /** Suite en cours de lecture : quelle ligne, et combien de coups rejoués. */
   const [replay, setReplay] = useState<{ line: Line; index: number } | null>(null);
+  /*
+   * « Pourquoi est-ce mauvais ? » — replié par défaut. La question ne se pose
+   * pas toujours : parfois on voit très bien ce qu'on a raté, et une explication
+   * imposée est du bruit. Quand elle se pose, en revanche, lire huit coups en
+   * notation ne suffit pas à s'en rendre compte.
+   */
+  const [showWhy, setShowWhy] = useState(false);
   const current = blunders[idx];
 
   const position = useMemo(
@@ -114,8 +122,20 @@ export function TrainingMode({
     setTimeout(() => setErrorSquare(null), 450);
   };
 
+  /** Position obtenue après un coup joué depuis celle de l'exercice. */
+  const sfenAfterUsi = (usi: string): string | null => {
+    try {
+      const p = Position.fromSfen(current.sfenBefore);
+      p.applyUsiMove(usi);
+      return p.toSfen();
+    } catch {
+      return null;
+    }
+  };
+
   const submitMove = async (usi: string) => {
     setVerdict({ kind: 'checking' });
+    setShowWhy(false);
     let engine: UsiEngine;
     try {
       engine = await ensureEngine();
@@ -470,9 +490,36 @@ export function TrainingMode({
                 </span>
               )}
               {verdict.kind === 'wrong' && (
-                <button className="btn btn-ghost" onClick={() => setVerdict({ kind: 'idle' })}>
-                  Réessayer
-                </button>
+                <div className="verdict-actions">
+                  <button className="btn btn-ghost" onClick={() => setVerdict({ kind: 'idle' })}>
+                    Réessayer
+                  </button>
+                  <button className="btn btn-ghost" onClick={() => setShowWhy((v) => !v)}>
+                    {showWhy ? 'Masquer' : 'Pourquoi est-ce mauvais ?'}
+                  </button>
+                </div>
+              )}
+              {/*
+                Rien n'est inventé : un moteur ne rend pas de commentaire, il
+                rend une variante et un score. Tout ce qui s'affiche ici se
+                calcule en rejouant cette variante — qui prend quoi, à quel
+                coup, et où va l'évaluation. La réfutation est déjà connue, donc
+                l'explication est instantanée.
+              */}
+              {verdict.kind === 'wrong' && showWhy && (
+                <ul className="verdict-why">
+                  {explainMistake({
+                    sfenAfter: sfenAfterUsi(verdict.usi) ?? current.sfenAfter,
+                    playedUsi: verdict.usi,
+                    refutationPv: verdict.pv,
+                    evalBeforeCp: current.evalBeforeCp,
+                    evalAfterCp: verdict.playedCp,
+                    mateAfter: null,
+                    mover: current.color,
+                  }).points.map((p) => (
+                    <li key={p}>{p}</li>
+                  ))}
+                </ul>
               )}
             </div>
           )}

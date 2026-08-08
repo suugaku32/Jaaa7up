@@ -240,3 +240,26 @@
   flex-direction: column;
   gap: 6px;
 }
+
+.verdict-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Les observations se lisent comme une liste de constats, pas comme un
+   paragraphe : chacune répond à une question différente. */
+.verdict-why {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+.verdict-why li::marker {
+  color: var(--status-blunder);
+}
