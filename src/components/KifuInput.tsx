@@ -22,8 +22,6 @@ interface KifuInputProps {
   onAnalyze: () => void;
   movetimeMs: number;
   onMovetimeChange: (ms: number) => void;
-  deepMovetimeMs: number;
-  onDeepMovetimeChange: (ms: number) => void;
   disabled?: boolean;
 }
 
@@ -33,8 +31,6 @@ export function KifuInput({
   onAnalyze,
   movetimeMs,
   onMovetimeChange,
-  deepMovetimeMs,
-  onDeepMovetimeChange,
   disabled,
 }: KifuInputProps) {
   const [showHelp, setShowHelp] = useState(false);
@@ -81,19 +77,6 @@ export function KifuInput({
           positions={positions}
           disabled={disabled}
         />
-        <label className="movetime-control">
-          Étude des gaffes :
-          <select
-            value={deepMovetimeMs}
-            onChange={(e) => onDeepMovetimeChange(parseInt(e.target.value, 10))}
-            disabled={disabled}
-          >
-            <option value={0}>désactivée</option>
-            <option value={1000}>1 s</option>
-            <option value={2000}>2 s</option>
-            <option value={4000}>4 s</option>
-          </select>
-        </label>
         <button type="button" className="btn btn-link" onClick={() => setShowHelp((v) => !v)}>
           {showHelp ? 'Masquer les formats' : 'Formats acceptés ?'}
         </button>

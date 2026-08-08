@@ -94,20 +94,15 @@ export interface AnalysisResult {
   tsumes: Tsume[];
 }
 
-export type AnalysisPhase = 'scan' | 'refine' | 'tsume';
+export type AnalysisPhase = 'scan' | 'tsume';
 
 export interface AnalyzeGameOptions {
   /** Time per position for the first pass, which sweeps the whole game. */
   movetimeMs?: number;
-  /** Time per position for the second pass, which re-examines suspect moves only. */
-  deepMovetimeMs?: number;
   depth?: number;
   onProgress?: (phase: AnalysisPhase, done: number, total: number) => void;
   signal?: AbortSignal;
 }
-
-/** Qualities worth spending the second pass on. */
-const REFINED_QUALITIES: MoveQuality[] = ['inaccuracy', 'mistake', 'blunder'];
 
 /** Ce que le moteur rapporte pour une position donnée. */
 interface PositionEval {
@@ -197,60 +192,19 @@ export async function analyzeGame(
     });
   }
 
-  // Pass 2 — re-examine only the suspect moves, with a much longer search.
-  // The first pass is too shallow to be trusted as the answer key in training
-  // mode, and it also mislabels some moves in both directions.
-  const deepMs = opts.deepMovetimeMs;
-  // Partagée avec la passe tsume plus bas : une position déjà creusée ici n'a pas
-  // à l'être une seconde fois.
+  /*
+   * Il y avait ici une seconde passe, qui reprenait les coups suspects à une
+   * cadence longue. Elle a été retirée : mesurée sur une partie de 80 coups,
+   * elle rouvrait 44 positions — plus de la moitié — parce qu'un balayage,
+   * quelle que soit sa durée, signale toujours autant de coups (43 à 200 ms,
+   * 46 à 2 s). Son coût était donc structurel, pas réglable.
+   *
+   * Ce qu'elle apportait est mieux servi autrement : un balayage plus long
+   * pour la justesse d'ensemble, et l'approfondissement à la demande pour la
+   * position qu'on regarde vraiment. Deviner à l'avance où mettre le temps
+   * était le mauvais pari.
+   */
   const deep = new Map<number, PositionEval>();
-  if (deepMs && deepMs > (opts.movetimeMs ?? 0)) {
-    const candidates = plies.filter((p) => REFINED_QUALITIES.includes(p.quality));
-    // A ply needs its own position and the one after it; consecutive candidates share.
-    const needed = new Set<number>();
-    for (const p of candidates) {
-      needed.add(p.ply - 1);
-      needed.add(p.ply);
-    }
-    const indices = [...needed].sort((a, b) => a - b);
-
-    for (let k = 0; k < indices.length; k++) {
-      if (opts.signal?.aborted) throw new DOMException('Analyse annulée', 'AbortError');
-      const i = indices[k];
-      const r = await engine.analyze(sfens[i], [], { movetimeMs: deepMs });
-      deep.set(i, {
-        cp: scoreToCp(r.scoreCp, r.scoreMate),
-        mate: r.scoreMate,
-        bestMove: r.bestMove,
-        pv: r.pv,
-      });
-      opts.onProgress?.('refine', k + 1, indices.length);
-    }
-
-    for (const p of candidates) {
-      const before = deep.get(p.ply - 1);
-      const after = deep.get(p.ply);
-      if (!before || !after) continue;
-      p.evalBeforeCp = before.cp;
-      p.evalAfterCp = -after.cp;
-      p.bestMove = before.bestMove;
-      p.bestMovePv = before.pv;
-      p.refutationPv = after.pv;
-      p.mateBefore = before.mate;
-      p.mateAfter = after.mate === null ? null : -after.mate;
-      p.centipawnLoss = Math.max(0, p.evalBeforeCp - p.evalAfterCp);
-      p.quality = classifyLoss(
-        Math.max(0, cpToWinPercent(p.evalBeforeCp) - cpToWinPercent(p.evalAfterCp)),
-      );
-      p.refined = true;
-    }
-
-    // Keep the curve consistent with the deepened values.
-    for (const p of candidates) {
-      const point = evalCurve[p.ply];
-      if (point) point.cpForBlack = p.color === 'b' ? p.evalAfterCp : -p.evalAfterCp;
-    }
-  }
 
   /*
    * Pass 3 — les positions où un mat forcé a été aperçu méritent une vraie
@@ -268,7 +222,7 @@ export async function analyzeGame(
    * Elle ne concerne qu'une poignée de positions : la garder allumée coûte
    * quelques secondes, la perdre coûte l'onglet Tsume.
    */
-  const tsumeMs = Math.max(deepMs ?? 0, opts.movetimeMs ?? 0);
+  const tsumeMs = opts.movetimeMs ?? 0;
   if (tsumeMs > 0) {
     const toDeepen = plies
       .filter((p) => p.mateBefore !== null && p.mateBefore > 0)

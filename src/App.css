@@ -131,7 +131,7 @@
   transition: width 0.2s;
 }
 
-/* Seconde passe : couleur distincte, la barre repart de zéro sur un autre total. */
+/* Passe tsume : couleur distincte, la barre repart de zéro sur un autre total. */
 .progress-fill.refine {
   background: var(--gold);
 }
@@ -395,4 +395,58 @@
   padding-top: 8px;
   border-top: 1px solid var(--border);
   line-height: 1.5;
+}
+
+/*
+ * Le fond assombri est un élément à part : `<dialog open>` (sans showModal)
+ * n'en pose pas lui-même. Il capte aussi les clics à côté, ce qui évite qu'on
+ * tape sur l'application derrière une question restée sans réponse.
+ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.focus-dialog {
+  position: static;
+  max-width: 380px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.focus-dialog h2 {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.focus-dialog p {
+  font-size: 13px;
+  color: var(--dim);
+  line-height: 1.5;
+}
+
+.focus-dialog-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.focus-dialog-choices .btn {
+  width: 100%;
+  /* Les noms de joueurs peuvent être longs ; le bouton s'étire, pas la page. */
+  overflow-wrap: anywhere;
 }

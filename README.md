@@ -19,15 +19,18 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
 - **Échelle brute** à l'affichage (`+245`, pas `+2.45`) : c'est ce que le moteur
   émet en USI et ce que lisent ShogiGUI ou Shogidokoro. Voir la réserve sur la
   calibration plus bas.
-- **Analyse en une passe, réglable de 100 ms à 5 s par position.** Une seconde
-  passe, qui reprend les coups suspects à une cadence longue, reste disponible
-  mais n'est plus activée par défaut : mesurée sur une partie de 80 coups, elle
-  rouvrait 44 positions — plus de la moitié — pour un coût dominant. Allonger le
-  balayage ne réduit pas ce nombre (43 coups signalés à 200 ms, 46 à 2 s) : dans
-  une partie d'amateurs, la moitié des coups perdent réellement assez de
-  pourcentage de victoire pour être marqués. Le seul levier sur ce décompte est
-  le seuil de classification, pas la profondeur ; la profondeur, elle, améliore
-  chaque verdict pris isolément.
+- **Analyse en une passe**, réglable de 100 ms à 5 s par position, avec la durée
+  totale annoncée à mesure qu'on règle le curseur. Une seconde passe reprenait
+  autrefois les coups suspects à une cadence longue ; elle a été retirée.
+  Mesurée sur une partie de 80 coups, elle rouvrait 44 positions — plus de la
+  moitié —, et allonger le balayage ne réduit pas ce nombre (43 coups signalés à
+  200 ms, 46 à 2 s) : dans une partie d'amateurs, la moitié des coups perdent
+  réellement assez de pourcentage de victoire pour être marqués. Son coût était
+  donc structurel, pas réglable. La profondeur va désormais là où elle sert : un
+  balayage plus long pour l'ensemble, et l'approfondissement à la demande sur la
+  position qu'on regarde.
+- **Choix du joueur suivi** à la fin de l'analyse : les compteurs, les gaffes et
+  les tsume ne retiennent que ses coups, et le plateau se place de son côté.
 - **Passe tsume indépendante** : les positions où un mat forcé a été aperçu sont
   reprises à la cadence la plus longue disponible, pour en obtenir la séquence
   complète. Elle partageait auparavant son interrupteur avec la seconde passe,

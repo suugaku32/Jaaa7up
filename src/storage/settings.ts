@@ -13,30 +13,26 @@ export interface Settings {
   focusSide: 'both' | 'b' | 'w';
   /** Temps par position, première passe. */
   movetimeMs: number;
-  /** Temps par position, seconde passe. 0 = pas de seconde passe. */
-  deepMovetimeMs: number;
 }
 
 /*
- * Le balayage passe de 200 à 800 ms, et la seconde passe s'éteint.
+ * Le balayage est passé de 200 à 800 ms et la seconde passe a été retirée.
  *
  * Mesuré sur une partie de 80 coups aux anciennes valeurs : 136 s au total,
- * dont l'essentiel dans la « seconde passe ciblée » — qui rouvrait 44 des 80
- * coups, parce qu'un balayage à 200 ms signale plus de la moitié de la partie.
- * On payait donc une analyse longue sur toute la partie, en deux temps, avec
- * l'instabilité en prime : deux exécutions identiques ne rendaient pas le même
- * nombre de gaffes.
+ * dont l'essentiel dans une « seconde passe ciblée » qui rouvrait 44 des 80
+ * coups. Allonger le balayage ne réduit pas ce nombre — 43 coups signalés à
+ * 200 ms, 46 à 2 s : dans une partie d'amateurs, la moitié des coups perdent
+ * réellement assez de pourcentage de victoire pour être marqués. Le coût de
+ * cette passe était donc structurel.
  *
- * Chercher correctement une fois coûte moins cher et rend un verdict plus
- * stable. La seconde passe reste disponible d'un clic pour qui la veut, et la
- * passe tsume tourne indépendamment.
+ * Chercher correctement une fois, puis approfondir la position qu'on regarde,
+ * coûte moins cher et rend un verdict plus stable.
  */
 export const DEFAULT_SETTINGS: Settings = {
   flipped: false,
   showBestArrow: true,
   focusSide: 'both',
   movetimeMs: 800,
-  deepMovetimeMs: 0,
 };
 
 const KEY = 'jaaa7up-settings-v1';
@@ -65,7 +61,6 @@ export function loadSettings(): Settings {
           ? p.focusSide
           : DEFAULT_SETTINGS.focusSide,
       movetimeMs: clampMs(p.movetimeMs, DEFAULT_SETTINGS.movetimeMs),
-      deepMovetimeMs: clampMs(p.deepMovetimeMs, DEFAULT_SETTINGS.deepMovetimeMs),
     };
   } catch {
     // Stockage indisponible ou contenu illisible : on repart des valeurs par

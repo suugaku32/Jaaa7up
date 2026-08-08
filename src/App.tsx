@@ -44,7 +44,6 @@ type Phase =
 
 const PHASE_LABEL: Record<AnalysisPhase, string> = {
   scan: 'Balayage de la partie',
-  refine: 'Étude des coups suspects',
   tsume: 'Vérification des mats',
 };
 
@@ -52,7 +51,6 @@ export default function App() {
   const [kifuText, setKifuText] = useState('');
   const [initialSettings] = useState(loadSettings);
   const [movetimeMs, setMovetimeMs] = useState(initialSettings.movetimeMs);
-  const [deepMovetimeMs, setDeepMovetimeMs] = useState(initialSettings.deepMovetimeMs);
   const [phase, setPhase] = useState<Phase>({ kind: 'input' });
   const [game, setGame] = useState<ParsedGame | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -61,6 +59,13 @@ export default function App() {
   const [flipped, setFlipped] = useState(initialSettings.flipped);
   const [showBestArrow, setShowBestArrow] = useState(initialSettings.showBestArrow);
   const [focusSide, setFocusSide] = useState<'both' | 'b' | 'w'>(initialSettings.focusSide);
+  /*
+   * Demandé une fois l'analyse finie, jamais avant : le choix porte sur des
+   * noms de joueurs qu'on ne connaît qu'après lecture du kifu. Et il commande
+   * deux choses à la fois — ce qu'on compte, et de quel côté on regarde le
+   * plateau — qu'il serait absurde de faire régler séparément.
+   */
+  const [askFocus, setAskFocus] = useState(false);
   /** Variante rejouée par-dessus la partie : d'où elle part, ses coups, et où on en est. */
   const [variation, setVariation] = useState<{
     baseSfen: string;
@@ -99,11 +104,6 @@ export default function App() {
   const changeMovetime = useCallback((ms: number) => {
     setMovetimeMs(ms);
     saveSettings({ movetimeMs: ms });
-  }, []);
-
-  const changeDeepMovetime = useCallback((ms: number) => {
-    setDeepMovetimeMs(ms);
-    saveSettings({ deepMovetimeMs: ms });
   }, []);
 
   /*
@@ -176,14 +176,14 @@ export default function App() {
         const engine = await ensureEngine();
         const res = await analyzeGame(engine, parsed.startSfen, parsed.moves, {
           movetimeMs,
-          deepMovetimeMs,
           onProgress: (step, done, total) => setPhase({ kind: 'analyzing', step, done, total }),
         });
         setResult(res);
         setPhase({ kind: 'done' });
+        setAskFocus(true);
         // Une analyse coûte des dizaines de secondes : la conserver évite de la
         // refaire pour revoir une partie.
-        const saved = saveGame(parsed, res, movetimeMs, deepMovetimeMs);
+        const saved = saveGame(parsed, res, movetimeMs);
         setHistory(listHistory());
         setHistoryNote(saved.reason ?? null);
       } catch (e) {
@@ -191,7 +191,7 @@ export default function App() {
         setPhase({ kind: 'input' });
       }
     },
-    [movetimeMs, deepMovetimeMs, ensureEngine],
+    [movetimeMs, ensureEngine],
   );
 
   const runAnalysis = useCallback(async () => {
@@ -236,7 +236,6 @@ export default function App() {
     setGame(loaded.game);
     setResult(loaded.result);
     setMovetimeMs(loaded.movetimeMs);
-    setDeepMovetimeMs(loaded.deepMovetimeMs);
     setCurrentPly(0);
     setVariation(null);
     setTab('analysis');
@@ -304,6 +303,18 @@ export default function App() {
   }, []);
 
   // « Suivre un joueur » : on ne montre que ses fautes, sans réanalyser la partie.
+  /*
+   * Suivre un joueur, c'est aussi le regarder jouer. Retourner le plateau
+   * séparément était une seconde manipulation à faire, qu'on oubliait — et un
+   * plateau à l'envers rend la lecture d'une position pénible pour qui n'a pas
+   * l'habitude.
+   */
+  const chooseFocus = useCallback((side: 'both' | 'b' | 'w') => {
+    setFocusSide(side);
+    if (side !== 'both') setFlipped(side === 'w');
+    setAskFocus(false);
+  }, []);
+
   const focusedPlies = useMemo(
     () => (result ? result.plies.filter((p) => focusSide === 'both' || p.color === focusSide) : []),
     [result, focusSide],
@@ -452,18 +463,6 @@ export default function App() {
                   onChange={changeMovetime}
                   positions={game.moves.length + 1}
                 />
-                <label className="focus-control">
-                  Étude des gaffes
-                  <select
-                    value={deepMovetimeMs}
-                    onChange={(e) => changeDeepMovetime(Number(e.target.value))}
-                  >
-                    <option value={0}>désactivée</option>
-                    <option value={1000}>1 s</option>
-                    <option value={2000}>2 s</option>
-                    <option value={4000}>4 s</option>
-                  </select>
-                </label>
                 <button className="btn btn-primary" onClick={reanalyse}>
                   ↻ Réanalyser
                 </button>
@@ -509,8 +508,6 @@ export default function App() {
           onAnalyze={runAnalysis}
           movetimeMs={movetimeMs}
           onMovetimeChange={changeMovetime}
-          deepMovetimeMs={deepMovetimeMs}
-          onDeepMovetimeChange={changeDeepMovetime}
           disabled={phase.kind === 'analyzing' || env.blocking}
         />
       )}
@@ -537,13 +534,12 @@ export default function App() {
         <div className="progress">
           <div className="progress-bar">
             <div
-              className={`progress-fill${phase.step === 'refine' ? ' refine' : ''}`}
+              className={`progress-fill${phase.step === 'tsume' ? ' refine' : ''}`}
               style={{ width: `${Math.round((phase.done / phase.total) * 100)}%` }}
             />
           </div>
           <span>
             {PHASE_LABEL[phase.step]} — {phase.done} / {phase.total} positions
-            {phase.step === 'scan' && deepMovetimeMs > 0 && ' (passe 1 sur 2)'}
           </span>
         </div>
       )}
@@ -720,7 +716,7 @@ export default function App() {
               blunders={focusedBlunders}
               ensureEngine={ensureEngine}
               onDeepen={deepenBlunder}
-              movetimeMs={deepMovetimeMs > 0 ? deepMovetimeMs : movetimeMs}
+              movetimeMs={movetimeMs}
               flipped={flipped}
               blackName={game.black}
               whiteName={game.white}
@@ -730,13 +726,42 @@ export default function App() {
               tsumes={focusedTsumes}
               ensureEngine={ensureEngine}
               onDeepen={deepenTsumeAt}
-              movetimeMs={deepMovetimeMs > 0 ? deepMovetimeMs : movetimeMs}
+              movetimeMs={movetimeMs}
               flipped={flipped}
               blackName={game.black}
               whiteName={game.white}
             />
           )}
         </>
+      )}
+
+      {/*
+        `<dialog open>` plutôt qu'une div : le navigateur lui donne le rôle
+        d'accessibilité, la touche Échap et la place au-dessus du reste sans
+        qu'on ait à empiler des z-index. Pas de `showModal()` — il refuserait
+        le rendu déclaratif de React et fermerait la boîte à chaque re-rendu.
+      */}
+      {askFocus && game && (
+        <div className="modal-backdrop">
+          <dialog open className="focus-dialog" aria-labelledby="focus-title">
+            <h2 id="focus-title">Quel joueur suivez-vous ?</h2>
+            <p>
+              Les compteurs, les gaffes et les tsume ne retiendront que ses coups, et le plateau
+              se placera de son côté.
+            </p>
+            <div className="focus-dialog-choices">
+              <button className="btn btn-primary" onClick={() => chooseFocus('b')}>
+                ▲ {game.black || 'Sente'}
+              </button>
+              <button className="btn btn-primary" onClick={() => chooseFocus('w')}>
+                △ {game.white || 'Gote'}
+              </button>
+              <button className="btn btn-ghost" onClick={() => chooseFocus('both')}>
+                Les deux joueurs
+              </button>
+            </div>
+          </dialog>
+        </div>
       )}
 
       <footer className="app-footer">

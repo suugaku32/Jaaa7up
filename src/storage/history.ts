@@ -103,7 +103,6 @@ export function saveGame(
   game: ParsedGame,
   result: AnalysisResult,
   movetimeMs: number,
-  deepMovetimeMs: number,
 ): { ok: boolean; reason?: string } {
   const entry: StoredGame = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -114,7 +113,9 @@ export function saveGame(
     startSfen: game.startSfen,
     moves: game.moves,
     movetimeMs,
-    deepMovetimeMs,
+    // Conservé à zéro : la seconde passe n'existe plus, mais le champ reste
+    // dans le format pour que les parties déjà enregistrées restent lisibles.
+    deepMovetimeMs: 0,
     evalCurve: result.evalCurve,
     plies: result.plies.map((p) => ({
       b: p.evalBeforeCp,
@@ -159,7 +160,7 @@ export function clearHistory(): void {
 /** Reconstruit la partie et son analyse à partir de la forme compacte stockée. */
 export function loadGame(
   id: string,
-): { game: ParsedGame; result: AnalysisResult; movetimeMs: number; deepMovetimeMs: number } | null {
+): { game: ParsedGame; result: AnalysisResult; movetimeMs: number } | null {
   const stored = readAll().find((g) => g.id === id);
   if (!stored) return null;
 
@@ -210,7 +211,6 @@ export function loadGame(
       game,
       result,
       movetimeMs: stored.movetimeMs,
-      deepMovetimeMs: stored.deepMovetimeMs,
     };
   } catch {
     // Entrée écrite par une version antérieure, ou coup devenu invalide.
