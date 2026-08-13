@@ -98,18 +98,24 @@
 }
 
 /*
- * Les flèches de navigation, dans la carte de la courbe. Elles y sont parce que
- * situer un moment de la partie et s'y rendre sont le même geste : sur un
- * téléphone, une rangée de boutons séparée poussait la courbe hors de l'écran.
- *
- * Deux flèches, pas quatre : « début » et « fin » ne servaient qu'à ce que la
- * courbe fait mieux — on y touche l'endroit voulu du doigt.
+ * La rangée de commandes, en tête de la carte de la courbe : naviguer dans la
+ * partie et situer un moment de la partie sont le même geste.
  */
 .eval-controls {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 6px 4px 2px;
+}
+
+/*
+ * Les deux chevrons. Deux, pas quatre : « début » et « fin » ne servaient qu'à
+ * ce que la courbe fait mieux — on y touche du doigt l'endroit voulu.
+ */
+.eval-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .eval-controls .btn {
@@ -147,34 +153,27 @@
 }
 
 /*
- * Sur téléphone, la barre quitte le flux et va se poser en bas de l'écran :
- * dans la carte, elle n'était atteignable qu'à condition que la courbe soit à
- * l'écran, alors qu'on avance coup par coup en regardant le plateau. Les
- * chevrons vont à droite, où tombe le pouce ; le bouton de la suite à gauche,
- * plus petit, parce qu'on l'actionne une fois par ligne et non à chaque coup.
+ * Sur téléphone, les chevrons quittent la carte et vont se poser en bas à
+ * droite de l'écran, sous le pouce : dans la carte, ils n'étaient atteignables
+ * qu'à condition que la courbe soit à l'écran, alors qu'on avance coup par coup
+ * en regardant le plateau, qui occupe déjà tout le haut.
  *
- * La barre elle-même est transparente aux clics — seuls ses boutons les
- * captent —, faute de quoi elle masquerait une bande entière du plateau.
+ * Le bouton de la suite reste, lui, dans la carte : un appui par ligne ne
+ * justifie pas d'occuper le coin le plus précieux de l'écran, et un bouton
+ * flottant de plus recouvrirait d'autant le plateau.
  */
 @media (max-width: 860px) {
-  .eval-controls {
+  .eval-nav {
     position: fixed;
-    left: 10px;
     right: 10px;
     /* `env()` tient compte de la barre d'accueil de l'iPhone ; les 14 px
        supplémentaires dégagent la barre d'adresse de Safari. */
     bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
     z-index: 30;
-    padding: 0;
     gap: 8px;
-    pointer-events: none;
   }
 
-  .eval-controls > * {
-    pointer-events: auto;
-  }
-
-  .eval-controls .btn-ghost {
+  .eval-nav .btn {
     width: 56px;
     height: 52px;
     padding: 0;
@@ -182,13 +181,6 @@
     line-height: 1;
     border-radius: 16px;
     background: var(--surface2);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  }
-
-  .btn.btn-line {
-    order: -1;
-    margin-left: 0;
-    margin-right: auto;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   }
 }

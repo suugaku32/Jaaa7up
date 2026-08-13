@@ -56,13 +56,14 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   et s'y rendre sont le même geste, et une rangée de boutons séparée coûtait une
   ligne d'écran. Elles suivaient auparavant trois blocs empilés et arrivaient à
   928 px du haut de la page — hors de l'écran d'un iPhone, donc un défilement à
-  chaque coup. Sous 860 px de large elles quittent le flux et se posent **en bas
-  à droite de l'écran**, où tombe le pouce, avec le bouton de la suite à gauche
-  en pastille ; la barre est transparente aux clics — seuls ses boutons les
-  captent —, sans quoi elle masquerait une bande entière du plateau. `⏮` et `⏭`
-  ont disparu : la courbe est cliquable, et un coup précis s'y choisit mieux
-  qu'en tenant une flèche. Au-dessus de 860 px, la barre reprend sa place dans
-  la carte de la courbe et les deux panneaux restent affichés ensemble.
+  chaque coup. Sous 860 px de large, les deux chevrons quittent le flux et se
+  posent **en bas à droite de l'écran**, sous le pouce, agrandis à 56 × 52 px ;
+  le bouton de la suite, lui, reste dans la carte, en pastille — un appui par
+  ligne ne justifie pas d'occuper le coin le plus précieux de l'écran, et un
+  bouton flottant de plus recouvrirait d'autant le plateau. `⏮` et `⏭` ont
+  disparu : la courbe est cliquable, et un coup précis s'y choisit mieux qu'en
+  tenant une flèche. Au-dessus de 860 px, les chevrons reprennent leur place
+  dans la carte et les deux panneaux restent affichés ensemble.
 - **Mode entraînement** : sur chaque gaffe, on rejoue la position ; le coup joué est
   montré (flèche rouge), le coup proposé est évalué par le moteur et accepté s'il
   perd au plus 50 centipions par rapport à la valeur que l'analyse a établie pour

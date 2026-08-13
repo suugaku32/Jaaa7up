@@ -665,34 +665,39 @@ export default function App() {
                     onSelectPly={selectPly}
                     controls={
                       /*
-                       * Les flèches vivent dans la courbe : c'est le même geste —
-                       * situer un moment de la partie et s'y rendre — et deux
-                       * blocs distincts coûtaient une rangée à l'écran.
+                       * Deux blocs, parce qu'ils ne se manipulent pas de la même
+                       * façon. Les chevrons servent à chaque coup : sur téléphone
+                       * ils quittent la carte pour se poser en bas à droite de
+                       * l'écran, sous le pouce (voir `.eval-nav`). Le bouton de la
+                       * suite, lui, reste dans la carte : un appui par ligne ne
+                       * justifie pas d'occuper le coin le plus précieux de l'écran.
                        *
                        * ⏮ et ⏭ ont disparu : la courbe est cliquable, et un coup
                        * précis se choisit mieux dessus qu'en tenant une flèche.
                        */
                       <div className="eval-controls">
-                        <button
-                          className="btn btn-ghost"
-                          onClick={stepBack}
-                          disabled={variation ? variation.index === 0 : currentPly === 0}
-                          aria-label="Coup précédent"
-                        >
-                          ‹
-                        </button>
-                        <button
-                          className="btn btn-ghost"
-                          onClick={stepForward}
-                          disabled={
-                            variation
-                              ? variation.index >= variation.moves.length
-                              : currentPly >= game.moves.length
-                          }
-                          aria-label="Coup suivant"
-                        >
-                          ›
-                        </button>
+                        <div className="eval-nav">
+                          <button
+                            className="btn btn-ghost"
+                            onClick={stepBack}
+                            disabled={variation ? variation.index === 0 : currentPly === 0}
+                            aria-label="Coup précédent"
+                          >
+                            ‹
+                          </button>
+                          <button
+                            className="btn btn-ghost"
+                            onClick={stepForward}
+                            disabled={
+                              variation
+                                ? variation.index >= variation.moves.length
+                                : currentPly >= game.moves.length
+                            }
+                            aria-label="Coup suivant"
+                          >
+                            ›
+                          </button>
+                        </div>
                         <button
                           className={`btn btn-line${variation ? ' active' : ''}`}
                           onClick={toggleBestLine}
