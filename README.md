@@ -36,23 +36,30 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   complète. Elle partageait auparavant son interrupteur avec la seconde passe,
   si bien que régler le balayage aussi haut que celle-ci les éteignait toutes
   les deux et privait les tsume de leur solution, sans que rien ne le signale.
-- **Variantes** : la suite prévue par le moteur est affichée et rejouable coup par
-  coup, avec flèches sur le goban, pour voir *pourquoi* un coup est une gaffe. Les
-  coups sont cliquables et deux flèches `‹ ›` permettent d'avancer d'un coup à la
-  fois — seules cibles dont la position ne bouge pas quand la variante défile.
+- **Meilleure suite au clavier de navigation** : un bouton donne les flèches
+  `‹ ›` à la ligne du moteur — celle dont le premier coup est déjà la flèche
+  verte sur le plateau —, qu'on déroule alors coup par coup ; un second appui
+  rend la main à la partie. Les suites étaient auparavant listées en toutes
+  lettres sous le plateau : sur un téléphone, lire la liste et regarder les
+  cases s'excluent, l'une chassant l'autre hors de l'écran. Jouée sur le goban,
+  la ligne se lit là où elle a un sens. La suite *effectivement jouée* n'est plus
+  listée non plus : les flèches la rejouent déjà.
 - **Plateau d'analyse jouable** : jouer un coup qui n'est pas dans la partie ouvre
   un embranchement, le moteur répond, et l'on voit où mène l'idée. Le temps de
   réponse se règle dans le panneau « Explorer ». Naviguer dans la partie abandonne
   la variante — la garder obligerait à choisir en permanence entre deux positions
   affichées, pour une idée qu'on explore le plus souvent d'un trait.
-- **Onglet Analyse en deux colonnes** : le plateau et sa navigation d'un côté, le
-  reste de l'autre. Sur téléphone, tout s'empile et un sélecteur « Coups / Suites /
-  Explorer » n'en montre qu'un à la fois ; la courbe passe sous le plateau. Les
-  flèches ⏮ ‹ › ⏭ suivaient auparavant trois blocs empilés et arrivaient à 928 px
-  du haut de la page, soit hors de l'écran d'un iPhone : il fallait faire défiler
-  à chaque coup. Elles sont maintenant à 668 px, sous les cases, avec le numéro du
-  coup, son jugement et l'évaluation. Au-dessus de 860 px de large, où la colonne
-  de droite a la hauteur qu'il faut, les trois panneaux restent affichés ensemble.
+- **Onglet Analyse en deux colonnes** : le plateau d'un côté, le reste de l'autre.
+  Sur téléphone tout s'empile, la courbe passe sous le plateau, et un sélecteur
+  « Coups / Explorer » ne montre qu'un panneau à la fois. Les flèches de
+  navigation sont **dans la carte de la courbe** : situer un moment de la partie
+  et s'y rendre sont le même geste, et une rangée de boutons séparée coûtait une
+  ligne d'écran. Elles suivaient auparavant trois blocs empilés et arrivaient à
+  928 px du haut de la page — hors de l'écran d'un iPhone, donc un défilement à
+  chaque coup ; elles sont maintenant à 704 px, sous les cases. `⏮` et `⏭` ont
+  disparu : la courbe est cliquable, et un coup précis s'y choisit mieux qu'en
+  tenant une flèche. Au-dessus de 860 px de large, les deux panneaux restent
+  affichés ensemble.
 - **Mode entraînement** : sur chaque gaffe, on rejoue la position ; le coup joué est
   montré (flèche rouge), le coup proposé est évalué par le moteur et accepté s'il
   perd au plus 50 centipions par rapport à la valeur que l'analyse a établie pour

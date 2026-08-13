@@ -96,3 +96,49 @@
   font-size: 9px;
   font-variant-numeric: tabular-nums;
 }
+
+/*
+ * Les flèches de navigation, dans la carte de la courbe. Elles y sont parce que
+ * situer un moment de la partie et s'y rendre sont le même geste : sur un
+ * téléphone, une rangée de boutons séparée poussait la courbe hors de l'écran.
+ *
+ * Deux flèches, pas quatre : « début » et « fin » ne servaient qu'à ce que la
+ * courbe fait mieux — on y touche l'endroit voulu du doigt.
+ */
+.eval-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px 2px;
+}
+
+.eval-controls .btn {
+  padding: 8px 14px;
+  line-height: 1;
+}
+
+/*
+ * Le bouton qui donne les flèches à la suite du moteur. Actif, il prend la
+ * couleur du « meilleur coup » : c'est la même chose que la flèche verte sur le
+ * plateau, dont il déroule la ligne.
+ */
+.btn.btn-line {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn.btn-line.active {
+  border-color: var(--status-good);
+  color: var(--status-good);
+}

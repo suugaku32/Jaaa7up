@@ -240,56 +240,10 @@
   gap: 10px;
 }
 
-.ply-nav {
-  display: flex;
-  gap: 6px;
-}
-
-.ply-nav .btn {
-  flex: 1;
-  padding: 8px;
-}
-
-/* L'état du coup affiché, sur une ligne : numéro, coup, jugement, évaluation. */
-.ply-status {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  font-size: 13px;
-  padding: 0 2px;
-  min-height: 20px;
-}
-
-.ply-status-count {
-  color: var(--dim);
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-
-.ply-status-move {
-  font-weight: 700;
-  font-size: 15px;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.ply-status-quality {
-  font-weight: 600;
-  font-size: 12px;
-  flex-shrink: 0;
-}
-
-.ply-status-eval {
-  margin-left: auto;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-
 /*
  * Sélecteur de panneau. Au-dessus de 860 px la colonne de droite a la hauteur
- * qu'il faut pour tout montrer d'un coup : le sélecteur disparaît et les trois
- * panneaux s'empilent comme avant. En dessous, un seul tient l'affiche.
+ * qu'il faut pour tout montrer d'un coup : le sélecteur disparaît et les deux
+ * panneaux s'empilent. En dessous, un seul tient l'affiche.
  */
 .analysis-segments {
   display: flex;
@@ -334,18 +288,12 @@
     display: none;
   }
 
-  /* Tout est visible d'un coup : les suites, qui se rapportent au coup affiché,
-     passent devant la liste, dont les 420 px les auraient reléguées hors vue. */
-  .panel-lines {
+  .panel-moves {
     order: 1;
   }
 
-  .panel-moves {
-    order: 2;
-  }
-
   .panel-explore {
-    order: 3;
+    order: 2;
   }
 }
 
@@ -393,9 +341,11 @@
     max-height: 46vh;
   }
 
-  .ply-nav .btn {
-    padding: 10px 8px;
-    font-size: 16px;
+  /* Les chevrons seuls s'élargissent : ce sont les cibles qu'on vise au pouce
+     à chaque coup. Le bouton de la suite garde sa taille, son libellé est long. */
+  .eval-controls .btn-ghost {
+    padding: 10px 16px;
+    font-size: 17px;
     line-height: 1;
   }
 }

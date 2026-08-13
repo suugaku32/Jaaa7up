@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import type { EvalPoint, PlyEval } from '../analysis/analyze';
 import type { MoveQuality } from '../analysis/classify';
 import { QUALITY_LABEL_FR } from '../analysis/classify';
@@ -10,6 +11,12 @@ interface EvalGraphProps {
   moveLabels: string[]; // index i = label for ply i+1 (evalCurve index i+1)
   currentPly: number;
   onSelectPly: (ply: number) => void;
+  /**
+   * Commandes rendues dans la carte, sous la courbe. Naviguer dans la partie et
+   * situer un moment de la partie sont le même geste ; deux blocs séparés
+   * coûtaient une rangée à l'écran pour rien.
+   */
+  controls?: ReactNode;
 }
 
 const WIDTH = 760;
@@ -53,7 +60,14 @@ const STATUS_VAR: Record<MoveQuality, string> = {
   best: 'var(--status-good)',
 };
 
-export function EvalGraph({ evalCurve, plies, moveLabels, currentPly, onSelectPly }: EvalGraphProps) {
+export function EvalGraph({
+  evalCurve,
+  plies,
+  moveLabels,
+  currentPly,
+  onSelectPly,
+  controls,
+}: EvalGraphProps) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   const innerW = WIDTH - PAD_X * 2;
@@ -91,6 +105,13 @@ export function EvalGraph({ evalCurve, plies, moveLabels, currentPly, onSelectPl
 
   return (
     <div className="eval-graph">
+      {/*
+        En tête de la carte, et non sous la courbe : sur un téléphone la courbe
+        est déjà sous le plateau, et des commandes placées après elle tombaient
+        au ras du bord de l'écran (797 px sur 844).
+      */}
+      {controls}
+
       <div className="eval-graph-labels">
         <span className="eval-side-label top">▲ Sente</span>
         <span className="eval-side-label bottom">△ Gote</span>

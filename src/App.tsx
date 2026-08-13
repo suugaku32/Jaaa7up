@@ -7,7 +7,6 @@ import { MovetimeSlider } from './components/MovetimeSlider';
 import { MoveList } from './components/MoveList';
 import { TrainingMode } from './components/TrainingMode';
 import { TsumeMode } from './components/TsumeMode';
-import { VariationBar } from './components/VariationBar';
 import { HistoryList } from './components/HistoryList';
 import {
   clearHistory,
@@ -21,8 +20,7 @@ import type { HistoryEntry } from './storage/history';
 import { UsiEngine, engineEnvironment } from './engine/UsiEngine';
 import { analyzeGame, deepenPly, deepenTsume } from './analysis/analyze';
 import type { AnalysisPhase, AnalysisResult } from './analysis/analyze';
-import { QUALITY_COLOR, QUALITY_LABEL_FR } from './analysis/classify';
-import type { MoveQuality } from './analysis/classify';
+import { QUALITY_LABEL_FR } from './analysis/classify';
 import { parseKifu } from './shogi/parser';
 import type { ParsedGame } from './shogi/parser';
 import { Position } from './shogi/position';
@@ -42,15 +40,6 @@ type Phase =
   | { kind: 'input' }
   | { kind: 'analyzing'; step: AnalysisPhase; done: number; total: number }
   | { kind: 'done' };
-
-/** Les jugements qui méritent d'être écrits — les deux autres vont sans dire. */
-const FLAGGED_QUALITIES = new Set<MoveQuality>(['inaccuracy', 'mistake', 'blunder']);
-
-/** Échelle brute du moteur, comme le graphe et la liste des coups. */
-function formatCpForBlack(cp: number | undefined): string {
-  if (cp === undefined) return '—';
-  return `${cp > 0 ? '+' : ''}${Math.round(cp)}`;
-}
 
 const PHASE_LABEL: Record<AnalysisPhase, string> = {
   scan: 'Balayage de la partie',
@@ -77,14 +66,13 @@ export default function App() {
    */
   const [askFocus, setAskFocus] = useState(false);
   /*
-   * Sous le plateau, trois blocs se suivaient : les deux suites, la liste des
-   * coups, puis les réglages d'exploration — de quoi faire défiler l'écran à
-   * chaque coup pour retrouver une information. Sur un écran étroit ils
-   * partagent maintenant une même place, et on choisit lequel occupe le terrain.
-   * Au-dessus de 860 px, où la colonne de droite a de la hauteur à revendre,
-   * tout reste affiché ensemble (voir `.analysis-segments` dans App.css).
+   * Sous le plateau se suivaient la liste des coups et les réglages
+   * d'exploration — de quoi faire défiler l'écran pour retrouver une
+   * information. Sur un écran étroit ils partagent maintenant une même place, et
+   * on choisit lequel occupe le terrain. Au-dessus de 860 px, où la colonne de
+   * droite a de la hauteur à revendre, les deux restent affichés ensemble.
    */
-  const [panel, setPanel] = useState<'moves' | 'lines' | 'explore'>('moves');
+  const [panel, setPanel] = useState<'moves' | 'explore'>('moves');
   /** Temps de réflexion du moteur dans le plateau d'exploration. */
   const [replyMs, setReplyMs] = useState(1000);
   /** Variante rejouée par-dessus la partie : d'où elle part, ses coups, et où on en est. */
@@ -270,7 +258,11 @@ export default function App() {
     try {
       const pos = Position.fromSfen(variation.baseSfen);
       let last: { from: Square | null; to: Square } | null = null;
+      // Le dernier coup joué de la ligne, en notation kifu : c'est ce qu'on
+      // annonce sous le plateau, faute de liste où le lire.
+      let label = '';
       for (const usi of variation.moves.slice(0, variation.index)) {
+        label = formatUsiMoveAsKif(pos, usi, last?.to ?? null);
         last = {
           from: usi.includes('*') ? null : usiToSquare(usi.slice(0, 2)),
           to: usiToSquare(usi.slice(2, 4)),
@@ -278,7 +270,7 @@ export default function App() {
         pos.applyUsiMove(usi);
       }
       const next = variation.moves[variation.index] ?? null;
-      return { position: pos, lastMove: last, next };
+      return { position: pos, lastMove: last, next, label };
     } catch {
       return null;
     }
@@ -316,12 +308,43 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, currentPly, showBestArrow, variationView]);
 
-  const currentPlyEval = result?.plies[currentPly - 1] ?? null;
-
   const selectPly = useCallback((ply: number) => {
     setCurrentPly(ply);
     setVariation(null);
   }, []);
+
+  /*
+   * La suite que le moteur jouerait *depuis la position affichée* — la même
+   * ligne dont le premier coup est la flèche verte sur le plateau. `plies[i]` a
+   * pour `sfenBefore` la position après i coups, donc `plies[currentPly]` part
+   * bien de ce qu'on voit.
+   */
+  const bestLine = result?.plies[currentPly] ?? null;
+
+  /*
+   * Lire une suite dans une liste de coups oblige à tenir le plateau d'une main
+   * et la liste de l'autre — impossible sur un téléphone, où l'un chasse
+   * l'autre. Le bouton donne la barre des flèches à la suite du moteur : on la
+   * déroule sur le plateau, coup par coup, et un second appui rend la main à la
+   * partie.
+   */
+  const toggleBestLine = useCallback(() => {
+    setVariation((v) => {
+      if (v) return null;
+      if (!bestLine || bestLine.bestMovePv.length === 0) return null;
+      return { baseSfen: bestLine.sfenBefore, moves: bestLine.bestMovePv, index: 0 };
+    });
+  }, [bestLine]);
+
+  const stepBack = useCallback(() => {
+    setVariation((v) => (v ? { ...v, index: Math.max(0, v.index - 1) } : v));
+    if (!variation) setCurrentPly((p) => Math.max(0, p - 1));
+  }, [variation]);
+
+  const stepForward = useCallback(() => {
+    setVariation((v) => (v ? { ...v, index: Math.min(v.moves.length, v.index + 1) } : v));
+    if (!variation) setCurrentPly((p) => Math.min(game?.moves.length ?? 0, p + 1));
+  }, [variation, game]);
 
   // « Suivre un joueur » : on ne montre que ses fautes, sans réanalyser la partie.
   /*
@@ -634,6 +657,45 @@ export default function App() {
                     moveLabels={moveLabels}
                     currentPly={currentPly}
                     onSelectPly={selectPly}
+                    controls={
+                      /*
+                       * Les flèches vivent dans la courbe : c'est le même geste —
+                       * situer un moment de la partie et s'y rendre — et deux
+                       * blocs distincts coûtaient une rangée à l'écran.
+                       *
+                       * ⏮ et ⏭ ont disparu : la courbe est cliquable, et un coup
+                       * précis se choisit mieux dessus qu'en tenant une flèche.
+                       */
+                      <div className="eval-controls">
+                        <button
+                          className="btn btn-ghost"
+                          onClick={stepBack}
+                          disabled={variation ? variation.index === 0 : currentPly === 0}
+                          aria-label="Coup précédent"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          className="btn btn-ghost"
+                          onClick={stepForward}
+                          disabled={
+                            variation
+                              ? variation.index >= variation.moves.length
+                              : currentPly >= game.moves.length
+                          }
+                          aria-label="Coup suivant"
+                        >
+                          ›
+                        </button>
+                        <button
+                          className={`btn btn-line${variation ? ' active' : ''}`}
+                          onClick={toggleBestLine}
+                          disabled={!variation && (bestLine?.bestMovePv.length ?? 0) === 0}
+                        >
+                          {variation ? '↩ Revenir à la partie' : 'Meilleure suite'}
+                        </button>
+                      </div>
+                    }
                   />
                 </div>
                 {/*
@@ -662,71 +724,10 @@ export default function App() {
                   )}
                   {variation && (
                     <p className="variation-hint">
-                      Variante du moteur — le plateau ne suit plus la partie.
+                      Meilleure suite — {variation.index} / {variation.moves.length}
+                      {variationView?.label ? ` · ${variationView.label}` : ''}
                     </p>
                   )}
-                  <div className="ply-nav">
-                    <button
-                      className="btn btn-ghost"
-                      onClick={() => selectPly(0)}
-                      disabled={currentPly === 0}
-                      aria-label="Position de départ"
-                    >
-                      ⏮
-                    </button>
-                    <button
-                      className="btn btn-ghost"
-                      onClick={() => selectPly(Math.max(0, currentPly - 1))}
-                      disabled={currentPly === 0}
-                      aria-label="Coup précédent"
-                    >
-                      ‹
-                    </button>
-                    <button
-                      className="btn btn-ghost"
-                      onClick={() => selectPly(Math.min(game.moves.length, currentPly + 1))}
-                      disabled={currentPly >= game.moves.length}
-                      aria-label="Coup suivant"
-                    >
-                      ›
-                    </button>
-                    <button
-                      className="btn btn-ghost"
-                      onClick={() => selectPly(game.moves.length)}
-                      disabled={currentPly >= game.moves.length}
-                      aria-label="Dernier coup"
-                    >
-                      ⏭
-                    </button>
-                  </div>
-
-                  {/*
-                    Numéro, coup, jugement et évaluation sur une ligne. C'est
-                    l'essentiel de ce qu'on allait chercher dans la liste des
-                    coups en faisant défiler l'écran.
-                  */}
-                  <div className="ply-status">
-                    <span className="ply-status-count">
-                      {currentPly} / {game.moves.length}
-                    </span>
-                    {currentPly > 0 && (
-                      <span className="ply-status-move">
-                        {result.plies[currentPly - 1]?.color === 'w' ? '△' : '▲'}
-                        {moveLabels[currentPly - 1]}
-                      </span>
-                    )}
-                    {currentPlyEval && FLAGGED_QUALITIES.has(currentPlyEval.quality) && (
-                      <span
-                        className="ply-status-quality"
-                        style={{ color: QUALITY_COLOR[currentPlyEval.quality] }}
-                      >
-                        {QUALITY_LABEL_FR[currentPlyEval.quality]}
-                      </span>
-                    )}
-                    <span className="ply-status-eval">
-                      {formatCpForBlack(result.evalCurve[currentPly]?.cpForBlack)}
-                    </span>
-                  </div>
                 </div>
 
                 <div className="analysis-side">
@@ -738,14 +739,6 @@ export default function App() {
                       onClick={() => setPanel('moves')}
                     >
                       Coups
-                    </button>
-                    <button
-                      role="tab"
-                      aria-selected={panel === 'lines'}
-                      className={panel === 'lines' ? 'active' : ''}
-                      onClick={() => setPanel('lines')}
-                    >
-                      Suites
                     </button>
                     <button
                       role="tab"
@@ -765,59 +758,6 @@ export default function App() {
                       onSelectPly={selectPly}
                       focusSide={focusSide}
                     />
-                  </div>
-
-                  <div className={`analysis-panel panel-lines${panel === 'lines' ? ' active' : ''}`}>
-                    {currentPlyEval ? (
-                      <div className="variations">
-                        <VariationBar
-                          label="Suite jouée"
-                          tone="played"
-                          baseSfen={currentPlyEval.sfenAfter}
-                          moves={currentPlyEval.refutationPv}
-                          activeIndex={
-                            variation?.baseSfen === currentPlyEval.sfenAfter ? variation.index : null
-                          }
-                          onSelect={(i) =>
-                            setVariation(
-                              i === null
-                                ? null
-                                : {
-                                    baseSfen: currentPlyEval.sfenAfter,
-                                    moves: currentPlyEval.refutationPv,
-                                    index: i,
-                                  },
-                            )
-                          }
-                        />
-                        <VariationBar
-                          label="Meilleure suite"
-                          tone="best"
-                          baseSfen={currentPlyEval.sfenBefore}
-                          moves={currentPlyEval.bestMovePv}
-                          activeIndex={
-                            variation?.baseSfen === currentPlyEval.sfenBefore
-                              ? variation.index
-                              : null
-                          }
-                          onSelect={(i) =>
-                            setVariation(
-                              i === null
-                                ? null
-                                : {
-                                    baseSfen: currentPlyEval.sfenBefore,
-                                    moves: currentPlyEval.bestMovePv,
-                                    index: i,
-                                  },
-                            )
-                          }
-                        />
-                      </div>
-                    ) : (
-                      <p className="panel-empty">
-                        Avancez d'un coup : les suites se rapportent au coup joué.
-                      </p>
-                    )}
                   </div>
 
                   <div className={`analysis-panel panel-explore${panel === 'explore' ? ' active' : ''}`}>
