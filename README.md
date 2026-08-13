@@ -46,8 +46,12 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   listée non plus : les flèches la rejouent déjà.
 - **Plateau d'analyse jouable** : jouer un coup qui n'est pas dans la partie ouvre
   un embranchement, le moteur répond, et l'on voit où mène l'idée. Le temps de
-  réponse se règle dans le panneau « Explorer ». Naviguer dans la partie abandonne
-  la variante — la garder obligerait à choisir en permanence entre deux positions
+  réponse se règle dans le panneau « Explorer », et la réponse elle-même se
+  coupe : décochée, les deux camps se jouent à la main, ce qu'il faut pour
+  dérouler une idée à soi ou rejouer une variante lue ailleurs sans qu'un
+  adversaire s'invite à chaque coup. « Reculer » retire alors un coup et non
+  deux — c'est la main d'avant qu'on veut reprendre. Naviguer dans la partie
+  abandonne la variante — la garder obligerait à choisir en permanence entre deux positions
   affichées, pour une idée qu'on explore le plus souvent d'un trait.
 - **Onglet Analyse en deux colonnes** : le plateau d'un côté, le reste de l'autre.
   Sur téléphone tout s'empile, la courbe passe sous le plateau, et un sélecteur

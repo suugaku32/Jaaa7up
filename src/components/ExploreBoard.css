@@ -49,6 +49,29 @@
   flex-wrap: wrap;
 }
 
+.explore-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* La case à cocher qui décide si un adversaire s'invite dans la variante. */
+.explore-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.explore-toggle input {
+  accent-color: var(--accent);
+  /* 13 px de case à cocher se ratent au doigt. */
+  width: 18px;
+  height: 18px;
+}
+
 .explore-time {
   display: flex;
   align-items: center;

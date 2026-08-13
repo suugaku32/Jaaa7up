@@ -26,6 +26,12 @@ interface ExploreBoardProps {
    * repoussait la navigation hors de l'écran.
    */
   replyMs: number;
+  /**
+   * Le moteur répond-il ? Décoché, les deux camps se jouent à la main : c'est
+   * ainsi qu'on déroule une idée à soi, ou qu'on rejoue une variante lue
+   * ailleurs, sans qu'un adversaire s'invite à chaque coup.
+   */
+  autoReply: boolean;
 }
 
 /** Rejoue une séquence depuis un SFEN. `null` si elle est invalide. */
@@ -59,6 +65,7 @@ export function ExploreBoard({
   gameArrows,
   lastMove,
   replyMs,
+  autoReply,
 }: ExploreBoardProps) {
   const [branch, setBranch] = useState<{ base: string; moves: string[] } | null>(null);
   const [selected, setSelected] = useState<
@@ -111,6 +118,12 @@ export function ExploreBoard({
     if (!replay(base, moves)) return;
     setBranch({ base, moves });
     setSelected(null);
+    // Sans réponse du moteur, rien à attendre : le coup est joué, la main passe
+    // à l'autre camp, et c'est l'utilisateur qui la tient.
+    if (!autoReply) {
+      setEvalCp(null);
+      return;
+    }
     setThinking(true);
     setEngineError(null);
     try {
@@ -189,9 +202,14 @@ export function ExploreBoard({
 
   const undo = () => {
     if (!branch) return;
-    // Deux coups : le nôtre et la réponse. En retirer un seul rendrait la main
-    // à l'adversaire, ce qui n'est pas ce qu'on veut en revenant en arrière.
-    const moves = branch.moves.slice(0, Math.max(0, branch.moves.length - 2));
+    /*
+     * Deux coups quand le moteur répond : le nôtre et sa réponse. En retirer un
+     * seul rendrait la main à l'adversaire, ce qui n'est pas ce qu'on veut en
+     * revenant en arrière. Quand on joue les deux camps, un seul coup suffit —
+     * c'est la main d'avant qu'on veut reprendre.
+     */
+    const step = autoReply ? 2 : 1;
+    const moves = branch.moves.slice(0, Math.max(0, branch.moves.length - step));
     setBranch(moves.length ? { base: branch.base, moves } : null);
     setEvalCp(null);
     setSelected(null);
@@ -263,30 +281,48 @@ export function ExploreBoard({
 }
 
 /**
- * Le curseur du temps de réponse, séparé du plateau parce qu'il se règle une
- * fois et se lit rarement — alors que le plateau et la navigation servent à
- * chaque coup. Il vit donc dans le panneau « Explorer ».
+ * Les réglages de l'exploration, séparés du plateau parce qu'ils se règlent une
+ * fois et se lisent rarement — alors que le plateau et la navigation servent à
+ * chaque coup. Ils vivent donc dans le panneau « Explorer ».
  */
-export function ExploreReplyTime({
-  value,
-  onChange,
+export function ExploreSettings({
+  replyMs,
+  onReplyMs,
+  autoReply,
+  onAutoReply,
 }: {
-  value: number;
-  onChange: (ms: number) => void;
+  replyMs: number;
+  onReplyMs: (ms: number) => void;
+  autoReply: boolean;
+  onAutoReply: (on: boolean) => void;
 }) {
   return (
-    <label className="explore-time">
-      <span>Réponse du moteur</span>
-      <input
-        type="range"
-        min={200}
-        max={10000}
-        step={100}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        aria-label="Temps de réflexion du moteur"
-      />
-      <output>{(value / 1000).toFixed(1).replace('.', ',')} s</output>
-    </label>
+    <div className="explore-settings">
+      <label className="explore-toggle">
+        <input
+          type="checkbox"
+          checked={autoReply}
+          onChange={(e) => onAutoReply(e.target.checked)}
+        />
+        <span>Le moteur répond</span>
+      </label>
+
+      {/* Le curseur ne s'affiche que s'il commande quelque chose. */}
+      {autoReply && (
+        <label className="explore-time">
+          <span>Temps de réflexion</span>
+          <input
+            type="range"
+            min={200}
+            max={10000}
+            step={100}
+            value={replyMs}
+            onChange={(e) => onReplyMs(Number(e.target.value))}
+            aria-label="Temps de réflexion du moteur"
+          />
+          <output>{(replyMs / 1000).toFixed(1).replace('.', ',')} s</output>
+        </label>
+      )}
+    </div>
   );
 }

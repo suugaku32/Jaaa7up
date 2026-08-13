@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ExploreBoard, ExploreReplyTime } from './components/ExploreBoard';
+import { ExploreBoard, ExploreSettings } from './components/ExploreBoard';
 import type { BoardArrow } from './components/Board';
 import { EvalGraph } from './components/EvalGraph';
 import { KifuInput } from './components/KifuInput';
@@ -75,6 +75,13 @@ export default function App() {
   const [panel, setPanel] = useState<'moves' | 'explore'>('moves');
   /** Temps de réflexion du moteur dans le plateau d'exploration. */
   const [replyMs, setReplyMs] = useState(1000);
+  /*
+   * Le moteur répond-il aux coups joués sur le plateau d'analyse ? Décoché, les
+   * deux camps se jouent à la main : c'est ce qu'il faut pour dérouler une idée
+   * à soi, ou rejouer une variante lue ailleurs, sans qu'un adversaire s'invite
+   * à chaque coup.
+   */
+  const [autoReply, setAutoReply] = useState(true);
   /** Variante rejouée par-dessus la partie : d'où elle part, ses coups, et où on en est. */
   const [variation, setVariation] = useState<{
     baseSfen: string;
@@ -731,6 +738,7 @@ export default function App() {
                       blackName={game.black}
                       whiteName={game.white}
                       replyMs={replyMs}
+                      autoReply={autoReply}
                     />
                   )}
                   {variation && (
@@ -773,10 +781,17 @@ export default function App() {
 
                   <div className={`analysis-panel panel-explore${panel === 'explore' ? ' active' : ''}`}>
                     <p className="explore-hint">
-                      Jouez un coup sur le plateau pour ouvrir une variante : le moteur
-                      répondra, et la partie reprendra son cours au coup suivant.
+                      Jouez un coup sur le plateau pour ouvrir une variante.{' '}
+                      {autoReply
+                        ? 'Le moteur répondra, et la partie reprendra son cours au coup suivant.'
+                        : 'Vous jouez les deux camps ; la partie reprendra son cours au coup suivant.'}
                     </p>
-                    <ExploreReplyTime value={replyMs} onChange={setReplyMs} />
+                    <ExploreSettings
+                      replyMs={replyMs}
+                      onReplyMs={setReplyMs}
+                      autoReply={autoReply}
+                      onAutoReply={setAutoReply}
+                    />
                   </div>
                 </div>
               </div>
