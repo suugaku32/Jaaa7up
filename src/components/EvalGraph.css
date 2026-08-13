@@ -123,15 +123,18 @@
  * plateau, dont il déroule la ligne.
  */
 .btn.btn-line {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
+  /* Poussé sur le côté : il ne sert qu'une fois par ligne, les chevrons
+     servent à chaque coup. */
+  margin-left: auto;
+  flex: 0 0 auto;
+  max-width: 60%;
+  font-size: 12px;
   font-weight: 600;
   border: 1px solid var(--border);
   background: var(--surface2);
   color: var(--text);
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: 999px;
+  padding: 7px 13px;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
@@ -141,4 +144,51 @@
 .btn.btn-line.active {
   border-color: var(--status-good);
   color: var(--status-good);
+}
+
+/*
+ * Sur téléphone, la barre quitte le flux et va se poser en bas de l'écran :
+ * dans la carte, elle n'était atteignable qu'à condition que la courbe soit à
+ * l'écran, alors qu'on avance coup par coup en regardant le plateau. Les
+ * chevrons vont à droite, où tombe le pouce ; le bouton de la suite à gauche,
+ * plus petit, parce qu'on l'actionne une fois par ligne et non à chaque coup.
+ *
+ * La barre elle-même est transparente aux clics — seuls ses boutons les
+ * captent —, faute de quoi elle masquerait une bande entière du plateau.
+ */
+@media (max-width: 860px) {
+  .eval-controls {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    /* `env()` tient compte de la barre d'accueil de l'iPhone ; les 14 px
+       supplémentaires dégagent la barre d'adresse de Safari. */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+    z-index: 30;
+    padding: 0;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .eval-controls > * {
+    pointer-events: auto;
+  }
+
+  .eval-controls .btn-ghost {
+    width: 56px;
+    height: 52px;
+    padding: 0;
+    font-size: 24px;
+    line-height: 1;
+    border-radius: 16px;
+    background: var(--surface2);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+
+  .btn.btn-line {
+    order: -1;
+    margin-left: 0;
+    margin-right: auto;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
 }

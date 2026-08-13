@@ -341,12 +341,10 @@
     max-height: 46vh;
   }
 
-  /* Les chevrons seuls s'élargissent : ce sont les cibles qu'on vise au pouce
-     à chaque coup. Le bouton de la suite garde sa taille, son libellé est long. */
-  .eval-controls .btn-ghost {
-    padding: 10px 16px;
-    font-size: 17px;
-    line-height: 1;
+  /* Place pour la barre de navigation flottante, qui sort du flux : sans
+     réserve, elle recouvrirait la fin de la liste des coups et le pied de page. */
+  .app.app-navbar {
+    padding-bottom: 88px;
   }
 }
 

@@ -422,7 +422,13 @@ export default function App() {
   }, [result]);
 
   return (
-    <div className="app">
+    <div
+      className={`app${
+        /* La barre de navigation flottante sort du flux et se poserait sur le
+           pied de page : seul l'onglet qui la porte réserve la place. */
+        phase.kind === 'done' && result && game && tab === 'analysis' ? ' app-navbar' : ''
+      }`}
+    >
       <header className={`app-header${phase.kind === 'done' ? ' compact' : ''}`}>
         <div className="app-title">
           <h1>将棋 — Analyseur de parties</h1>
