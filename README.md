@@ -45,7 +45,10 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   la ligne se lit là où elle a un sens. La suite *effectivement jouée* n'est plus
   listée non plus : les flèches la rejouent déjà.
 - **Plateau d'analyse jouable** : jouer un coup qui n'est pas dans la partie ouvre
-  un embranchement, le moteur répond, et l'on voit où mène l'idée. Le temps de
+  un embranchement, le moteur répond, et l'on voit où mène l'idée. Le panneau
+  bascule alors de lui-même sur « Explorer » : le plateau est jouable en
+  permanence, y compris quand on regarde la liste des coups, et il serait absurde
+  d'avoir à chercher où se règle ce qui vient de changer sous les yeux. Le temps de
   réponse se règle dans le panneau « Explorer », et la réponse elle-même se
   coupe : décochée, les deux camps se jouent à la main, ce qu'il faut pour
   dérouler une idée à soi ou rejouer une variante lue ailleurs sans qu'un

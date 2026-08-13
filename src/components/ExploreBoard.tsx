@@ -32,6 +32,13 @@ interface ExploreBoardProps {
    * ailleurs, sans qu'un adversaire s'invite à chaque coup.
    */
   autoReply: boolean;
+  /**
+   * Appelé au premier coup joué hors de la partie. Le panneau des réglages
+   * d'exploration n'a d'intérêt qu'à partir de là : c'est le moment de le
+   * montrer, plutôt que de laisser chercher où l'on règle ce qui vient de
+   * changer sous les yeux.
+   */
+  onBranchStart?: () => void;
 }
 
 /** Rejoue une séquence depuis un SFEN. `null` si elle est invalide. */
@@ -66,6 +73,7 @@ export function ExploreBoard({
   lastMove,
   replyMs,
   autoReply,
+  onBranchStart,
 }: ExploreBoardProps) {
   const [branch, setBranch] = useState<{ base: string; moves: string[] } | null>(null);
   const [selected, setSelected] = useState<
@@ -116,6 +124,7 @@ export function ExploreBoard({
     const base = branch?.base ?? baseSfen;
     const moves = (branch?.moves ?? []).concat(usi);
     if (!replay(base, moves)) return;
+    if (!branch) onBranchStart?.();
     setBranch({ base, moves });
     setSelected(null);
     // Sans réponse du moteur, rien à attendre : le coup est joué, la main passe

@@ -739,6 +739,7 @@ export default function App() {
                       whiteName={game.white}
                       replyMs={replyMs}
                       autoReply={autoReply}
+                      onBranchStart={() => setPanel('explore')}
                     />
                   )}
                   {variation && (
