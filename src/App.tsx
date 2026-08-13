@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Board } from './components/Board';
+import { ExploreBoard } from './components/ExploreBoard';
 import type { BoardArrow } from './components/Board';
 import { EvalGraph } from './components/EvalGraph';
 import { KifuInput } from './components/KifuInput';
@@ -607,23 +607,28 @@ export default function App() {
                 onSelectPly={selectPly}
               />
               <div className="analysis-body">
-                <div className="analysis-board">
-                  {shownPosition && (
-                    <Board
-                      position={shownPosition}
-                      lastMove={lastMove}
-                      flipped={flipped}
-                      arrows={arrows}
-                      blackName={game.black}
-                      whiteName={game.white}
-                    />
-                  )}
-                  {variation && (
-                    <p className="variation-hint">
-                      Variante du moteur — le plateau ne suit plus la partie.
-                    </p>
-                  )}
-                </div>
+                {/*
+                  Le plateau d'analyse est jouable : « et si j'avais joué ça ? »
+                  est la question qu'on se pose devant une partie, et à laquelle
+                  une courbe ne répond pas. Il reçoit la position affichée —
+                  celle de la partie, ou celle d'une variante qu'on parcourt.
+                */}
+                {shownPosition && (
+                  <ExploreBoard
+                    baseSfen={shownPosition.toSfen()}
+                    ensureEngine={ensureEngine}
+                    flipped={flipped}
+                    gameArrows={arrows}
+                    lastMove={lastMove}
+                    blackName={game.black}
+                    whiteName={game.white}
+                  />
+                )}
+                {variation && (
+                  <p className="variation-hint">
+                    Variante du moteur — le plateau ne suit plus la partie.
+                  </p>
+                )}
                 <div className="analysis-side">
                   <div className="ply-nav">
                     <button

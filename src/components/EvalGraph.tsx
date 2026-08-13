@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { EvalPoint, PlyEval } from '../analysis/analyze';
-import { cpToWinPercent } from '../analysis/classify';
 import type { MoveQuality } from '../analysis/classify';
 import { QUALITY_LABEL_FR } from '../analysis/classify';
 import './EvalGraph.css';
@@ -19,9 +18,31 @@ const PAD_X = 8;
 const PAD_TOP = 10;
 const PAD_BOTTOM = 10;
 
+/**
+ * Plafond de l'axe vertical, en centièmes de pion. Au shogi, ±2000 à ±4000 sont
+ * des écarts courants ; l'ancienne courbe traçait un pourcentage de victoire
+ * dont l'entrée est écrêtée à ±1000, si bien que +1200 et +4000 donnaient le
+ * même point. Le graphe montre désormais l'évaluation elle-même.
+ *
+ * Le pourcentage de victoire reste ce qui *classe* les coups, et c'est voulu :
+ * perdre 1800 centièmes quand on est à +3000 ne change pas l'issue, et ne
+ * mérite donc pas d'être appelé une gaffe. Les deux échelles répondent à deux
+ * questions différentes — combien, et est-ce grave.
+ */
+const AXIS_MAX_CP = 4000;
+
+/**
+ * −1..+1, positif = avantage Sente. Compression en racine carrée plutôt que
+ * linéaire : sur un axe linéaire jusqu'à 4000, les ±150 de l'ouverture sont
+ * indiscernables du zéro. Ici 1000 occupe la moitié de la hauteur, 250 le quart.
+ */
 function displayValue(cpForBlack: number): number {
-  return cpToWinPercent(cpForBlack) - 50; // -50..+50, positive = sente advantage
+  const capped = Math.max(-AXIS_MAX_CP, Math.min(AXIS_MAX_CP, cpForBlack));
+  return Math.sign(capped) * Math.sqrt(Math.abs(capped) / AXIS_MAX_CP);
 }
+
+/** Repères de l'axe : sans eux, une échelle comprimée ne se lit pas. */
+const GRID_CP = [1000, 2000];
 
 const MARKER_QUALITIES: MoveQuality[] = ['blunder', 'mistake', 'inaccuracy'];
 const STATUS_VAR: Record<MoveQuality, string> = {
@@ -38,7 +59,7 @@ export function EvalGraph({ evalCurve, plies, moveLabels, currentPly, onSelectPl
   const innerW = WIDTH - PAD_X * 2;
   const innerH = HEIGHT - PAD_TOP - PAD_BOTTOM;
   const midY = PAD_TOP + innerH / 2;
-  const scaleY = innerH / 2 / 50;
+  const scaleY = innerH / 2;
 
   const n = evalCurve.length;
   const xAt = (i: number) => PAD_X + (n <= 1 ? 0 : (i / (n - 1)) * innerW);
@@ -108,6 +129,35 @@ export function EvalGraph({ evalCurve, plies, moveLabels, currentPly, onSelectPl
         />
         <path d={linePath} fill="none" stroke="var(--diverging-pos)" strokeWidth={2} clipPath="url(#clip-top)" />
         <path d={linePath} fill="none" stroke="var(--diverging-neg)" strokeWidth={2} clipPath="url(#clip-bottom)" />
+
+        {GRID_CP.map((cp) => (
+          <g key={cp}>
+            {[cp, -cp].map((v) => (
+              <line
+                key={v}
+                x1={PAD_X}
+                x2={WIDTH - PAD_X}
+                y1={midY - displayValue(v) * scaleY}
+                y2={midY - displayValue(v) * scaleY}
+                className="eval-gridline"
+              />
+            ))}
+            <text
+              x={PAD_X + 2}
+              y={midY - displayValue(cp) * scaleY - 3}
+              className="eval-gridlabel"
+            >
+              {cp}
+            </text>
+            <text
+              x={PAD_X + 2}
+              y={midY + displayValue(cp) * scaleY - 3}
+              className="eval-gridlabel"
+            >
+              −{cp}
+            </text>
+          </g>
+        ))}
 
         <line x1={PAD_X} x2={WIDTH - PAD_X} y1={midY} y2={midY} className="eval-baseline" />
 

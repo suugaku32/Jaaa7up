@@ -82,3 +82,17 @@
 .eval-area {
   fill-opacity: var(--area-opacity, 0.18);
 }
+
+/* Repères de l'axe vertical. Discrets : ils servent à situer une hauteur, pas
+   à être lus en permanence. */
+.eval-gridline {
+  stroke: var(--gridline);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.eval-gridlabel {
+  fill: var(--dim);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
