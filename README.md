@@ -40,6 +40,19 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   coup, avec flèches sur le goban, pour voir *pourquoi* un coup est une gaffe. Les
   coups sont cliquables et deux flèches `‹ ›` permettent d'avancer d'un coup à la
   fois — seules cibles dont la position ne bouge pas quand la variante défile.
+- **Plateau d'analyse jouable** : jouer un coup qui n'est pas dans la partie ouvre
+  un embranchement, le moteur répond, et l'on voit où mène l'idée. Le temps de
+  réponse se règle dans le panneau « Explorer ». Naviguer dans la partie abandonne
+  la variante — la garder obligerait à choisir en permanence entre deux positions
+  affichées, pour une idée qu'on explore le plus souvent d'un trait.
+- **Onglet Analyse en deux colonnes** : le plateau et sa navigation d'un côté, le
+  reste de l'autre. Sur téléphone, tout s'empile et un sélecteur « Coups / Suites /
+  Explorer » n'en montre qu'un à la fois ; la courbe passe sous le plateau. Les
+  flèches ⏮ ‹ › ⏭ suivaient auparavant trois blocs empilés et arrivaient à 928 px
+  du haut de la page, soit hors de l'écran d'un iPhone : il fallait faire défiler
+  à chaque coup. Elles sont maintenant à 668 px, sous les cases, avec le numéro du
+  coup, son jugement et l'évaluation. Au-dessus de 860 px de large, où la colonne
+  de droite a la hauteur qu'il faut, les trois panneaux restent affichés ensemble.
 - **Mode entraînement** : sur chaque gaffe, on rejoue la position ; le coup joué est
   montré (flèche rouge), le coup proposé est évalué par le moteur et accepté s'il
   perd au plus 50 centipions par rapport à la valeur que l'analyse a établie pour

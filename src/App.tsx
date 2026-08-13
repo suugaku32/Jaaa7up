@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ExploreBoard } from './components/ExploreBoard';
+import { ExploreBoard, ExploreReplyTime } from './components/ExploreBoard';
 import type { BoardArrow } from './components/Board';
 import { EvalGraph } from './components/EvalGraph';
 import { KifuInput } from './components/KifuInput';
@@ -21,7 +21,8 @@ import type { HistoryEntry } from './storage/history';
 import { UsiEngine, engineEnvironment } from './engine/UsiEngine';
 import { analyzeGame, deepenPly, deepenTsume } from './analysis/analyze';
 import type { AnalysisPhase, AnalysisResult } from './analysis/analyze';
-import { QUALITY_LABEL_FR } from './analysis/classify';
+import { QUALITY_COLOR, QUALITY_LABEL_FR } from './analysis/classify';
+import type { MoveQuality } from './analysis/classify';
 import { parseKifu } from './shogi/parser';
 import type { ParsedGame } from './shogi/parser';
 import { Position } from './shogi/position';
@@ -41,6 +42,15 @@ type Phase =
   | { kind: 'input' }
   | { kind: 'analyzing'; step: AnalysisPhase; done: number; total: number }
   | { kind: 'done' };
+
+/** Les jugements qui méritent d'être écrits — les deux autres vont sans dire. */
+const FLAGGED_QUALITIES = new Set<MoveQuality>(['inaccuracy', 'mistake', 'blunder']);
+
+/** Échelle brute du moteur, comme le graphe et la liste des coups. */
+function formatCpForBlack(cp: number | undefined): string {
+  if (cp === undefined) return '—';
+  return `${cp > 0 ? '+' : ''}${Math.round(cp)}`;
+}
 
 const PHASE_LABEL: Record<AnalysisPhase, string> = {
   scan: 'Balayage de la partie',
@@ -66,6 +76,17 @@ export default function App() {
    * plateau — qu'il serait absurde de faire régler séparément.
    */
   const [askFocus, setAskFocus] = useState(false);
+  /*
+   * Sous le plateau, trois blocs se suivaient : les deux suites, la liste des
+   * coups, puis les réglages d'exploration — de quoi faire défiler l'écran à
+   * chaque coup pour retrouver une information. Sur un écran étroit ils
+   * partagent maintenant une même place, et on choisit lequel occupe le terrain.
+   * Au-dessus de 860 px, où la colonne de droite a de la hauteur à revendre,
+   * tout reste affiché ensemble (voir `.analysis-segments` dans App.css).
+   */
+  const [panel, setPanel] = useState<'moves' | 'lines' | 'explore'>('moves');
+  /** Temps de réflexion du moteur dans le plateau d'exploration. */
+  const [replyMs, setReplyMs] = useState(1000);
   /** Variante rejouée par-dessus la partie : d'où elle part, ses coups, et où on en est. */
   const [variation, setVariation] = useState<{
     baseSfen: string;
@@ -599,42 +620,57 @@ export default function App() {
 
           {tab === 'analysis' ? (
             <>
-              <EvalGraph
-                evalCurve={result.evalCurve}
-                plies={focusedPlies}
-                moveLabels={moveLabels}
-                currentPly={currentPly}
-                onSelectPly={selectPly}
-              />
               <div className="analysis-body">
                 {/*
-                  Le plateau d'analyse est jouable : « et si j'avais joué ça ? »
-                  est la question qu'on se pose devant une partie, et à laquelle
-                  une courbe ne répond pas. Il reçoit la position affichée —
-                  celle de la partie, ou celle d'une variante qu'on parcourt.
+                  La courbe reste en tête sur grand écran, où elle ne coûte rien.
+                  Sur téléphone elle passe sous le plateau (voir `.analysis-graph`
+                  dans App.css) : 160 px au-dessus des cases, c'était le plateau
+                  et sa navigation repoussés hors de l'écran d'entrée de jeu.
                 */}
-                {shownPosition && (
-                  <ExploreBoard
-                    baseSfen={shownPosition.toSfen()}
-                    ensureEngine={ensureEngine}
-                    flipped={flipped}
-                    gameArrows={arrows}
-                    lastMove={lastMove}
-                    blackName={game.black}
-                    whiteName={game.white}
+                <div className="analysis-graph">
+                  <EvalGraph
+                    evalCurve={result.evalCurve}
+                    plies={focusedPlies}
+                    moveLabels={moveLabels}
+                    currentPly={currentPly}
+                    onSelectPly={selectPly}
                   />
-                )}
-                {variation && (
-                  <p className="variation-hint">
-                    Variante du moteur — le plateau ne suit plus la partie.
-                  </p>
-                )}
-                <div className="analysis-side">
+                </div>
+                {/*
+                  Colonne de gauche : ce qu'on manipule en boucle. Le plateau,
+                  puis immédiatement dessous les flèches de navigation et l'état
+                  du coup affiché. Tout le reste attend son tour à droite.
+                */}
+                <div className="analysis-main">
+                  {/*
+                    Le plateau d'analyse est jouable : « et si j'avais joué ça ? »
+                    est la question qu'on se pose devant une partie, et à laquelle
+                    une courbe ne répond pas. Il reçoit la position affichée —
+                    celle de la partie, ou celle d'une variante qu'on parcourt.
+                  */}
+                  {shownPosition && (
+                    <ExploreBoard
+                      baseSfen={shownPosition.toSfen()}
+                      ensureEngine={ensureEngine}
+                      flipped={flipped}
+                      gameArrows={arrows}
+                      lastMove={lastMove}
+                      blackName={game.black}
+                      whiteName={game.white}
+                      replyMs={replyMs}
+                    />
+                  )}
+                  {variation && (
+                    <p className="variation-hint">
+                      Variante du moteur — le plateau ne suit plus la partie.
+                    </p>
+                  )}
                   <div className="ply-nav">
                     <button
                       className="btn btn-ghost"
                       onClick={() => selectPly(0)}
                       disabled={currentPly === 0}
+                      aria-label="Position de départ"
                     >
                       ⏮
                     </button>
@@ -642,6 +678,7 @@ export default function App() {
                       className="btn btn-ghost"
                       onClick={() => selectPly(Math.max(0, currentPly - 1))}
                       disabled={currentPly === 0}
+                      aria-label="Coup précédent"
                     >
                       ‹
                     </button>
@@ -649,6 +686,7 @@ export default function App() {
                       className="btn btn-ghost"
                       onClick={() => selectPly(Math.min(game.moves.length, currentPly + 1))}
                       disabled={currentPly >= game.moves.length}
+                      aria-label="Coup suivant"
                     >
                       ›
                     </button>
@@ -656,63 +694,139 @@ export default function App() {
                       className="btn btn-ghost"
                       onClick={() => selectPly(game.moves.length)}
                       disabled={currentPly >= game.moves.length}
+                      aria-label="Dernier coup"
                     >
                       ⏭
                     </button>
                   </div>
 
-                  {currentPlyEval && (
-                    <div className="variations">
-                      <VariationBar
-                        label="Suite jouée"
-                        tone="played"
-                        baseSfen={currentPlyEval.sfenAfter}
-                        moves={currentPlyEval.refutationPv}
-                        activeIndex={
-                          variation?.baseSfen === currentPlyEval.sfenAfter ? variation.index : null
-                        }
-                        onSelect={(i) =>
-                          setVariation(
-                            i === null
-                              ? null
-                              : {
-                                  baseSfen: currentPlyEval.sfenAfter,
-                                  moves: currentPlyEval.refutationPv,
-                                  index: i,
-                                },
-                          )
-                        }
-                      />
-                      <VariationBar
-                        label="Meilleure suite"
-                        tone="best"
-                        baseSfen={currentPlyEval.sfenBefore}
-                        moves={currentPlyEval.bestMovePv}
-                        activeIndex={
-                          variation?.baseSfen === currentPlyEval.sfenBefore ? variation.index : null
-                        }
-                        onSelect={(i) =>
-                          setVariation(
-                            i === null
-                              ? null
-                              : {
-                                  baseSfen: currentPlyEval.sfenBefore,
-                                  moves: currentPlyEval.bestMovePv,
-                                  index: i,
-                                },
-                          )
-                        }
-                      />
-                    </div>
-                  )}
+                  {/*
+                    Numéro, coup, jugement et évaluation sur une ligne. C'est
+                    l'essentiel de ce qu'on allait chercher dans la liste des
+                    coups en faisant défiler l'écran.
+                  */}
+                  <div className="ply-status">
+                    <span className="ply-status-count">
+                      {currentPly} / {game.moves.length}
+                    </span>
+                    {currentPly > 0 && (
+                      <span className="ply-status-move">
+                        {result.plies[currentPly - 1]?.color === 'w' ? '△' : '▲'}
+                        {moveLabels[currentPly - 1]}
+                      </span>
+                    )}
+                    {currentPlyEval && FLAGGED_QUALITIES.has(currentPlyEval.quality) && (
+                      <span
+                        className="ply-status-quality"
+                        style={{ color: QUALITY_COLOR[currentPlyEval.quality] }}
+                      >
+                        {QUALITY_LABEL_FR[currentPlyEval.quality]}
+                      </span>
+                    )}
+                    <span className="ply-status-eval">
+                      {formatCpForBlack(result.evalCurve[currentPly]?.cpForBlack)}
+                    </span>
+                  </div>
+                </div>
 
-                  <MoveList
-                    plies={result.plies}
-                    moveLabels={moveLabels}
-                    currentPly={currentPly}
-                    onSelectPly={selectPly}
-                    focusSide={focusSide}
-                  />
+                <div className="analysis-side">
+                  <div className="analysis-segments" role="tablist">
+                    <button
+                      role="tab"
+                      aria-selected={panel === 'moves'}
+                      className={panel === 'moves' ? 'active' : ''}
+                      onClick={() => setPanel('moves')}
+                    >
+                      Coups
+                    </button>
+                    <button
+                      role="tab"
+                      aria-selected={panel === 'lines'}
+                      className={panel === 'lines' ? 'active' : ''}
+                      onClick={() => setPanel('lines')}
+                    >
+                      Suites
+                    </button>
+                    <button
+                      role="tab"
+                      aria-selected={panel === 'explore'}
+                      className={panel === 'explore' ? 'active' : ''}
+                      onClick={() => setPanel('explore')}
+                    >
+                      Explorer
+                    </button>
+                  </div>
+
+                  <div className={`analysis-panel panel-moves${panel === 'moves' ? ' active' : ''}`}>
+                    <MoveList
+                      plies={result.plies}
+                      moveLabels={moveLabels}
+                      currentPly={currentPly}
+                      onSelectPly={selectPly}
+                      focusSide={focusSide}
+                    />
+                  </div>
+
+                  <div className={`analysis-panel panel-lines${panel === 'lines' ? ' active' : ''}`}>
+                    {currentPlyEval ? (
+                      <div className="variations">
+                        <VariationBar
+                          label="Suite jouée"
+                          tone="played"
+                          baseSfen={currentPlyEval.sfenAfter}
+                          moves={currentPlyEval.refutationPv}
+                          activeIndex={
+                            variation?.baseSfen === currentPlyEval.sfenAfter ? variation.index : null
+                          }
+                          onSelect={(i) =>
+                            setVariation(
+                              i === null
+                                ? null
+                                : {
+                                    baseSfen: currentPlyEval.sfenAfter,
+                                    moves: currentPlyEval.refutationPv,
+                                    index: i,
+                                  },
+                            )
+                          }
+                        />
+                        <VariationBar
+                          label="Meilleure suite"
+                          tone="best"
+                          baseSfen={currentPlyEval.sfenBefore}
+                          moves={currentPlyEval.bestMovePv}
+                          activeIndex={
+                            variation?.baseSfen === currentPlyEval.sfenBefore
+                              ? variation.index
+                              : null
+                          }
+                          onSelect={(i) =>
+                            setVariation(
+                              i === null
+                                ? null
+                                : {
+                                    baseSfen: currentPlyEval.sfenBefore,
+                                    moves: currentPlyEval.bestMovePv,
+                                    index: i,
+                                  },
+                            )
+                          }
+                        />
+                      </div>
+                    ) : (
+                      <p className="panel-empty">
+                        Avancez d'un coup : les suites se rapportent au coup joué.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className={`analysis-panel panel-explore${panel === 'explore' ? ' active' : ''}`}>
+                    <p className="explore-hint">
+                      Jouez un coup sur le plateau pour ouvrir une variante : le moteur
+                      répondra, et la partie reprendra son cours au coup suivant.
+                    </p>
+                    <ExploreReplyTime value={replyMs} onChange={setReplyMs} />
+                  </div>
                 </div>
               </div>
             </>

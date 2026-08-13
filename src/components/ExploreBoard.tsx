@@ -20,6 +20,12 @@ interface ExploreBoardProps {
   /** Flèche du coup recommandé, tant qu'on n'a pas quitté la partie. */
   gameArrows?: BoardArrow[];
   lastMove?: { from: Square | null; to: Square } | null;
+  /**
+   * Temps de réflexion accordé au moteur pour répondre. Réglé au-dehors : le
+   * curseur vit dans le panneau « Explorer », pas sous le plateau, où il
+   * repoussait la navigation hors de l'écran.
+   */
+  replyMs: number;
 }
 
 /** Rejoue une séquence depuis un SFEN. `null` si elle est invalide. */
@@ -52,6 +58,7 @@ export function ExploreBoard({
   whiteName,
   gameArrows,
   lastMove,
+  replyMs,
 }: ExploreBoardProps) {
   const [branch, setBranch] = useState<{ base: string; moves: string[] } | null>(null);
   const [selected, setSelected] = useState<
@@ -59,7 +66,6 @@ export function ExploreBoard({
   >(null);
   const [promptPromotion, setPromptPromotion] = useState<{ from: Square; to: Square } | null>(null);
   const [thinking, setThinking] = useState(false);
-  const [replyMs, setReplyMs] = useState(1000);
   const [evalCp, setEvalCp] = useState<number | null>(null);
   const [engineError, setEngineError] = useState<string | null>(null);
 
@@ -230,12 +236,6 @@ export function ExploreBoard({
         </div>
       )}
 
-      {!branch && !promptPromotion && (
-        <p className="explore-hint">
-          Jouez un coup sur le plateau pour ouvrir une variante : le moteur répondra.
-        </p>
-      )}
-
       {branch && (
         <div className="explore-branch">
           <div className="explore-branch-head">
@@ -258,21 +258,35 @@ export function ExploreBoard({
       )}
 
       {engineError && <p className="explore-hint">Le moteur n’a pas pu répondre : {engineError}</p>}
-
-      <label className="explore-time">
-        <span>Réponse du moteur</span>
-        <input
-          type="range"
-          min={200}
-          max={10000}
-          step={100}
-          value={replyMs}
-          onChange={(e) => setReplyMs(Number(e.target.value))}
-          disabled={thinking}
-          aria-label="Temps de réflexion du moteur"
-        />
-        <output>{(replyMs / 1000).toFixed(1).replace('.', ',')} s</output>
-      </label>
     </div>
+  );
+}
+
+/**
+ * Le curseur du temps de réponse, séparé du plateau parce qu'il se règle une
+ * fois et se lit rarement — alors que le plateau et la navigation servent à
+ * chaque coup. Il vit donc dans le panneau « Explorer ».
+ */
+export function ExploreReplyTime({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (ms: number) => void;
+}) {
+  return (
+    <label className="explore-time">
+      <span>Réponse du moteur</span>
+      <input
+        type="range"
+        min={200}
+        max={10000}
+        step={100}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        aria-label="Temps de réflexion du moteur"
+      />
+      <output>{(value / 1000).toFixed(1).replace('.', ',')} s</output>
+    </label>
   );
 }
