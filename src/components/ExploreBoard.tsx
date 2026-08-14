@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import type { Ref } from 'react';
 import { Board } from './Board';
 import type { BoardArrow } from './Board';
 import type { UsiEngine } from '../engine/UsiEngine';
@@ -39,6 +40,24 @@ interface ExploreBoardProps {
    * changer sous les yeux.
    */
   onBranchStart?: () => void;
+  /**
+   * Signale l'état de la variante au parent : c'est lui qui porte les chevrons
+   * flottants, et il doit savoir s'ils commandent la partie ou la variante.
+   */
+  onBranchState?: (state: { moves: number; thinking: boolean }) => void;
+  ref?: Ref<ExploreBoardHandle>;
+}
+
+/**
+ * Ce que le parent peut demander au plateau. Les chevrons vivent au-dehors —
+ * ils flottent en bas de l'écran — mais dans une variante ce sont ces deux
+ * gestes-là qu'ils doivent commander.
+ */
+export interface ExploreBoardHandle {
+  /** Joue le coup que le moteur choisit dans la position courante. */
+  playEngineMove: () => Promise<void>;
+  /** Revient d'un coup (ou de deux, si le moteur avait répondu). */
+  undo: () => void;
 }
 
 /** Rejoue une séquence depuis un SFEN. `null` si elle est invalide. */
@@ -74,6 +93,8 @@ export function ExploreBoard({
   replyMs,
   autoReply,
   onBranchStart,
+  onBranchState,
+  ref,
 }: ExploreBoardProps) {
   const [branch, setBranch] = useState<{ base: string; moves: string[] } | null>(null);
   const [selected, setSelected] = useState<
@@ -120,6 +141,36 @@ export function ExploreBoard({
     return out;
   }, [branch]);
 
+  /**
+   * Demande son coup au moteur dans la position donnée et le joue.
+   *
+   * Le score renvoyé est celui du camp au trait dans cette position : on le
+   * retourne pour l'afficher toujours du point de vue de celui qui vient de
+   * jouer.
+   */
+  const engineMove = useCallback(
+    async (base: string, moves: string[]) => {
+      setThinking(true);
+      setEngineError(null);
+      try {
+        const engine = await ensureEngine();
+        const r = await engine.analyze(base, moves, { movetimeMs: replyMs });
+        setEvalCp(-scoreToCp(r.scoreCp, r.scoreMate));
+        const reply = r.bestMove;
+        // `bestmove resign` : le moteur s'avoue battu. Il n'y a pas de coup à
+        // jouer, et lui en inventer un serait mentir sur ce qu'il a dit.
+        if (reply && replay(base, moves.concat(reply))) {
+          setBranch({ base, moves: moves.concat(reply) });
+        }
+      } catch (e) {
+        setEngineError((e as Error).message);
+      } finally {
+        setThinking(false);
+      }
+    },
+    [ensureEngine, replyMs],
+  );
+
   const play = async (usi: string) => {
     const base = branch?.base ?? baseSfen;
     const moves = (branch?.moves ?? []).concat(usi);
@@ -128,29 +179,13 @@ export function ExploreBoard({
     setBranch({ base, moves });
     setSelected(null);
     // Sans réponse du moteur, rien à attendre : le coup est joué, la main passe
-    // à l'autre camp, et c'est l'utilisateur qui la tient.
+    // à l'autre camp, et c'est l'utilisateur qui la tient. Le chevron « › » reste
+    // là pour lui demander son coup quand on veut le voir.
     if (!autoReply) {
       setEvalCp(null);
       return;
     }
-    setThinking(true);
-    setEngineError(null);
-    try {
-      const engine = await ensureEngine();
-      const r = await engine.analyze(base, moves, { movetimeMs: replyMs });
-      // Le moteur parle du point de vue du camp au trait après notre coup.
-      setEvalCp(-scoreToCp(r.scoreCp, r.scoreMate));
-      const reply = r.bestMove;
-      // `bestmove resign` : le moteur s'avoue battu. Il n'y a pas de coup à
-      // jouer, et lui en inventer un serait mentir sur ce qu'il a dit.
-      if (reply && replay(base, moves.concat(reply))) {
-        setBranch({ base, moves: moves.concat(reply) });
-      }
-    } catch (e) {
-      setEngineError((e as Error).message);
-    } finally {
-      setThinking(false);
-    }
+    await engineMove(base, moves);
   };
 
   const destinations = (): Square[] => {
@@ -223,6 +258,27 @@ export function ExploreBoard({
     setEvalCp(null);
     setSelected(null);
   };
+
+  /*
+   * Les chevrons flottants commandent la variante dès qu'elle existe : « › »
+   * demande son coup au moteur — c'est la seule façon de le voir quand la
+   * réponse automatique est coupée —, « ‹ » revient en arrière.
+   */
+  useImperativeHandle(
+    ref,
+    () => ({
+      playEngineMove: async () => {
+        if (!branch || thinking) return;
+        await engineMove(branch.base, branch.moves);
+      },
+      undo,
+    }),
+    [branch, thinking, engineMove, undo],
+  );
+
+  useEffect(() => {
+    onBranchState?.({ moves: branch?.moves.length ?? 0, thinking });
+  }, [branch, thinking, onBranchState]);
 
   const branchLastMove = branch?.moves.length
     ? (() => {

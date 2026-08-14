@@ -352,7 +352,7 @@ export function TrainingMode({
           </label>
           <span className="training-solved">{solved.size} résolue(s)</span>
         </div>
-        <div className="training-nav">
+        <div className="training-nav float-nav">
           <button
             className="btn btn-ghost"
             onClick={() => goTo(idx - 1)}

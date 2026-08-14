@@ -108,20 +108,9 @@
   padding: 6px 4px 2px;
 }
 
-/*
- * Les deux chevrons. Deux, pas quatre : « début » et « fin » ne servaient qu'à
- * ce que la courbe fait mieux — on y touche du doigt l'endroit voulu.
- */
-.eval-nav {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.eval-controls .btn {
-  padding: 8px 14px;
-  line-height: 1;
-}
+/* Deux chevrons, pas quatre : « début » et « fin » ne servaient qu'à ce que la
+   courbe fait mieux — on y touche du doigt l'endroit voulu. Leur mise en page
+   flottante sur téléphone est commune à tout le site : voir `.float-nav`. */
 
 /*
  * Le bouton qui donne les flèches à la suite du moteur. Actif, il prend la
@@ -150,37 +139,4 @@
 .btn.btn-line.active {
   border-color: var(--status-good);
   color: var(--status-good);
-}
-
-/*
- * Sur téléphone, les chevrons quittent la carte et vont se poser en bas à
- * droite de l'écran, sous le pouce : dans la carte, ils n'étaient atteignables
- * qu'à condition que la courbe soit à l'écran, alors qu'on avance coup par coup
- * en regardant le plateau, qui occupe déjà tout le haut.
- *
- * Le bouton de la suite reste, lui, dans la carte : un appui par ligne ne
- * justifie pas d'occuper le coin le plus précieux de l'écran, et un bouton
- * flottant de plus recouvrirait d'autant le plateau.
- */
-@media (max-width: 860px) {
-  .eval-nav {
-    position: fixed;
-    right: 10px;
-    /* `env()` tient compte de la barre d'accueil de l'iPhone ; les 14 px
-       supplémentaires dégagent la barre d'adresse de Safari. */
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
-    z-index: 30;
-    gap: 8px;
-  }
-
-  .eval-nav .btn {
-    width: 56px;
-    height: 52px;
-    padding: 0;
-    font-size: 24px;
-    line-height: 1;
-    border-radius: 16px;
-    background: var(--surface2);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  }
 }

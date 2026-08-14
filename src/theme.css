@@ -538,3 +538,42 @@ body {
   --piece-font: 'Hiragino Maru Gothic ProN', 'Zen Maru Gothic', 'YuGothic', 'Noto Sans JP',
     sans-serif;
 }
+
+/*
+ * Barre de navigation flottante. Sur téléphone, les deux chevrons — le geste
+ * qu'on répète le plus, qu'il s'agisse d'avancer dans une partie ou de passer à
+ * la gaffe suivante — quittent le flux et se posent en bas à droite de l'écran,
+ * sous le pouce. Ailleurs ils restent où ils sont, dans leur rangée.
+ *
+ * `.btn-ghost` dans le sélecteur, et non `.btn` seul : les règles voisines
+ * (`.eval-controls .btn`, `.training-nav .btn`) ont deux classes, et une media
+ * query n'ajoute aucune spécificité.
+ */
+.float-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 860px) {
+  .float-nav {
+    position: fixed;
+    right: 10px;
+    /* `env()` tient compte de la barre d'accueil de l'iPhone ; les 14 px
+       supplémentaires dégagent la barre d'adresse de Safari. */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+    z-index: 30;
+    gap: 8px;
+  }
+
+  .float-nav .btn.btn-ghost {
+    width: 56px;
+    height: 52px;
+    padding: 0;
+    font-size: 24px;
+    line-height: 1;
+    border-radius: 16px;
+    background: var(--surface2);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ExploreBoard, ExploreSettings } from './components/ExploreBoard';
+import type { ExploreBoardHandle } from './components/ExploreBoard';
 import type { BoardArrow } from './components/Board';
 import { EvalGraph } from './components/EvalGraph';
 import { KifuInput } from './components/KifuInput';
@@ -82,6 +83,18 @@ export default function App() {
    * à chaque coup.
    */
   const [autoReply, setAutoReply] = useState(true);
+  /*
+   * L'état de la variante en cours, remonté par le plateau. Les chevrons
+   * flottants sont ici : ils doivent savoir s'ils commandent la partie ou la
+   * variante, faute de quoi avancer d'un coup effacerait ce qu'on est en train
+   * d'explorer.
+   */
+  const exploreRef = useRef<ExploreBoardHandle>(null);
+  const [branchState, setBranchState] = useState({ moves: 0, thinking: false });
+  const onBranchState = useCallback(
+    (st: { moves: number; thinking: boolean }) => setBranchState(st),
+    [],
+  );
   /** Variante rejouée par-dessus la partie : d'où elle part, ses coups, et où on en est. */
   const [variation, setVariation] = useState<{
     baseSfen: string;
@@ -344,14 +357,28 @@ export default function App() {
   }, [bestLine]);
 
   const stepBack = useCallback(() => {
+    // Dans une variante jouée sur le plateau, reculer c'est reprendre son coup.
+    if (branchState.moves > 0) {
+      exploreRef.current?.undo();
+      return;
+    }
     setVariation((v) => (v ? { ...v, index: Math.max(0, v.index - 1) } : v));
     if (!variation) setCurrentPly((p) => Math.max(0, p - 1));
-  }, [variation]);
+  }, [variation, branchState.moves]);
 
   const stepForward = useCallback(() => {
+    /*
+     * Dans une variante, avancer c'est demander son coup au moteur — et c'est la
+     * seule façon de le voir quand la réponse automatique est coupée : on tient
+     * les deux camps, mais on veut encore pouvoir consulter.
+     */
+    if (branchState.moves > 0) {
+      void exploreRef.current?.playEngineMove();
+      return;
+    }
     setVariation((v) => (v ? { ...v, index: Math.min(v.moves.length, v.index + 1) } : v));
     if (!variation) setCurrentPly((p) => Math.min(game?.moves.length ?? 0, p + 1));
-  }, [variation, game]);
+  }, [variation, game, branchState.moves]);
 
   // « Suivre un joueur » : on ne montre que ses fautes, sans réanalyser la partie.
   /*
@@ -433,7 +460,7 @@ export default function App() {
       className={`app${
         /* La barre de navigation flottante sort du flux et se poserait sur le
            pied de page : seul l'onglet qui la porte réserve la place. */
-        phase.kind === 'done' && result && game && tab === 'analysis' ? ' app-navbar' : ''
+        phase.kind === 'done' && result && game && tab !== 'tsume' ? ' app-navbar' : ''
       }`}
     >
       <header className={`app-header${phase.kind === 'done' ? ' compact' : ''}`}>
@@ -683,11 +710,17 @@ export default function App() {
                        * précis se choisit mieux dessus qu'en tenant une flèche.
                        */
                       <div className="eval-controls">
-                        <div className="eval-nav">
+                        <div className="float-nav">
                           <button
                             className="btn btn-ghost"
                             onClick={stepBack}
-                            disabled={variation ? variation.index === 0 : currentPly === 0}
+                            disabled={
+                              branchState.moves > 0
+                                ? branchState.thinking
+                                : variation
+                                  ? variation.index === 0
+                                  : currentPly === 0
+                            }
                             aria-label="Coup précédent"
                           >
                             ‹
@@ -696,11 +729,15 @@ export default function App() {
                             className="btn btn-ghost"
                             onClick={stepForward}
                             disabled={
-                              variation
-                                ? variation.index >= variation.moves.length
-                                : currentPly >= game.moves.length
+                              branchState.moves > 0
+                                ? branchState.thinking
+                                : variation
+                                  ? variation.index >= variation.moves.length
+                                  : currentPly >= game.moves.length
                             }
-                            aria-label="Coup suivant"
+                            aria-label={
+                              branchState.moves > 0 ? 'Jouer le coup du moteur' : 'Coup suivant'
+                            }
                           >
                             ›
                           </button>
@@ -708,7 +745,10 @@ export default function App() {
                         <button
                           className={`btn btn-line${variation ? ' active' : ''}`}
                           onClick={toggleBestLine}
-                          disabled={!variation && (bestLine?.bestMovePv.length ?? 0) === 0}
+                          disabled={
+                            branchState.moves > 0 ||
+                            (!variation && (bestLine?.bestMovePv.length ?? 0) === 0)
+                          }
                         >
                           {variation ? '↩ Revenir à la partie' : 'Meilleure suite'}
                         </button>
@@ -740,6 +780,8 @@ export default function App() {
                       replyMs={replyMs}
                       autoReply={autoReply}
                       onBranchStart={() => setPanel('explore')}
+                      onBranchState={onBranchState}
+                      ref={exploreRef}
                     />
                   )}
                   {variation && (

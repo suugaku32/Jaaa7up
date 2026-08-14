@@ -53,7 +53,10 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   coupe : décochée, les deux camps se jouent à la main, ce qu'il faut pour
   dérouler une idée à soi ou rejouer une variante lue ailleurs sans qu'un
   adversaire s'invite à chaque coup. « Reculer » retire alors un coup et non
-  deux — c'est la main d'avant qu'on veut reprendre. Naviguer dans la partie
+  deux — c'est la main d'avant qu'on veut reprendre. Dans une variante, les
+  chevrons flottants la commandent : `›` demande son coup au moteur — la seule
+  façon de le voir quand la réponse automatique est coupée — et `‹` revient en
+  arrière. Vidée de ses coups, la variante leur rend la partie. Naviguer dans la partie
   abandonne la variante — la garder obligerait à choisir en permanence entre deux positions
   affichées, pour une idée qu'on explore le plus souvent d'un trait.
 - **Onglet Analyse en deux colonnes** : le plateau d'un côté, le reste de l'autre.
@@ -64,7 +67,8 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   ligne d'écran. Elles suivaient auparavant trois blocs empilés et arrivaient à
   928 px du haut de la page — hors de l'écran d'un iPhone, donc un défilement à
   chaque coup. Sous 860 px de large, les deux chevrons quittent le flux et se
-  posent **en bas à droite de l'écran**, sous le pouce, agrandis à 56 × 52 px ;
+  posent **en bas à droite de l'écran**, sous le pouce, agrandis à 56 × 52 px —
+  comme, en entraînement, les chevrons qui passent d'une gaffe à la suivante ;
   le bouton de la suite, lui, reste dans la carte, en pastille — un appui par
   ligne ne justifie pas d'occuper le coin le plus précieux de l'écran, et un
   bouton flottant de plus recouvrirait d'autant le plateau. `⏮` et `⏭` ont
