@@ -65,6 +65,15 @@ export function TrainingMode({
   const [solved, setSolved] = useState<Set<number>>(new Set());
   /** Suite en cours de lecture : quelle ligne, et combien de coups rejoués. */
   const [replay, setReplay] = useState<{ line: Line; index: number } | null>(null);
+  /*
+   * Suite demandée au moteur depuis la position affichée. « Ce qui a suivi »
+   * occupait cette place : la suite réellement jouée dans la partie, c'est-à-dire
+   * la suite d'un coup dont on vient d'établir qu'il était mauvais. On la
+   * regardait sans rien pouvoir en faire. La question qu'on se pose devant une
+   * position est l'autre : et maintenant, qu'est-ce qui vient ?
+   */
+  const [forecast, setForecast] = useState<Line | null>(null);
+  const [forecasting, setForecasting] = useState(false);
   const current = blunders[idx];
 
   const position = useMemo(
@@ -220,6 +229,36 @@ export function TrainingMode({
     setPromptPromotion(null);
     setErrorSquare(null);
     setReplay(null);
+    setForecast(null);
+  };
+
+  /**
+   * Demande au moteur ce qui vient après la position affichée — celle de
+   * l'exercice, ou celle où l'on est arrivé en déroulant une suite.
+   *
+   * Le calcul se fait à la cadence de l'analyse : c'est la même question que
+   * celle qu'elle pose, sur une position qu'elle n'a pas vue.
+   */
+  const prevoir = async () => {
+    const from = replayView ? replayView.position : position;
+    const baseSfen = from.toSfen();
+    setForecasting(true);
+    try {
+      const engine = await ensureEngine();
+      const r = await engine.analyze(baseSfen, [], { movetimeMs });
+      const moves = r.pv.length ? r.pv : r.bestMove ? [r.bestMove] : [];
+      if (moves.length === 0) return;
+      const line: Line = { label: 'Suite prévue', tone: 'best', baseSfen, moves };
+      setForecast(line);
+      // On la déroule aussitôt d'un coup : la question était « et maintenant ? ».
+      setReplay({ line, index: 1 });
+    } catch {
+      // Le moteur indisponible se signale déjà ailleurs ; ici, ne rien montrer
+      // vaut mieux qu'une ligne fausse.
+      setForecast(null);
+    } finally {
+      setForecasting(false);
+    }
   };
 
   // Lignes proposées une fois la position résolue ou dévoilée. Jamais avant :
@@ -263,15 +302,9 @@ export function TrainingMode({
         moves: current.bestMovePv,
       });
     }
-    if (current.refutationPv.length) {
-      lines.push({
-        label: 'Ce qui a suivi',
-        tone: 'played',
-        baseSfen: current.sfenAfter,
-        moves: current.refutationPv,
-      });
-    }
   }
+
+  if (forecast) lines.push(forecast);
 
   // Le plateau suit la suite en cours de lecture, sinon la position de l'exercice.
   // Pas de useMemo ici : ce code vit après le retour anticipé plus haut, et un
@@ -531,6 +564,15 @@ export function TrainingMode({
               ))}
             </div>
           )}
+
+          {/*
+            Toujours disponible : la question « qu'est-ce qui vient ensuite ? »
+            se pose à tout moment — avant d'avoir répondu comme après, et depuis
+            n'importe quel point d'une suite qu'on déroule.
+          */}
+          <button className="btn btn-ghost" onClick={() => void prevoir()} disabled={forecasting}>
+            {forecasting ? 'Le moteur réfléchit…' : 'Prévoir la suite'}
+          </button>
 
           {verdict.kind !== 'revealed' && verdict.kind !== 'correct' && (
             <button

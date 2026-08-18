@@ -80,6 +80,13 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   perd au plus 50 centipions par rapport à la valeur que l'analyse a établie pour
   la position. Le verdict distingue le coup du moteur d'un coup simplement toléré,
   et nomme le premier quand ils diffèrent.
+- **« Prévoir la suite »**, disponible à tout moment en entraînement : le moteur
+  dit ce qui vient après la position affichée — celle de l'exercice, ou celle où
+  l'on est arrivé en déroulant une suite —, et la ligne obtenue se parcourt coup
+  par coup. Elle remplace « Ce qui a suivi », qui montrait la suite réellement
+  jouée dans la partie : la suite d'un coup dont on venait d'établir qu'il était
+  mauvais, qu'on regardait sans rien pouvoir en faire. La question qu'on se pose
+  devant une position est l'autre — et maintenant, qu'est-ce qui vient ?
 - **Détection des tsume** : les positions où un mat forcé était disponible sont
   repérées, distinguées selon qu'il a été porté ou laissé passer, et rejouables —
   on joue le mat, le moteur défend, jusqu'au mat ou jusqu'à ce qu'il s'échappe.
