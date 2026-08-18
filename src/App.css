@@ -283,6 +283,16 @@
   color: var(--dim);
 }
 
+/*
+ * Masqué tant que le sélecteur de panneau fait le travail (sous 860 px, un
+ * seul panneau à la fois porte déjà son nom sur l'onglet actif). Au-dessus,
+ * où « Coups » et « Explorer » s'affichent ensemble sans rien pour les
+ * distinguer, ce titre est ce qui les rend identifiables comme deux sections.
+ */
+.panel-heading {
+  display: none;
+}
+
 @media (min-width: 861px) {
   .analysis-segments {
     display: none;
@@ -294,6 +304,14 @@
 
   .panel-explore {
     order: 2;
+  }
+
+  .panel-heading {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--dim);
+    margin: 0;
   }
 }
 
