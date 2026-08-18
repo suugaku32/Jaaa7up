@@ -111,9 +111,17 @@ npm run build      # produit dist/, prêt pour Pages
 ```
 
 Le workflow `.github/workflows/deploy.yml` compile `dist/` à chaque push sur `main`
-et le pousse en force sur la branche `gh-pages`, d'où Pages le sert. Vite est
-configuré avec `base: './'`, donc le site fonctionne aussi bien à la racine d'un
-domaine que sous `/<repo>/`.
+et le publie par la chaîne officielle (`upload-pages-artifact` puis
+`deploy-pages`). **Le dépôt doit être réglé sur Réglages → Pages → Source :
+GitHub Actions.** Vite est configuré avec `base: './'`, donc le site fonctionne
+aussi bien à la racine d'un domaine que sous `/<repo>/`.
+
+Le workflow a poussé sur une branche `gh-pages` pendant un temps, pour contourner
+un incident Actions qui laissait les déploiements en `deployment_queued`. Les deux
+approches sont incompatibles avec le mauvais réglage : source « GitHub Actions » et
+publication sur une branche, la poussée réussit, la branche porte le nouveau site,
+et rien n'est publié — sans qu'aucune erreur ne le signale. Le seul indice est
+l'absence de « pages build and deployment » derrière un déploiement réussi.
 
 Le panneau `⚙` affiche en dernière ligne l'estampille de compilation, injectée par
 Vite. C'est la seule façon de distinguer « le correctif ne marche pas » de « le
