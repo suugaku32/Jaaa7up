@@ -169,15 +169,20 @@
   color: var(--text);
 }
 
+/*
+ * Colonne, pas rangée : à côté de la courbe, l'espace disponible est étroit et
+ * vertical (ce que `EvalGraph` laisse libre à sa droite) plutôt que large et
+ * horizontal comme lorsque le bilan occupait sa propre rangée pleine largeur.
+ */
 .summary {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 220px;
+  min-width: 0;
 }
 
 .summary-card {
-  flex: 1;
-  min-width: 240px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -185,6 +190,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .summary-side {
@@ -225,10 +231,24 @@
   min-width: 0;
 }
 
-/* Sur grand écran la courbe occupe seule la première ligne du bloc. */
-.analysis-graph {
+/*
+ * Sur grand écran, la rangée occupe seule la première ligne du bloc. La courbe
+ * elle-même plafonne à 760 px (voir `EvalGraph.css`) : le bilan par joueur se
+ * loge dans ce qu'elle laisse libre à sa droite plutôt que d'occuper sa propre
+ * rangée pleine largeur au-dessus. Sous 861 px il n'y a plus la place ; la
+ * rangée se replie et le bilan repasse sous la courbe (`flex-wrap`).
+ */
+.analysis-graph-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
   flex: 1 1 100%;
   order: -1;
+}
+
+.analysis-graph {
+  flex: 1 1 480px;
   min-width: 0;
 }
 
@@ -325,12 +345,13 @@
     width: 100%;
   }
 
-  /* Plateau, navigation, puis la courbe, puis le panneau choisi. */
+  /* Plateau, navigation, puis la courbe (et sous elle, le bilan replié faute
+     de place à côté), puis le panneau choisi. */
   .analysis-main {
     order: 1;
   }
 
-  .analysis-graph {
+  .analysis-graph-row {
     order: 2;
   }
 

@@ -653,44 +653,20 @@ export default function App() {
             </div>
           </div>
 
-          {/* Le bilan par joueur appartient à l'analyse. En entraînement et en
-              tsume, il n'ajoute rien que les compteurs des onglets ne disent
-              déjà, et sur téléphone il repousse le plateau de 290 px. */}
-          {summary && tab === 'analysis' && (
-            <div className="summary">
-              {(['b', 'w'] as const).map((side) => (
-                <div className="summary-card" key={side}>
-                  <span className="summary-side">
-                    {side === 'b' ? '▲ Sente' : '△ Gote'}
-                    {side === 'b' && game.black ? ` — ${game.black}` : ''}
-                    {side === 'w' && game.white ? ` — ${game.white}` : ''}
-                  </span>
-                  <span className="summary-stats">
-                    <em style={{ color: 'var(--status-inaccuracy)' }}>
-                      {summary[side].inaccuracy} {QUALITY_LABEL_FR.inaccuracy.toLowerCase()}
-                    </em>
-                    <em style={{ color: 'var(--status-mistake)' }}>
-                      {summary[side].mistake} {QUALITY_LABEL_FR.mistake.toLowerCase()}
-                    </em>
-                    <em style={{ color: 'var(--status-blunder)' }}>
-                      {summary[side].blunder} {QUALITY_LABEL_FR.blunder.toLowerCase()}
-                    </em>
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
           {tab === 'analysis' ? (
             <>
               <div className="analysis-body">
                 {/*
-                  La courbe reste en tête sur grand écran, où elle ne coûte rien.
-                  Sur téléphone elle passe sous le plateau (voir `.analysis-graph`
-                  dans App.css) : 160 px au-dessus des cases, c'était le plateau
-                  et sa navigation repoussés hors de l'écran d'entrée de jeu.
+                  Le bilan par joueur vivait dans sa propre rangée, pleine
+                  largeur, au-dessus de la courbe. Sur un grand écran la courbe
+                  elle-même plafonne à 760 px (voir `EvalGraph.css`) : tout ce
+                  qui suivait à sa droite restait vide. Le bilan s'y loge
+                  maintenant à la place ; en dessous de 861 px il n'y a plus de
+                  place à côté, la ligne se replie et le bilan repasse sous la
+                  courbe — voir `.analysis-graph-row` dans App.css.
                 */}
-                <div className="analysis-graph">
+                <div className="analysis-graph-row">
+                  <div className="analysis-graph">
                   <EvalGraph
                     evalCurve={result.evalCurve}
                     plies={focusedPlies}
@@ -755,6 +731,32 @@ export default function App() {
                       </div>
                     }
                   />
+                  </div>
+
+                  {summary && (
+                    <div className="summary">
+                      {(['b', 'w'] as const).map((side) => (
+                        <div className="summary-card" key={side}>
+                          <span className="summary-side">
+                            {side === 'b' ? '▲ Sente' : '△ Gote'}
+                            {side === 'b' && game.black ? ` — ${game.black}` : ''}
+                            {side === 'w' && game.white ? ` — ${game.white}` : ''}
+                          </span>
+                          <span className="summary-stats">
+                            <em style={{ color: 'var(--status-inaccuracy)' }}>
+                              {summary[side].inaccuracy} {QUALITY_LABEL_FR.inaccuracy.toLowerCase()}
+                            </em>
+                            <em style={{ color: 'var(--status-mistake)' }}>
+                              {summary[side].mistake} {QUALITY_LABEL_FR.mistake.toLowerCase()}
+                            </em>
+                            <em style={{ color: 'var(--status-blunder)' }}>
+                              {summary[side].blunder} {QUALITY_LABEL_FR.blunder.toLowerCase()}
+                            </em>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {/*
                   Colonne de gauche : ce qu'on manipule en boucle. Le plateau,

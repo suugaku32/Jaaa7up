@@ -5,6 +5,53 @@
   align-items: center;
 }
 
+/* Sur large écran : la colonne des noms à côté du plateau plutôt qu'un ruban
+   au-dessus et en dessous de lui. Voir `Board.tsx`, la mesure qui décide. */
+.board-main {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.board-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Un nom en haut, un en bas — alignés sur le ruban de pièces du même camp
+   grâce à `space-between`, qui étire la colonne à la hauteur du plateau. */
+.names-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 108px;
+  flex-shrink: 0;
+  padding: 2px 0;
+}
+
+.name-label {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+  overflow: hidden;
+}
+
+.name-label-side {
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.name-label-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .board-frame {
   display: flex;
   flex-direction: column;
@@ -233,6 +280,18 @@
   padding: 7px 10px;
   width: 100%;
   min-height: 44px;
+}
+
+/*
+ * Sans nom à afficher (le nom vit alors dans `.names-col`, à côté du
+ * plateau), un ruban pleine largeur pour quelques pièces — ou un simple
+ * tiret — était le vide que dénonçait « c'est trop gros ». Réduit à son
+ * contenu et centré, il ne pèse plus que ce qu'il montre.
+ */
+.hbox-compact {
+  width: auto;
+  min-width: 0;
+  align-self: center;
 }
 
 .hl {

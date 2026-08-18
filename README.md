@@ -90,8 +90,26 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   elle-même est monté de 40 à 60 px : sur mobile la mesure de la largeur
   disponible le réduit de toute façon à l'écran, mais sur bureau 40 px laissait
   le plateau minuscule au milieu d'une colonne bien plus large que lui. Mesuré
-  à 1440 px de large : le plateau passe de 382 à 573 px en Analyse, et à 554 px
-  en Entraînement et Tsume, sans rien changer sur téléphone.
+  à 1440 px de large : le plateau passe de 382 à 573 px, identique dans les
+  trois onglets, sans rien changer sur téléphone.
+
+  Le nom des joueurs quitte aussi le ruban qui l'accompagnait au-dessus et en
+  dessous du plateau : plus le plateau grandit, plus ce ruban pleine largeur
+  pour quelques mots se voyait vide — c'était vrai avant même ce changement,
+  mais un plateau à 573 px le rendait criant. Sur bureau, le nom se loge donc
+  dans une colonne étroite à côté du plateau, en petit, sans fond ni cadre ; le
+  ruban ne garde que les pièces prises, réduit à ce qu'il montre au lieu de
+  s'étirer sur toute la largeur pour un tiret. La même mesure qui décide de la
+  taille de la case décide aussi de la mise en page : sous ~500 px de colonne,
+  ni la colonne des noms ni un plateau correct ne tiendraient côte à côte, et
+  le nom retourne dans le ruban — c'est ce qui se passe sur téléphone.
+
+  Le bilan par joueur (imprécisions, erreurs, gaffes) avait sa propre rangée
+  pleine largeur au-dessus de la courbe. Sur un grand écran la courbe
+  plafonne à 760 px (`EvalGraph.css`) : tout ce qui suivait à sa droite
+  restait vide. Le bilan s'y loge maintenant à la place, en colonne étroite ;
+  sous 861 px il n'y a plus la place à côté, la rangée se replie et le bilan
+  repasse sous la courbe.
 - **Mode entraînement** : sur chaque gaffe, on rejoue la position ; le coup joué est
   montré (flèche rouge), le coup proposé est évalué par le moteur et accepté s'il
   perd au plus 50 centipions par rapport à la valeur que l'analyse a établie pour

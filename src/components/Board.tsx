@@ -37,6 +37,12 @@ export interface BoardProps {
 
 const RANK_KANJI = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
 
+/** Largeur de la colonne des noms, quand elle sort du ruban pour se loger à côté du plateau. */
+const NAMES_COL_WIDTH = 108;
+const NAMES_GAP = 10;
+/** En dessous, ni la colonne ni un plateau de taille correcte (case ≥ 40 px) ne tiendraient côte à côte. */
+const WIDE_THRESHOLD = NAMES_COL_WIDTH + NAMES_GAP + Math.ceil(40 * 9.55);
+
 export function Board({
   position,
   lastMove,
@@ -83,8 +89,21 @@ export function Board({
   // Avant la première mesure on rend à la taille demandée : mieux vaut un
   // plateau trop large le temps d'une image qu'un plateau qui grandit sous
   // l'œil à chaque affichage.
+  /*
+   * Les rubans de nom, un par camp, occupaient toute la largeur du plateau
+   * pour un nom qui n'en emplit qu'une fraction — plus le plateau grandit,
+   * plus le vide autour du nom se voit. Sur un large écran, le nom sort donc
+   * du ruban et se loge dans une colonne étroite à côté du plateau : c'est le
+   * même `available` qui décide, puisqu'il faut la place des deux à la fois.
+   * Sous ce seuil, ni la colonne ni le plateau ne tiendraient — le nom
+   * retourne dans le ruban, seul endroit qui reste.
+   */
+  const wide = available !== null && available >= WIDE_THRESHOLD;
+  const boardAvailable = available === null ? null : wide ? available - NAMES_COL_WIDTH - NAMES_GAP : available;
   const cellSize =
-    available === null ? maxCellSize : Math.max(18, Math.min(maxCellSize, Math.floor(available / 9.55)));
+    boardAvailable === null
+      ? maxCellSize
+      : Math.max(18, Math.min(maxCellSize, Math.floor(boardAvailable / 9.55)));
 
   const isLegalDest = (sq: Square) => (legalDestinations ?? []).some((d) => sameSquare(d, sq));
 
@@ -173,11 +192,12 @@ export function Board({
   const bottom: Color = flipped ? 'w' : 'b';
   const nameOf = (c: Color) => (c === 'b' ? blackName : whiteName);
 
-  return (
-    <div className="board-wrap" ref={wrapRef}>
+  const stack = (
+    <div className="board-stack">
       <HandRow
         color={top}
         name={nameOf(top)}
+        showName={!wide}
         hand={position.hands[top]}
         upsideDown
         interactive={interactive && handSide === top}
@@ -302,6 +322,7 @@ export function Board({
       <HandRow
         color={bottom}
         name={nameOf(bottom)}
+        showName={!wide}
         hand={position.hands[bottom]}
         upsideDown={false}
         interactive={interactive && handSide === bottom}
@@ -310,11 +331,42 @@ export function Board({
       />
     </div>
   );
+
+  return (
+    <div className="board-wrap" ref={wrapRef}>
+      {wide ? (
+        <div className="board-main">
+          <div className="names-col">
+            <NameLabel side={top} name={nameOf(top)} />
+            <NameLabel side={bottom} name={nameOf(bottom)} />
+          </div>
+          {stack}
+        </div>
+      ) : (
+        stack
+      )}
+    </div>
+  );
+}
+
+/**
+ * Le nom, seul, à côté du plateau — plus grand celui-ci grandit, plus un ruban
+ * pleine largeur pour quelques mots se voyait vide. Sans fond ni cadre : ce
+ * n'est plus une carte à remplir, juste une étiquette.
+ */
+function NameLabel({ side, name }: { side: Color; name?: string }) {
+  return (
+    <div className="name-label">
+      <span className="name-label-side">{side === 'b' ? '▲ Sente' : '△ Gote'}</span>
+      {name && <span className="name-label-name">{name}</span>}
+    </div>
+  );
 }
 
 function HandRow({
   color,
   name,
+  showName = true,
   hand,
   upsideDown,
   interactive,
@@ -323,6 +375,12 @@ function HandRow({
 }: {
   color: Color;
   name?: string;
+  /**
+   * Faux quand le nom est déjà affiché à côté du plateau (`NameLabel`) : le
+   * répéter ici referait la même chose deux fois, et sans lui le ruban ne
+   * contient plus que les pièces, largeur réduite au strict nécessaire.
+   */
+  showName?: boolean;
   hand: Record<Exclude<PieceType, 'K'>, number>;
   upsideDown?: boolean;
   interactive?: boolean;
@@ -331,11 +389,13 @@ function HandRow({
 }) {
   const pieces = HAND_PIECE_ORDER.filter((t) => hand[t] > 0);
   return (
-    <div className="hbox">
-      <span className="hl">
-        <span className="hl-side">{color === 'b' ? '▲ Sente' : '△ Gote'}</span>
-        {name && <span className="hl-name">{name}</span>}
-      </span>
+    <div className={`hbox${showName ? '' : ' hbox-compact'}`}>
+      {showName && (
+        <span className="hl">
+          <span className="hl-side">{color === 'b' ? '▲ Sente' : '△ Gote'}</span>
+          {name && <span className="hl-name">{name}</span>}
+        </span>
+      )}
       <div className="hpieces">
         {pieces.length === 0 && <span className="hempty">—</span>}
         {pieces.map((type) => (
