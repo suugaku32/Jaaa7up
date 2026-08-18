@@ -130,12 +130,15 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   « Meilleure suite » : les quatre répondent à la même question — où en
   est-on dans la partie — et se lisent d'un coup d'œil. Sur bureau,
   l'info-bulle sous le graphe, devenue redondante, a disparu à son tour — une
-  ligne de moins dans la carte. Sur téléphone en revanche elle reste : la
-  rangée du haut y est resserrée par les chevrons flottants qui en sortent
-  (voir plus haut, `.float-nav`), pas la place d'y ajouter coup et score sans
-  les tronquer. La courbe elle-même est un peu moins haute (220 → 170 px) : la carte
-  gagne de la hauteur d'écran sans perdre en lisibilité, l'échelle en racine
-  carrée gardant les petits écarts visibles même moins étirée verticalement.
+  ligne de moins dans la carte. Sur téléphone c'est l'inverse : la rangée du
+  haut est resserrée par les chevrons flottants qui en sortent (voir plus
+  haut, `.float-nav`), pas la place d'y ajouter coup, score et qualité sans
+  les tronquer — elle disparaît donc à son tour sous 861 px, et c'est
+  l'info-bulle qui garde les trois, la qualité en tête plutôt qu'en fin,
+  puisque c'est elle qu'on cherche d'abord. La courbe elle-même est un peu
+  moins haute (220 → 170 px) : la carte gagne de la hauteur d'écran sans
+  perdre en lisibilité, l'échelle en racine carrée gardant les petits écarts
+  visibles même moins étirée verticalement.
 
   En bas, plateau et colonne des coups suivaient chacun leur propre largeur :
   la colonne des noms, centrée avec le plateau, ne partait pas du même bord

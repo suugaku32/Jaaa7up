@@ -125,6 +125,17 @@
   white-space: nowrap;
 }
 
+/*
+ * Cachée sous 861 px : elle double alors `.eval-tooltip`, sous le graphe, qui
+ * a la place d'afficher coup, score et qualité sans les tronquer — cette
+ * rangée-ci, resserrée par les chevrons flottants (`.float-nav`), ne l'a pas.
+ */
+@media (max-width: 860px) {
+  .eval-controls-info {
+    display: none;
+  }
+}
+
 .eval-controls-ply {
   font-size: 12px;
   font-weight: 600;

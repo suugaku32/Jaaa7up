@@ -221,13 +221,19 @@ export function EvalGraph({
 
       {/*
         Sur bureau la rangée de commandes dit déjà tout ça — redondant, elle y
-        a disparu (voir `.eval-tooltip` dans `EvalGraph.css`). Sur téléphone en
-        revanche cette rangée est resserrée par les chevrons qui en sortent
-        (voir `.float-nav`), pas la place d'y ajouter coup et score sans les
-        tronquer ; ils gardent donc leur propre ligne, comme avant.
+        a disparu (voir `.eval-controls-info` dans `EvalGraph.css`). Sur
+        téléphone en revanche cette rangée est resserrée par les chevrons qui
+        en sortent (voir `.float-nav`), pas la place d'y ajouter coup, score
+        et qualité sans les tronquer ; ils gardent donc leur propre ligne, la
+        qualité en tête plutôt qu'en fin — c'est elle qu'on cherche d'abord.
       */}
       {activePoint && (
         <div className="eval-tooltip">
+          {activePly && (
+            <span className="eval-quality-badge" style={{ color: STATUS_VAR[activePly.quality] }}>
+              {QUALITY_LABEL_FR[activePly.quality]}
+            </span>
+          )}
           <span className="eval-tooltip-ply">{activePlyLabel}</span>
           <span className="eval-tooltip-score">
             {formatCp(activePoint.cpForBlack)}
