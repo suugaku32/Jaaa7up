@@ -22,7 +22,9 @@ interface EvalGraphProps {
 }
 
 const WIDTH = 760;
-const HEIGHT = 220;
+/* Réduite de 220 : la carte gagne de la hauteur d'écran, et l'échelle en
+   racine carrée reste lisible même moins haute. */
+const HEIGHT = 170;
 const PAD_X = 8;
 const PAD_TOP = 10;
 const PAD_BOTTOM = 10;
@@ -105,6 +107,8 @@ export function EvalGraph({
   const activeIdx = hoverIdx ?? currentPly;
   const activePoint = evalCurve[activeIdx];
   const activePly = plies[activeIdx - 1];
+  const activePlyLabel =
+    activeIdx === 0 ? 'Position initiale' : `Coup ${activeIdx}${moveLabels[activeIdx - 1] ? ` — ${moveLabels[activeIdx - 1]}` : ''}`;
 
   return (
     <div className="eval-graph">
@@ -121,9 +125,15 @@ export function EvalGraph({
       */}
       <div className="eval-controls">
         {navControls}
-        {activePly && (
-          <span className="eval-quality-badge" style={{ color: STATUS_VAR[activePly.quality] }}>
-            {QUALITY_LABEL_FR[activePly.quality]}
+        {activePoint && (
+          <span className="eval-controls-info">
+            <span className="eval-controls-ply">{activePlyLabel}</span>
+            <span className="eval-controls-score">{formatCp(activePoint.cpForBlack)}</span>
+            {activePly && (
+              <span className="eval-quality-badge" style={{ color: STATUS_VAR[activePly.quality] }}>
+                {QUALITY_LABEL_FR[activePly.quality]}
+              </span>
+            )}
           </span>
         )}
         {lineControl}
@@ -211,9 +221,7 @@ export function EvalGraph({
 
       {activePoint && (
         <div className="eval-tooltip">
-          <span className="eval-tooltip-ply">
-            {activeIdx === 0 ? 'Position initiale' : `Coup ${activeIdx}${moveLabels[activeIdx - 1] ? ` — ${moveLabels[activeIdx - 1]}` : ''}`}
-          </span>
+          <span className="eval-tooltip-ply">{activePlyLabel}</span>
           <span className="eval-tooltip-score">
             {formatCp(activePoint.cpForBlack)}
           </span>

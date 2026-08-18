@@ -123,13 +123,16 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
 
   Dans la carte de la courbe, la légende des marqueurs (▲ Imprécision, etc.)
   a disparu : elle ne disait rien que les marqueurs eux-mêmes, sur la courbe,
-  ne disaient déjà. Ce qui manquait vraiment — savoir si le coup survolé est
-  bon ou pas — vivait dans l'info-bulle sous le graphe, repérable seulement
-  en la cherchant. Cette indication rejoint maintenant la rangée de commandes
-  en tête de la carte, entre les chevrons et le bouton « Meilleure suite » :
-  les trois répondent à la même question — où en est-on dans la partie — et
-  se lisent d'un coup d'œil. L'info-bulle, elle, garde le numéro du coup et
-  le score.
+  ne disaient déjà. Ce qui manquait vraiment — le coup survolé, son score, et
+  si c'est un bon coup ou pas — vivait dans l'info-bulle sous le graphe,
+  repérable seulement en la cherchant. Ce trio rejoint maintenant la rangée
+  de commandes en tête de la carte, entre les chevrons et le bouton
+  « Meilleure suite » : les quatre répondent à la même question — où en
+  est-on dans la partie — et se lisent d'un coup d'œil. L'info-bulle sous le
+  graphe garde le même contenu, pour qui la regarde plutôt que la rangée du
+  haut. La courbe elle-même est un peu moins haute (220 → 170 px) : la carte
+  gagne de la hauteur d'écran sans perdre en lisibilité, l'échelle en racine
+  carrée gardant les petits écarts visibles même moins étirée verticalement.
 
   En bas, plateau et colonne des coups suivaient chacun leur propre largeur :
   la colonne des noms, centrée avec le plateau, ne partait pas du même bord
