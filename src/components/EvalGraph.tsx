@@ -112,6 +112,21 @@ export function EvalGraph({
       */}
       {controls}
 
+      {/*
+        En haut, centrée : elle vivait sous le graphe, une rangée de plus dans
+        une carte déjà chargée. Ici elle ne coûte rien de neuf — les commandes
+        au-dessus ont déjà leur propre ligne.
+      */}
+      {markers.length > 0 && (
+        <div className="eval-legend">
+          {MARKER_QUALITIES.filter((q) => markers.some((m) => m.p.quality === q)).map((q) => (
+            <span key={q} className="eval-legend-item">
+              <MarkerShapeIcon quality={q} /> {QUALITY_LABEL_FR[q]}
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="eval-graph-labels">
         <span className="eval-side-label top">▲ Sente</span>
         <span className="eval-side-label bottom">△ Gote</span>
@@ -208,15 +223,6 @@ export function EvalGraph({
         </div>
       )}
 
-      {markers.length > 0 && (
-        <div className="eval-legend">
-          {MARKER_QUALITIES.filter((q) => markers.some((m) => m.p.quality === q)).map((q) => (
-            <span key={q} className="eval-legend-item">
-              <MarkerShapeIcon quality={q} /> {QUALITY_LABEL_FR[q]}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

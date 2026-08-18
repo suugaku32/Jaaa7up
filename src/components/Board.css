@@ -6,11 +6,15 @@
 }
 
 /* Sur large écran : la colonne des noms à côté du plateau plutôt qu'un ruban
-   au-dessus et en dessous de lui. Voir `Board.tsx`, la mesure qui décide. */
+   au-dessus et en dessous de lui. Voir `Board.tsx`, la mesure qui décide.
+   Pleine largeur, pour que la colonne des noms reste bord à bord avec le bord
+   gauche de la courbe au-dessus (voir `.analysis-main` dans `App.css`) plutôt
+   que de suivre le plateau, lui, plus étroit. */
 .board-main {
   display: flex;
   gap: 10px;
   align-items: stretch;
+  width: 100%;
 }
 
 .board-stack {
@@ -18,6 +22,17 @@
   flex-direction: column;
   gap: 8px;
   align-items: center;
+}
+
+/* `flex: 1` : une fois la colonne des noms fixée à gauche par `.board-main`,
+   le goban se centre dans ce qui reste plutôt que dans la largeur entière —
+   à sa taille maximale il déborderait sur la colonne des noms si on le
+   centrait sous la courbe entière. Ne vise que le mode large : en ruban
+   (mobile), `.board-stack` est l'unique enfant de `.board-wrap` et n'a pas
+   besoin de céder de la place à une colonne de noms voisine. */
+.board-main > .board-stack {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 /*

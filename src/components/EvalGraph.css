@@ -64,12 +64,19 @@
   font-weight: 600;
 }
 
+/*
+ * En haut de la carte, centrée : elle vivait sous le graphe, dans sa propre
+ * rangée en plus de l'info-bulle juste au-dessus — deux lignes pour ce qui
+ * tient en une. Elle ne coûte plus rien de neuf ici, la rangée des commandes
+ * est déjà là.
+ */
 .eval-legend {
   display: flex;
+  justify-content: center;
   gap: 14px;
   font-size: 11px;
   color: var(--text);
-  padding: 0 6px 6px;
+  padding: 0 6px 4px;
   flex-wrap: wrap;
 }
 

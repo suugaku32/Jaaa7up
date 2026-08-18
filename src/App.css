@@ -1,5 +1,11 @@
+/*
+ * 1 200 px : la courbe plafonne à 760 px, le bilan à sa droite à 380 px (même
+ * largeur que la liste des coups) — au-delà, l'espace gagné n'allait qu'en
+ * marges. La colonne des coups et le plateau, eux, restaient les seuls à en
+ * profiter, et ils ont leur propre plafond plus bas.
+ */
 .app {
-  max-width: 1320px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px 16px 40px;
   display: flex;
@@ -271,6 +277,21 @@
 @media (min-width: 861px) {
   .analysis-side {
     max-width: 380px;
+  }
+
+  /* Même largeur que la liste des coups, pour la même raison : au-delà d'une
+     largeur de lecture confortable, l'espace gagné ne sert plus à rien ici —
+     et le laisser filer élargissait la page entière sans nécessité. */
+  .summary {
+    max-width: 380px;
+  }
+
+  /* Même plafond que la courbe (760 px, voir `EvalGraph.css`) : les deux
+     partent du même bord gauche dans `.analysis-body`, donc plafonnés pareil
+     ils gardent aussi le même bord droit — plateau et noms de joueurs restent
+     sous la courbe plutôt que de déborder à sa droite une fois la page large. */
+  .analysis-main {
+    max-width: 760px;
   }
 }
 

@@ -113,7 +113,29 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   plafonne à 760 px (`EvalGraph.css`) : tout ce qui suivait à sa droite
   restait vide. Le bilan s'y loge maintenant à la place, en colonne étroite ;
   sous 861 px il n'y a plus la place à côté, la rangée se replie et le bilan
-  repasse sous la courbe.
+  repasse sous la courbe. Sur bureau, cette colonne plafonne elle aussi à
+  380 px — la même largeur que la liste des coups, pour la même raison :
+  au-delà d'une largeur de lecture confortable, l'espace gagné ne servait
+  qu'à élargir la page entière sans rien y montrer de plus. La page plafonne
+  donc désormais à 1 200 px plutôt que 1 320 : la courbe (760) et le bilan
+  (380) posent le nouveau plafond, la colonne des coups et le plateau ayant
+  déjà le leur, plus bas.
+
+  Dans la carte de la courbe, la légende (▲ Imprécision, etc.) vivait sous le
+  graphe, dans sa propre rangée en plus de l'info-bulle juste au-dessus —
+  deux lignes pour ce qui tient en une. Elle est montée en tête de la carte,
+  centrée, à côté de la rangée des commandes qui l'accueille sans rien
+  coûter de neuf.
+
+  En bas, plateau et colonne des coups suivaient chacun leur propre largeur :
+  la colonne des noms, centrée avec le plateau, ne partait pas du même bord
+  que la courbe au-dessus. La colonne des coups plafonne maintenant à 760 px
+  comme la courbe — même bord gauche, donc le nom du joueur du haut et celui
+  du bas y restent alignés directement sous elle. Le goban, lui, se centre
+  dans l'espace qui reste une fois la colonne des noms posée à gauche plutôt
+  que sous la courbe entière : à sa taille maximale (573 px) plus la colonne
+  des noms (108 px) dépassent la largeur de la courbe, le centrer sous les
+  760 px l'aurait fait chevaucher les noms.
 - **Mode entraînement** : sur chaque gaffe, on rejoue la position ; le coup joué est
   montré (flèche rouge), le coup proposé est évalué par le moteur et accepté s'il
   perd au plus 50 centipions par rapport à la valeur que l'analyse a établie pour
