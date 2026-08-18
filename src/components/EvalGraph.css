@@ -60,32 +60,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.eval-tooltip-quality {
-  font-weight: 600;
-}
-
-/*
- * En haut de la carte, centrée : elle vivait sous le graphe, dans sa propre
- * rangée en plus de l'info-bulle juste au-dessus — deux lignes pour ce qui
- * tient en une. Elle ne coûte plus rien de neuf ici, la rangée des commandes
- * est déjà là.
- */
-.eval-legend {
-  display: flex;
-  justify-content: center;
-  gap: 14px;
-  font-size: 11px;
-  color: var(--text);
-  padding: 0 6px 4px;
-  flex-wrap: wrap;
-}
-
-.eval-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
 .eval-area {
   fill-opacity: var(--area-opacity, 0.18);
 }
@@ -118,6 +92,24 @@
 /* Deux chevrons, pas quatre : « début » et « fin » ne servaient qu'à ce que la
    courbe fait mieux — on y touche du doigt l'endroit voulu. Leur mise en page
    flottante sur téléphone est commune à tout le site : voir `.float-nav`. */
+
+/*
+ * Entre les chevrons et le bouton de la suite : ce que l'info-bulle disait
+ * sous le graphe (bon coup ou pas) et qu'on ne voyait qu'en cherchant.
+ * `flex: 1` occupe tout l'espace laissé libre entre les deux — les chevrons
+ * gardent leur largeur propre, `.btn-line` garde la sienne (et sa marge
+ * automatique, sans effet ici puisqu'il ne reste alors plus d'espace à
+ * pousser) — et centre le texte dedans.
+ */
+.eval-quality-badge {
+  flex: 1 1 auto;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /*
  * Le bouton qui donne les flèches à la suite du moteur. Actif, il prend la

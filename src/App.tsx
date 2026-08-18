@@ -673,62 +673,63 @@ export default function App() {
                     moveLabels={moveLabels}
                     currentPly={currentPly}
                     onSelectPly={selectPly}
-                    controls={
+                    navControls={
                       /*
-                       * Deux blocs, parce qu'ils ne se manipulent pas de la même
-                       * façon. Les chevrons servent à chaque coup : sur téléphone
-                       * ils quittent la carte pour se poser en bas à droite de
-                       * l'écran, sous le pouce (voir `.eval-nav`). Le bouton de la
-                       * suite, lui, reste dans la carte : un appui par ligne ne
-                       * justifie pas d'occuper le coin le plus précieux de l'écran.
-                       *
-                       * ⏮ et ⏭ ont disparu : la courbe est cliquable, et un coup
-                       * précis se choisit mieux dessus qu'en tenant une flèche.
+                       * Les chevrons servent à chaque coup : sur téléphone ils
+                       * quittent la carte pour se poser en bas à droite de
+                       * l'écran, sous le pouce (voir `.eval-nav`). ⏮ et ⏭ ont
+                       * disparu : la courbe est cliquable, et un coup précis
+                       * se choisit mieux dessus qu'en tenant une flèche.
                        */
-                      <div className="eval-controls">
-                        <div className="float-nav">
-                          <button
-                            className="btn btn-ghost"
-                            onClick={stepBack}
-                            disabled={
-                              branchState.moves > 0
-                                ? branchState.thinking
-                                : variation
-                                  ? variation.index === 0
-                                  : currentPly === 0
-                            }
-                            aria-label="Coup précédent"
-                          >
-                            ‹
-                          </button>
-                          <button
-                            className="btn btn-ghost"
-                            onClick={stepForward}
-                            disabled={
-                              branchState.moves > 0
-                                ? branchState.thinking
-                                : variation
-                                  ? variation.index >= variation.moves.length
-                                  : currentPly >= game.moves.length
-                            }
-                            aria-label={
-                              branchState.moves > 0 ? 'Jouer le coup du moteur' : 'Coup suivant'
-                            }
-                          >
-                            ›
-                          </button>
-                        </div>
+                      <div className="float-nav">
                         <button
-                          className={`btn btn-line${variation ? ' active' : ''}`}
-                          onClick={toggleBestLine}
+                          className="btn btn-ghost"
+                          onClick={stepBack}
                           disabled={
-                            branchState.moves > 0 ||
-                            (!variation && (bestLine?.bestMovePv.length ?? 0) === 0)
+                            branchState.moves > 0
+                              ? branchState.thinking
+                              : variation
+                                ? variation.index === 0
+                                : currentPly === 0
+                          }
+                          aria-label="Coup précédent"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          className="btn btn-ghost"
+                          onClick={stepForward}
+                          disabled={
+                            branchState.moves > 0
+                              ? branchState.thinking
+                              : variation
+                                ? variation.index >= variation.moves.length
+                                : currentPly >= game.moves.length
+                          }
+                          aria-label={
+                            branchState.moves > 0 ? 'Jouer le coup du moteur' : 'Coup suivant'
                           }
                         >
-                          {variation ? '↩ Revenir à la partie' : 'Meilleure suite'}
+                          ›
                         </button>
                       </div>
+                    }
+                    lineControl={
+                      /*
+                       * Reste à droite de la rangée : un appui par ligne ne
+                       * justifie pas d'occuper le coin le plus précieux de
+                       * l'écran, contrairement aux chevrons.
+                       */
+                      <button
+                        className={`btn btn-line${variation ? ' active' : ''}`}
+                        onClick={toggleBestLine}
+                        disabled={
+                          branchState.moves > 0 ||
+                          (!variation && (bestLine?.bestMovePv.length ?? 0) === 0)
+                        }
+                      >
+                        {variation ? '↩ Revenir à la partie' : 'Meilleure suite'}
+                      </button>
                     }
                   />
                   </div>

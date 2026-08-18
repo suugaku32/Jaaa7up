@@ -12,11 +12,13 @@ interface EvalGraphProps {
   currentPly: number;
   onSelectPly: (ply: number) => void;
   /**
-   * Commandes rendues dans la carte, sous la courbe. Naviguer dans la partie et
-   * situer un moment de la partie sont le même geste ; deux blocs séparés
-   * coûtaient une rangée à l'écran pour rien.
+   * Chevrons ‹ › de la rangée de commandes, en tête de la carte. Naviguer dans
+   * la partie et situer un moment de la partie sont le même geste ; une
+   * rangée séparée coûtait une ligne d'écran pour rien.
    */
-  controls?: ReactNode;
+  navControls?: ReactNode;
+  /** Bouton « Meilleure suite », à droite de la même rangée. */
+  lineControl?: ReactNode;
 }
 
 const WIDTH = 760;
@@ -66,7 +68,8 @@ export function EvalGraph({
   moveLabels,
   currentPly,
   onSelectPly,
-  controls,
+  navControls,
+  lineControl,
 }: EvalGraphProps) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
@@ -109,23 +112,22 @@ export function EvalGraph({
         En tête de la carte, et non sous la courbe : sur un téléphone la courbe
         est déjà sous le plateau, et des commandes placées après elle tombaient
         au ras du bord de l'écran (797 px sur 844).
-      */}
-      {controls}
 
-      {/*
-        En haut, centrée : elle vivait sous le graphe, une rangée de plus dans
-        une carte déjà chargée. Ici elle ne coûte rien de neuf — les commandes
-        au-dessus ont déjà leur propre ligne.
+        L'indication « bon coup ou pas » vivait dans l'info-bulle sous le
+        graphe, où on ne la voyait qu'en cherchant. Elle rejoint ici les
+        chevrons et le bouton de la suite : les trois répondent à la même
+        question — où en est-on dans la partie — et se lisent d'un coup d'œil
+        au lieu de deux endroits différents.
       */}
-      {markers.length > 0 && (
-        <div className="eval-legend">
-          {MARKER_QUALITIES.filter((q) => markers.some((m) => m.p.quality === q)).map((q) => (
-            <span key={q} className="eval-legend-item">
-              <MarkerShapeIcon quality={q} /> {QUALITY_LABEL_FR[q]}
-            </span>
-          ))}
-        </div>
-      )}
+      <div className="eval-controls">
+        {navControls}
+        {activePly && (
+          <span className="eval-quality-badge" style={{ color: STATUS_VAR[activePly.quality] }}>
+            {QUALITY_LABEL_FR[activePly.quality]}
+          </span>
+        )}
+        {lineControl}
+      </div>
 
       <div className="eval-graph-labels">
         <span className="eval-side-label top">▲ Sente</span>
@@ -215,11 +217,6 @@ export function EvalGraph({
           <span className="eval-tooltip-score">
             {formatCp(activePoint.cpForBlack)}
           </span>
-          {activePly && MARKER_QUALITIES.includes(activePly.quality) && (
-            <span className="eval-tooltip-quality" style={{ color: STATUS_VAR[activePly.quality] }}>
-              {QUALITY_LABEL_FR[activePly.quality]}
-            </span>
-          )}
         </div>
       )}
 
@@ -269,13 +266,5 @@ function MarkerShape({ x, y, quality }: { x: number; y: number; quality: MoveQua
       stroke="var(--surface)"
       strokeWidth={1.5}
     />
-  );
-}
-
-function MarkerShapeIcon({ quality }: { quality: MoveQuality }) {
-  return (
-    <svg width={12} height={12} viewBox="0 0 12 12" aria-hidden="true">
-      <MarkerShape x={6} y={6} quality={quality} />
-    </svg>
   );
 }

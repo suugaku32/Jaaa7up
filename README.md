@@ -121,11 +121,15 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   (380) posent le nouveau plafond, la colonne des coups et le plateau ayant
   déjà le leur, plus bas.
 
-  Dans la carte de la courbe, la légende (▲ Imprécision, etc.) vivait sous le
-  graphe, dans sa propre rangée en plus de l'info-bulle juste au-dessus —
-  deux lignes pour ce qui tient en une. Elle est montée en tête de la carte,
-  centrée, à côté de la rangée des commandes qui l'accueille sans rien
-  coûter de neuf.
+  Dans la carte de la courbe, la légende des marqueurs (▲ Imprécision, etc.)
+  a disparu : elle ne disait rien que les marqueurs eux-mêmes, sur la courbe,
+  ne disaient déjà. Ce qui manquait vraiment — savoir si le coup survolé est
+  bon ou pas — vivait dans l'info-bulle sous le graphe, repérable seulement
+  en la cherchant. Cette indication rejoint maintenant la rangée de commandes
+  en tête de la carte, entre les chevrons et le bouton « Meilleure suite » :
+  les trois répondent à la même question — où en est-on dans la partie — et
+  se lisent d'un coup d'œil. L'info-bulle, elle, garde le numéro du coup et
+  le score.
 
   En bas, plateau et colonne des coups suivaient chacun leur propre largeur :
   la colonne des noms, centrée avec le plateau, ne partait pas du même bord
