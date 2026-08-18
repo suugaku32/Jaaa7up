@@ -129,8 +129,8 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   de commandes en tête de la carte, entre les chevrons et le bouton
   « Meilleure suite » : les quatre répondent à la même question — où en
   est-on dans la partie — et se lisent d'un coup d'œil. L'info-bulle sous le
-  graphe garde le même contenu, pour qui la regarde plutôt que la rangée du
-  haut. La courbe elle-même est un peu moins haute (220 → 170 px) : la carte
+  graphe, devenue redondante, a disparu à son tour — une ligne de moins dans
+  la carte. La courbe elle-même est un peu moins haute (220 → 170 px) : la carte
   gagne de la hauteur d'écran sans perdre en lisibilité, l'échelle en racine
   carrée gardant les petits écarts visibles même moins étirée verticalement.
 

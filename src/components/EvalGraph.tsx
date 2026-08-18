@@ -219,15 +219,6 @@ export function EvalGraph({
         {activePoint && <circle cx={xAt(activeIdx)} cy={yAt(activeIdx)} r={4} className="eval-cursor-dot" />}
       </svg>
 
-      {activePoint && (
-        <div className="eval-tooltip">
-          <span className="eval-tooltip-ply">{activePlyLabel}</span>
-          <span className="eval-tooltip-score">
-            {formatCp(activePoint.cpForBlack)}
-          </span>
-        </div>
-      )}
-
     </div>
   );
 }
