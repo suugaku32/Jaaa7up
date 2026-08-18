@@ -438,7 +438,6 @@ outils forment une famille visuelle.
 | [mizar/YaneuraOu.wasm](https://github.com/mizar/YaneuraOu.wasm) | compilation WebAssembly, paquet `@mizarjp/yaneuraou.k-p` 7.6.3 | GPL-3.0 |
 | [React](https://react.dev) · [Vite](https://vite.dev) | interface et compilation | MIT |
 | [coi-serviceworker](https://github.com/gzuidhof/coi-serviceworker) | en-têtes COOP/COEP, par Guido Zuidhof | MIT |
-| [shogiops](https://github.com/WandererXII/shogiops) | oracle des tests, **hors site livré** | GPL-3.0-or-later |
 
 Les thèmes reprennent les palettes de [Catppuccin](https://catppuccin.com),
 [Nord](https://nordtheme.com), [Dracula](https://draculatheme.com),
@@ -446,8 +445,6 @@ Les thèmes reprennent les palettes de [Catppuccin](https://catppuccin.com),
 [Solarized](https://ethanschoonover.com/solarized) et
 [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-theme). Le classement
 des coups en points de *win %* suit la méthode de [lichess](https://lichess.org).
-Palette d'origine et durée des animations reprises de
-[l'app Tsume](https://github.com/suugaku32/tsume).
 
 ### Licence de ce dépôt
 

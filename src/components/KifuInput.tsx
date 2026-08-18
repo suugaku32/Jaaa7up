@@ -3,19 +3,6 @@ import { parseKifu } from '../shogi/parser';
 import { MovetimeSlider } from './MovetimeSlider';
 import './KifuInput.css';
 
-const EXAMPLE_KIF = `手合割：平手
-先手：Sente
-後手：Gote
-   1 ７六歩(77)
-   2 ３四歩(33)
-   3 ２六歩(27)
-   4 ８四歩(83)
-   5 ２五歩(26)
-   6 ８五歩(84)
-   7 ７八金(69)
-   8 ３二金(41)
-`;
-
 interface KifuInputProps {
   value: string;
   onChange: (text: string) => void;
@@ -66,9 +53,6 @@ export function KifuInput({
       <div className="kifu-controls">
         <button type="button" className="btn btn-primary" onClick={onAnalyze} disabled={disabled || !value.trim()}>
           Analyser la partie
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={() => onChange(EXAMPLE_KIF)} disabled={disabled}>
-          Charger un exemple
         </button>
         <MovetimeSlider
           label="Balayage"

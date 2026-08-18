@@ -940,13 +940,6 @@ export default function App() {
               configurer, sans lesquels le moteur ne peut pas utiliser plusieurs fils. MIT.
             </li>
             <li>
-              <a href="https://github.com/WandererXII/shogiops" target="_blank" rel="noreferrer">
-                shogiops
-              </a>{' '}
-              — sert d'oracle aux tests : 7200 positions comparées coup par coup. GPL-3.0-or-later,
-              mais ne fait pas partie du site livré.
-            </li>
-            <li>
               Thèmes d'après{' '}
               <a href="https://catppuccin.com" target="_blank" rel="noreferrer">
                 Catppuccin
@@ -982,10 +975,6 @@ export default function App() {
               <a href="https://lichess.org" target="_blank" rel="noreferrer">
                 lichess
               </a>
-              . Palette d'origine et durée des animations reprises de{' '}
-              <a href="https://github.com/suugaku32/tsume" target="_blank" rel="noreferrer">
-                l'app Tsume
-              </a>
               .
             </li>
           </ul>
@@ -1002,10 +991,6 @@ export default function App() {
               rel="noreferrer"
             >
               GPL-3.0-or-later
-            </a>
-            . Son code source est disponible sur{' '}
-            <a href="https://github.com/suugaku32/Jaaa7up" target="_blank" rel="noreferrer">
-              GitHub
             </a>
             .
           </p>
