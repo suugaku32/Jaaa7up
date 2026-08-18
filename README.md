@@ -80,6 +80,18 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   flottant de plus recouvrirait d'autant le plateau. `⏮` et `⏭` ont disparu : la
   courbe est cliquable, et un coup précis s'y choisit mieux qu'en tenant une
   flèche. Au-dessus de 860 px, les chevrons reprennent leur place dans la carte.
+
+  Sur bureau, le plateau et la colonne des coups grandissaient à parts égales :
+  la moitié de l'écran gagnée sur un large moniteur finissait en marge autour
+  d'une liste de texte, pendant que le plateau — la seule chose qui bénéficie
+  vraiment de la place — restait à 534 px. La colonne des coups plafonne
+  désormais à 380 px, une largeur de lecture confortable ; tout l'espace gagné
+  au-delà va au plateau, seul élément encore flexible. Le plafond de la case
+  elle-même est monté de 40 à 60 px : sur mobile la mesure de la largeur
+  disponible le réduit de toute façon à l'écran, mais sur bureau 40 px laissait
+  le plateau minuscule au milieu d'une colonne bien plus large que lui. Mesuré
+  à 1440 px de large : le plateau passe de 382 à 573 px en Analyse, et à 554 px
+  en Entraînement et Tsume, sans rien changer sur téléphone.
 - **Mode entraînement** : sur chaque gaffe, on rejoue la position ; le coup joué est
   montré (flèche rouge), le coup proposé est évalué par le moteur et accepté s'il
   perd au plus 50 centipions par rapport à la valeur que l'analyse a établie pour

@@ -1,5 +1,5 @@
 .app {
-  max-width: 1100px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 20px 16px 40px;
   display: flex;
@@ -238,6 +238,20 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/*
+ * Sur bureau, plateau et colonne des coups grandissaient à parts égales : la
+ * moitié de l'écran gagnée sur un large moniteur finissait en marge autour
+ * d'une liste de texte, pendant que le plateau — la seule chose qui bénéficie
+ * vraiment de la place — restait à 534 px. Plafonnée, la colonne des coups
+ * cesse de croître une fois une largeur de lecture confortable atteinte ; le
+ * reste de l'espace gagné va au plateau, seul flexible restant.
+ */
+@media (min-width: 861px) {
+  .analysis-side {
+    max-width: 380px;
+  }
 }
 
 /*

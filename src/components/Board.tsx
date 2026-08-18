@@ -51,7 +51,7 @@ export function Board({
   whiteName,
   onSquareClick,
   onHandPieceClick,
-  cellSize: maxCellSize = 40,
+  cellSize: maxCellSize = 60,
 }: BoardProps) {
   /*
    * Le plateau était figé à 40 px par case, soit 382 px avec la colonne des
@@ -62,6 +62,11 @@ export function Board({
    * La case se règle donc sur la largeur réellement disponible, sans jamais
    * dépasser la taille demandée. Le cadre vaut 9 cases plus 0,55 pour les
    * kanji de rangée : c'est ce diviseur qu'on inverse.
+   *
+   * Le plafond lui-même est monté à 60 px (573 px de plateau) : sur mobile,
+   * la mesure ci-dessus le réduit de toute façon à la largeur de l'écran, mais
+   * sur un bureau où la colonne dépasse 573 px, 40 px laissait le plateau
+   * minuscule au milieu d'une colonne bien plus large que lui.
    */
   const wrapRef = useRef<HTMLDivElement>(null);
   const [available, setAvailable] = useState<number | null>(null);
