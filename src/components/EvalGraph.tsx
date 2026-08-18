@@ -219,6 +219,22 @@ export function EvalGraph({
         {activePoint && <circle cx={xAt(activeIdx)} cy={yAt(activeIdx)} r={4} className="eval-cursor-dot" />}
       </svg>
 
+      {/*
+        Sur bureau la rangée de commandes dit déjà tout ça — redondant, elle y
+        a disparu (voir `.eval-tooltip` dans `EvalGraph.css`). Sur téléphone en
+        revanche cette rangée est resserrée par les chevrons qui en sortent
+        (voir `.float-nav`), pas la place d'y ajouter coup et score sans les
+        tronquer ; ils gardent donc leur propre ligne, comme avant.
+      */}
+      {activePoint && (
+        <div className="eval-tooltip">
+          <span className="eval-tooltip-ply">{activePlyLabel}</span>
+          <span className="eval-tooltip-score">
+            {formatCp(activePoint.cpForBlack)}
+          </span>
+        </div>
+      )}
+
     </div>
   );
 }

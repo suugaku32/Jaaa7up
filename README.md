@@ -128,9 +128,12 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   repérable seulement en la cherchant. Ce trio rejoint maintenant la rangée
   de commandes en tête de la carte, entre les chevrons et le bouton
   « Meilleure suite » : les quatre répondent à la même question — où en
-  est-on dans la partie — et se lisent d'un coup d'œil. L'info-bulle sous le
-  graphe, devenue redondante, a disparu à son tour — une ligne de moins dans
-  la carte. La courbe elle-même est un peu moins haute (220 → 170 px) : la carte
+  est-on dans la partie — et se lisent d'un coup d'œil. Sur bureau,
+  l'info-bulle sous le graphe, devenue redondante, a disparu à son tour — une
+  ligne de moins dans la carte. Sur téléphone en revanche elle reste : la
+  rangée du haut y est resserrée par les chevrons flottants qui en sortent
+  (voir plus haut, `.float-nav`), pas la place d'y ajouter coup et score sans
+  les tronquer. La courbe elle-même est un peu moins haute (220 → 170 px) : la carte
   gagne de la hauteur d'écran sans perdre en lisibilité, l'échelle en racine
   carrée gardant les petits écarts visibles même moins étirée verticalement.
 

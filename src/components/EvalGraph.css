@@ -41,6 +41,38 @@
   stroke-width: 1.5;
 }
 
+/*
+ * Cachée par défaut : sur bureau la rangée de commandes en tête de la carte
+ * dit déjà tout ça (`.eval-controls-info`). Elle ne réapparaît que sous
+ * 861 px, où cette rangée est resserrée par les chevrons flottants qui en
+ * sortent (voir `.float-nav`) et n'a pas la place d'ajouter coup et score
+ * sans les tronquer.
+ */
+.eval-tooltip {
+  display: none;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 12px;
+  padding: 4px 6px 6px;
+  color: var(--text);
+  flex-wrap: wrap;
+}
+
+.eval-tooltip-ply {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.eval-tooltip-score {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 860px) {
+  .eval-tooltip {
+    display: flex;
+  }
+}
+
 .eval-area {
   fill-opacity: var(--area-opacity, 0.18);
 }
