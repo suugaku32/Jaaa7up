@@ -813,13 +813,6 @@ export default function App() {
                   </div>
 
                   <div className={`analysis-panel panel-moves${panel === 'moves' ? ' active' : ''}`}>
-                    {/*
-                      Le sélecteur « Coups / Explorer » disparaît au-dessus de
-                      860 px, où les deux panneaux s'affichent ensemble : sans
-                      titre, le second se lisait comme un réglage égaré sous la
-                      liste plutôt que comme une section à part entière.
-                    */}
-                    <h3 className="panel-heading">Coups</h3>
                     <MoveList
                       plies={result.plies}
                       moveLabels={moveLabels}
@@ -830,7 +823,6 @@ export default function App() {
                   </div>
 
                   <div className={`analysis-panel panel-explore${panel === 'explore' ? ' active' : ''}`}>
-                    <h3 className="panel-heading">Explorer</h3>
                     <p className="explore-hint">
                       Jouez un coup sur le plateau pour ouvrir une variante.{' '}
                       {autoReply

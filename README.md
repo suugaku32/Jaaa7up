@@ -60,23 +60,26 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   abandonne la variante — la garder obligerait à choisir en permanence entre deux positions
   affichées, pour une idée qu'on explore le plus souvent d'un trait.
 - **Onglet Analyse en deux colonnes** : le plateau d'un côté, le reste de l'autre.
-  Sur téléphone tout s'empile, la courbe passe sous le plateau, et un sélecteur
-  « Coups / Explorer » ne montre qu'un panneau à la fois. Les flèches de
-  navigation sont **dans la carte de la courbe** : situer un moment de la partie
-  et s'y rendre sont le même geste, et une rangée de boutons séparée coûtait une
-  ligne d'écran. Elles suivaient auparavant trois blocs empilés et arrivaient à
-  928 px du haut de la page — hors de l'écran d'un iPhone, donc un défilement à
-  chaque coup. Sous 860 px de large, les deux chevrons quittent le flux et se
-  posent **en bas à droite de l'écran**, sous le pouce, agrandis à 56 × 52 px —
-  comme, en entraînement, les chevrons qui passent d'une gaffe à la suivante ;
-  le bouton de la suite, lui, reste dans la carte, en pastille — un appui par
-  ligne ne justifie pas d'occuper le coin le plus précieux de l'écran, et un
-  bouton flottant de plus recouvrirait d'autant le plateau. `⏮` et `⏭` ont
-  disparu : la courbe est cliquable, et un coup précis s'y choisit mieux qu'en
-  tenant une flèche. Au-dessus de 860 px, les chevrons reprennent leur place
-  dans la carte et les deux panneaux restent affichés ensemble, chacun sous un
-  titre (« Coups », « Explorer ») — sans le sélecteur pour les nommer, le second
-  se lisait comme un réglage égaré sous la liste plutôt que comme une section.
+  Un sélecteur « Coups / Explorer » ne montre qu'un panneau à la fois — **identique
+  à toutes les largeurs**, du téléphone au bureau. Il a un temps disparu au-dessus
+  de 860 px pour empiler les deux panneaux ensemble ; sans l'onglet pour les
+  nommer, « Explorer » se lisait comme un réglage égaré sous la liste des coups
+  plutôt que comme une section à part entière, ce qui le rendait invisible au
+  premier regard sur bureau. Le sélecteur reste donc affiché partout.
+
+  Sur téléphone, la courbe passe sous le plateau. Les flèches de navigation sont
+  **dans la carte de la courbe** : situer un moment de la partie et s'y rendre
+  sont le même geste, et une rangée de boutons séparée coûtait une ligne d'écran.
+  Elles suivaient auparavant trois blocs empilés et arrivaient à 928 px du haut de
+  la page — hors de l'écran d'un iPhone, donc un défilement à chaque coup. Sous
+  860 px de large, les deux chevrons quittent le flux et se posent **en bas à
+  droite de l'écran**, sous le pouce, agrandis à 56 × 52 px — comme, en
+  entraînement, les chevrons qui passent d'une gaffe à la suivante ; le bouton de
+  la suite, lui, reste dans la carte, en pastille — un appui par ligne ne
+  justifie pas d'occuper le coin le plus précieux de l'écran, et un bouton
+  flottant de plus recouvrirait d'autant le plateau. `⏮` et `⏭` ont disparu : la
+  courbe est cliquable, et un coup précis s'y choisit mieux qu'en tenant une
+  flèche. Au-dessus de 860 px, les chevrons reprennent leur place dans la carte.
 - **Mode entraînement** : sur chaque gaffe, on rejoue la position ; le coup joué est
   montré (flèche rouge), le coup proposé est évalué par le moteur et accepté s'il
   perd au plus 50 centipions par rapport à la valeur que l'analyse a établie pour

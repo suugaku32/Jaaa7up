@@ -241,9 +241,10 @@
 }
 
 /*
- * Sélecteur de panneau. Au-dessus de 860 px la colonne de droite a la hauteur
- * qu'il faut pour tout montrer d'un coup : le sélecteur disparaît et les deux
- * panneaux s'empilent. En dessous, un seul tient l'affiche.
+ * Sélecteur de panneau « Coups / Explorer », identique à toutes les largeurs.
+ * Un temps, il disparaissait au-dessus de 860 px pour montrer les deux
+ * panneaux empilés — mais alors rien ne les distinguait plus l'un de l'autre,
+ * et l'onglet actif est justement ce qui nomme ce qu'on regarde.
  */
 .analysis-segments {
   display: flex;
@@ -278,41 +279,15 @@
   min-width: 0;
 }
 
-.panel-empty {
-  font-size: 12px;
-  color: var(--dim);
-}
-
-/*
- * Masqué tant que le sélecteur de panneau fait le travail (sous 860 px, un
- * seul panneau à la fois porte déjà son nom sur l'onglet actif). Au-dessus,
- * où « Coups » et « Explorer » s'affichent ensemble sans rien pour les
- * distinguer, ce titre est ce qui les rend identifiables comme deux sections.
- */
-.panel-heading {
+/* Un seul panneau à la fois, à toutes les largeurs : c'est l'onglet actif qui
+   dit lequel on regarde, comme le reste des onglets de l'application. */
+.analysis-panel:not(.active) {
   display: none;
 }
 
-@media (min-width: 861px) {
-  .analysis-segments {
-    display: none;
-  }
-
-  .panel-moves {
-    order: 1;
-  }
-
-  .panel-explore {
-    order: 2;
-  }
-
-  .panel-heading {
-    display: block;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--dim);
-    margin: 0;
-  }
+.panel-empty {
+  font-size: 12px;
+  color: var(--dim);
 }
 
 @media (max-width: 860px) {
@@ -347,10 +322,6 @@
 
   .analysis-side {
     order: 3;
-  }
-
-  .analysis-panel:not(.active) {
-    display: none;
   }
 
   /* La liste garde son propre défilement, mais s'arrête avant de pousser le
