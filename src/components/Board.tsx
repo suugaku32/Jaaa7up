@@ -192,19 +192,15 @@ export function Board({
   const bottom: Color = flipped ? 'w' : 'b';
   const nameOf = (c: Color) => (c === 'b' ? blackName : whiteName);
 
-  const stack = (
-    <div className="board-stack">
-      <HandRow
-        color={top}
-        name={nameOf(top)}
-        showName={!wide}
-        hand={position.hands[top]}
-        upsideDown
-        interactive={interactive && handSide === top}
-        selectedType={selected?.kind === 'hand' && handSide === top ? selected.type : null}
-        onClick={onHandPieceClick}
-      />
-
+  /*
+   * Extrait une fois : en mode large, la colonne des noms porte les rubans de
+   * pièces (voir plus bas), et le plateau n'a plus besoin de rien au-dessus
+   * ni en dessous de lui — seul ce bloc reste. Sa hauteur devient alors celle
+   * de `.board-stack`, ce qui aligne la colonne des noms (`justify-content:
+   * space-between`, sur la même hauteur) exactement sur le haut et le bas du
+   * goban, et non plus sur un ruban de pièces qui les en écartait.
+   */
+  const boardFrame = (
       <div className="board-frame" style={{ width: boardPx + cellSize * 0.55 }}>
         <div className="coords-files" style={{ width: boardPx }}>
           {files.map((f) => (
@@ -318,18 +314,6 @@ export function Board({
           </div>
         </div>
       </div>
-
-      <HandRow
-        color={bottom}
-        name={nameOf(bottom)}
-        showName={!wide}
-        hand={position.hands[bottom]}
-        upsideDown={false}
-        interactive={interactive && handSide === bottom}
-        selectedType={selected?.kind === 'hand' && handSide === bottom ? selected.type : null}
-        onClick={onHandPieceClick}
-      />
-    </div>
   );
 
   return (
@@ -337,50 +321,72 @@ export function Board({
       {wide ? (
         <div className="board-main">
           <div className="names-col">
-            <NameLabel side={top} name={nameOf(top)} />
-            <NameLabel side={bottom} name={nameOf(bottom)} />
+            <NameLabel
+              side={top}
+              name={nameOf(top)}
+              hand={position.hands[top]}
+              upsideDown
+              interactive={interactive && handSide === top}
+              selectedType={selected?.kind === 'hand' && handSide === top ? selected.type : null}
+              onClick={onHandPieceClick}
+            />
+            <NameLabel
+              side={bottom}
+              name={nameOf(bottom)}
+              hand={position.hands[bottom]}
+              interactive={interactive && handSide === bottom}
+              selectedType={selected?.kind === 'hand' && handSide === bottom ? selected.type : null}
+              onClick={onHandPieceClick}
+            />
           </div>
-          {stack}
+          <div className="board-stack">{boardFrame}</div>
         </div>
       ) : (
-        stack
+        <div className="board-stack">
+          <HandRow
+            color={top}
+            name={nameOf(top)}
+            hand={position.hands[top]}
+            upsideDown
+            interactive={interactive && handSide === top}
+            selectedType={selected?.kind === 'hand' && handSide === top ? selected.type : null}
+            onClick={onHandPieceClick}
+          />
+          {boardFrame}
+          <HandRow
+            color={bottom}
+            name={nameOf(bottom)}
+            hand={position.hands[bottom]}
+            upsideDown={false}
+            interactive={interactive && handSide === bottom}
+            selectedType={selected?.kind === 'hand' && handSide === bottom ? selected.type : null}
+            onClick={onHandPieceClick}
+          />
+        </div>
       )}
     </div>
   );
 }
 
 /**
- * Le nom, seul, à côté du plateau — plus grand celui-ci grandit, plus un ruban
- * pleine largeur pour quelques mots se voyait vide. Sans fond ni cadre : ce
- * n'est plus une carte à remplir, juste une étiquette.
+ * Le nom, à côté du plateau, avec ses pièces prises en dessous — plus le
+ * plateau grandit, plus un ruban pleine largeur pour quelques mots se voyait
+ * vide. Sans fond ni cadre : ce n'est plus une carte à remplir, juste une
+ * étiquette. En haut et en bas de la colonne (`justify-content: space-between`
+ * sur `.names-col`), ce qui l'aligne sur le haut et le bas du goban : lui seul
+ * occupe encore `.board-stack` en mode large, rien ne les écarte plus.
  */
-function NameLabel({ side, name }: { side: Color; name?: string }) {
-  return (
-    <div className="name-label">
-      <span className="name-label-side">{side === 'b' ? '▲ Sente' : '△ Gote'}</span>
-      {name && <span className="name-label-name">{name}</span>}
-    </div>
-  );
-}
-
-function HandRow({
-  color,
+function NameLabel({
+  side,
   name,
-  showName = true,
   hand,
   upsideDown,
   interactive,
   selectedType,
   onClick,
 }: {
-  color: Color;
+  side: Color;
   name?: string;
-  /**
-   * Faux quand le nom est déjà affiché à côté du plateau (`NameLabel`) : le
-   * répéter ici referait la même chose deux fois, et sans lui le ruban ne
-   * contient plus que les pièces, largeur réduite au strict nécessaire.
-   */
-  showName?: boolean;
   hand: Record<Exclude<PieceType, 'K'>, number>;
   upsideDown?: boolean;
   interactive?: boolean;
@@ -389,30 +395,95 @@ function HandRow({
 }) {
   const pieces = HAND_PIECE_ORDER.filter((t) => hand[t] > 0);
   return (
-    <div className={`hbox${showName ? '' : ' hbox-compact'}`}>
-      {showName && (
-        <span className="hl">
-          <span className="hl-side">{color === 'b' ? '▲ Sente' : '△ Gote'}</span>
-          {name && <span className="hl-name">{name}</span>}
-        </span>
-      )}
-      <div className="hpieces">
-        {pieces.length === 0 && <span className="hempty">—</span>}
-        {pieces.map((type) => (
-          <div
-            key={type}
-            className={`hp${selectedType === type ? ' sel' : ''}${interactive ? ' clickable' : ''}`}
-            onClick={() => interactive && onClick?.(type)}
-            role={interactive ? 'button' : undefined}
-            aria-label={`${pieceGlyph(type, false)} en main`}
-          >
-            <span className={`pc${upsideDown ? ' gote' : ''}`} style={{ fontSize: 20 }}>
-              {pieceGlyph(type, false)}
-            </span>
-            {hand[type] > 1 && <span className="hpc">{hand[type]}</span>}
-          </div>
-        ))}
-      </div>
+    <div className="name-label">
+      <span className="name-label-side">{side === 'b' ? '▲ Sente' : '△ Gote'}</span>
+      {name && <span className="name-label-name">{name}</span>}
+      <HandPieces
+        pieces={pieces}
+        hand={hand}
+        upsideDown={upsideDown}
+        interactive={interactive}
+        selectedType={selectedType}
+        onClick={onClick}
+      />
+    </div>
+  );
+}
+
+function HandRow({
+  color,
+  name,
+  hand,
+  upsideDown,
+  interactive,
+  selectedType,
+  onClick,
+}: {
+  color: Color;
+  name?: string;
+  hand: Record<Exclude<PieceType, 'K'>, number>;
+  upsideDown?: boolean;
+  interactive?: boolean;
+  selectedType?: PieceType | null;
+  onClick?: (type: PieceType) => void;
+}) {
+  const pieces = HAND_PIECE_ORDER.filter((t) => hand[t] > 0);
+  return (
+    <div className="hbox">
+      <span className="hl">
+        <span className="hl-side">{color === 'b' ? '▲ Sente' : '△ Gote'}</span>
+        {name && <span className="hl-name">{name}</span>}
+      </span>
+      <HandPieces
+        pieces={pieces}
+        hand={hand}
+        upsideDown={upsideDown}
+        interactive={interactive}
+        selectedType={selectedType}
+        onClick={onClick}
+      />
+    </div>
+  );
+}
+
+/**
+ * Les pièces prises, seules — partagé entre `HandRow` (ruban, sous 500 px de
+ * colonne) et `NameLabel` (à côté du plateau, au-dessus). Rien n'est rendu à
+ * mains vides : un tiret sans rien à côté ne disait rien qu'un blanc ne dise
+ * aussi bien, et flottait, seul, au-dessus ou en dessous du goban.
+ */
+function HandPieces({
+  pieces,
+  hand,
+  upsideDown,
+  interactive,
+  selectedType,
+  onClick,
+}: {
+  pieces: Exclude<PieceType, 'K'>[];
+  hand: Record<Exclude<PieceType, 'K'>, number>;
+  upsideDown?: boolean;
+  interactive?: boolean;
+  selectedType?: PieceType | null;
+  onClick?: (type: PieceType) => void;
+}) {
+  if (pieces.length === 0) return null;
+  return (
+    <div className="hpieces">
+      {pieces.map((type) => (
+        <div
+          key={type}
+          className={`hp${selectedType === type ? ' sel' : ''}${interactive ? ' clickable' : ''}`}
+          onClick={() => interactive && onClick?.(type)}
+          role={interactive ? 'button' : undefined}
+          aria-label={`${pieceGlyph(type, false)} en main`}
+        >
+          <span className={`pc${upsideDown ? ' gote' : ''}`} style={{ fontSize: 20 }}>
+            {pieceGlyph(type, false)}
+          </span>
+          {hand[type] > 1 && <span className="hpc">{hand[type]}</span>}
+        </div>
+      ))}
     </div>
   );
 }

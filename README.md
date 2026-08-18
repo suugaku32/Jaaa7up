@@ -97,12 +97,16 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   dessous du plateau : plus le plateau grandit, plus ce ruban pleine largeur
   pour quelques mots se voyait vide — c'était vrai avant même ce changement,
   mais un plateau à 573 px le rendait criant. Sur bureau, le nom se loge donc
-  dans une colonne étroite à côté du plateau, en petit, sans fond ni cadre ; le
-  ruban ne garde que les pièces prises, réduit à ce qu'il montre au lieu de
-  s'étirer sur toute la largeur pour un tiret. La même mesure qui décide de la
-  taille de la case décide aussi de la mise en page : sous ~500 px de colonne,
-  ni la colonne des noms ni un plateau correct ne tiendraient côte à côte, et
-  le nom retourne dans le ruban — c'est ce qui se passe sur téléphone.
+  dans une colonne étroite à côté du plateau, en petit, sans fond ni cadre, les
+  pièces prises juste en dessous ; le ruban disparaît complètement, avec lui le
+  tiret qu'il affichait à mains vides et qui ne disait jamais rien. La même
+  mesure qui décide de la taille de la case décide aussi de la mise en page :
+  sous ~500 px de colonne, la colonne des noms et un plateau correct ne
+  tiendraient pas côte à côte, et le nom retourne dans le ruban — c'est ce qui
+  se passe sur téléphone, avec les pièces prises mais sans le tiret non plus.
+  Colonne des noms et liste des coups s'alignent maintenant sur le haut et le
+  bas du goban lui-même plutôt que sur ce que le ruban laissait deviner :
+  rien ne les en écarte plus.
 
   Le bilan par joueur (imprécisions, erreurs, gaffes) avait sa propre rangée
   pleine largeur au-dessus de la courbe. Sur un grand écran la courbe
