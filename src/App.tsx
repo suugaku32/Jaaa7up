@@ -899,6 +899,8 @@ export default function App() {
                       onReplyMs={setReplyMs}
                       autoReply={autoReply}
                       onAutoReply={setAutoReply}
+                      showArrowB={showArrowB}
+                      showArrowW={showArrowW}
                     />
                   </div>
                 </div>

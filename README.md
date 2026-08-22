@@ -82,7 +82,9 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   la cherche donc à la cadence du curseur « Temps de réflexion » du panneau
   « Explorer » — celui-là même qui règle la réponse automatique — dès qu'il
   n'est pas déjà occupé à y répondre, pour ne pas lancer deux recherches à la
-  fois sur la même position.
+  fois sur la même position. Le curseur reste donc affiché même la réponse
+  automatique décochée, tant qu'au moins une des deux flèches l'est encore :
+  il ne disparaît que si plus rien ne s'en sert du tout.
 - **Onglet Analyse en deux colonnes** : le plateau d'un côté, le reste de l'autre.
   Un sélecteur « Coups / Explorer » ne montre qu'un panneau à la fois — **identique
   à toutes les largeurs**, du téléphone au bureau. Il a un temps disparu au-dessus

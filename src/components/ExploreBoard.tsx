@@ -418,11 +418,22 @@ export function ExploreSettings({
   onReplyMs,
   autoReply,
   onAutoReply,
+  showArrowB,
+  showArrowW,
 }: {
   replyMs: number;
   onReplyMs: (ms: number) => void;
   autoReply: boolean;
   onAutoReply: (on: boolean) => void;
+  /**
+   * Le curseur sert aussi à la flèche du coup conseillé dans une variante
+   * (voir `ExploreBoard`), pas seulement à la réponse automatique : le
+   * masquer dès que « Le moteur répond » est décoché le rendrait injoignable
+   * pour régler la seule chose qui reste — combien de temps la flèche
+   * cherche. Il ne disparaît donc que si plus rien ne s'en sert du tout.
+   */
+  showArrowB: boolean;
+  showArrowW: boolean;
 }) {
   return (
     <div className="explore-settings">
@@ -435,8 +446,7 @@ export function ExploreSettings({
         <span>Le moteur répond</span>
       </label>
 
-      {/* Le curseur ne s'affiche que s'il commande quelque chose. */}
-      {autoReply && (
+      {(autoReply || showArrowB || showArrowW) && (
         <label className="explore-time">
           <span>Temps de réflexion</span>
           <input
