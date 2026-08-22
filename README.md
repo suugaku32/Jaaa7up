@@ -33,7 +33,11 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   les tsume ne retiennent que ses coups, et le plateau se place de son côté.
   Se choisit dans les réglages (« Suivre ») ou directement en cliquant le nom
   du joueur sur sa carte de bilan — un second clic sur le même nom revient
-  aux deux joueurs, plutôt que d'obliger à en choisir un des deux.
+  aux deux joueurs, plutôt que d'obliger à en choisir un des deux. Le camp
+  suivi se voit au fond de sa carte entière, pas seulement à son nom : les
+  chiffres imprécision/erreur/gaffe qu'elle contient sont déjà colorés
+  chacun dans leur propre couleur, un simple changement de couleur du nom
+  se perdait dedans.
 - **Passe tsume indépendante** : les positions où un mat forcé a été aperçu sont
   reprises à la cadence la plus longue disponible, pour en obtenir la séquence
   complète. Elle partageait auparavant son interrupteur avec la seconde passe,

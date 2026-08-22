@@ -197,12 +197,24 @@
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+/*
+ * `--surface2` plutôt qu'un aplat de la couleur d'accent : la carte contient
+ * les chiffres imprécision/erreur/gaffe, déjà colorés chacun dans leur
+ * couleur de statut — un fond d'accent plein les aurait rendus illisibles.
+ * C'est le même ton que les onglets actifs (`.tab.active`), pour rester le
+ * langage établi de « ceci est choisi » plutôt que d'en inventer un nouveau.
+ */
+.summary-card.active {
+  background: var(--surface2);
+  border-color: var(--accent);
 }
 
 /*
  * Un bouton, pas un simple libellé : cliquer le nom du joueur revient à le
- * choisir dans « Suivre », sans passer par les réglages. `active` marque le
- * camp actuellement suivi ; ni l'un ni l'autre coché ne veut dire les deux.
+ * choisir dans « Suivre », sans passer par les réglages.
  */
 .summary-side {
   font-weight: 700;
@@ -220,12 +232,6 @@
 
 .summary-side:hover {
   color: var(--accent);
-}
-
-.summary-side.active {
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .summary-stats {

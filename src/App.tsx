@@ -760,16 +760,18 @@ export default function App() {
                   {summary && (
                     <div className="summary">
                       {(['b', 'w'] as const).map((side) => (
-                        <div className="summary-card" key={side}>
+                        <div className={`summary-card${focusSide === side ? ' active' : ''}`} key={side}>
                           {/*
                             Cliquer le nom reprend « Suivre » sans passer par
                             les réglages : un second clic sur le même camp
                             revient à « les deux joueurs », plutôt que de
-                            forcer à en choisir un.
+                            forcer à en choisir un. La carte entière change de
+                            fond pour marquer le camp suivi — le nom seul se
+                            voyait mal.
                           */}
                           <button
                             type="button"
-                            className={`summary-side${focusSide === side ? ' active' : ''}`}
+                            className="summary-side"
                             onClick={() => chooseFocus(focusSide === side ? 'both' : side)}
                           >
                             {side === 'b' ? '▲ Sente' : '△ Gote'}
