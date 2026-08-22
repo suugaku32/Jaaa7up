@@ -65,6 +65,14 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   remplacent, une par camp : « Flèche Sente » et « Flèche Gote » se coupent
   indépendamment, pour ne suivre les suggestions que du camp qu'on étudie
   sans se faire souffler la réponse de l'adversaire.
+
+  Dans une variante, cette flèche vient d'une recherche en direct plutôt que
+  du calcul précédent : une position jouée en explorant n'a jamais été
+  analysée à l'avance, contrairement à celles de la partie suivie. Le moteur
+  la cherche donc à la cadence du curseur « Temps de réflexion » du panneau
+  « Explorer » — celui-là même qui règle la réponse automatique — dès qu'il
+  n'est pas déjà occupé à y répondre, pour ne pas lancer deux recherches à la
+  fois sur la même position.
 - **Onglet Analyse en deux colonnes** : le plateau d'un côté, le reste de l'autre.
   Un sélecteur « Coups / Explorer » ne montre qu'un panneau à la fois — **identique
   à toutes les largeurs**, du téléphone au bureau. Il a un temps disparu au-dessus

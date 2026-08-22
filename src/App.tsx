@@ -805,6 +805,8 @@ export default function App() {
                       whiteName={game.white}
                       replyMs={replyMs}
                       autoReply={autoReply}
+                      showArrowB={showArrowB}
+                      showArrowW={showArrowW}
                       onBranchStart={() => setPanel('explore')}
                       onBranchState={onBranchState}
                       ref={exploreRef}

@@ -34,6 +34,14 @@ interface ExploreBoardProps {
    */
   autoReply: boolean;
   /**
+   * Flèche du coup conseillé dans la variante, par camp. `gameArrows` ne
+   * couvre que la partie suivie — une position jouée dans une variante n'a
+   * jamais été analysée à l'avance, il faut donc que le moteur la cherche en
+   * direct, à la cadence `replyMs`.
+   */
+  showArrowB: boolean;
+  showArrowW: boolean;
+  /**
    * Appelé au premier coup joué hors de la partie. Le panneau des réglages
    * d'exploration n'a d'intérêt qu'à partir de là : c'est le moment de le
    * montrer, plutôt que de laisser chercher où l'on règle ce qui vient de
@@ -92,6 +100,8 @@ export function ExploreBoard({
   lastMove,
   replyMs,
   autoReply,
+  showArrowB,
+  showArrowW,
   onBranchStart,
   onBranchState,
   ref,
@@ -104,6 +114,9 @@ export function ExploreBoard({
   const [thinking, setThinking] = useState(false);
   const [evalCp, setEvalCp] = useState<number | null>(null);
   const [engineError, setEngineError] = useState<string | null>(null);
+  /** Flèche du coup conseillé dans la variante, cherchée en direct. */
+  const [suggestArrow, setSuggestArrow] = useState<BoardArrow | null>(null);
+  const [suggestThinking, setSuggestThinking] = useState(false);
 
   /*
    * Naviguer dans la partie abandonne l'embranchement. L'alternative — le
@@ -116,12 +129,60 @@ export function ExploreBoard({
     setSelected(null);
     setEvalCp(null);
     setEngineError(null);
+    setSuggestArrow(null);
   }, [baseSfen]);
 
   const position = useMemo(
     () => (branch ? (replay(branch.base, branch.moves) ?? Position.fromSfen(baseSfen)) : Position.fromSfen(baseSfen)),
     [branch, baseSfen],
   );
+
+  /*
+   * La flèche verte suivait la partie (`gameArrows`, précalculée à l'analyse) :
+   * dans une variante, la position n'a jamais été vue d'avance, il faut donc la
+   * faire chercher au moteur. `thinking` (la réponse automatique) exclut cette
+   * recherche : la relancer en double pendant qu'une réponse est déjà en cours
+   * gâcherait un calcul pour un résultat qui va de toute façon être écrasé dès
+   * que le coup de l'adversaire tombe.
+   */
+  useEffect(() => {
+    if (!branch || thinking) {
+      setSuggestArrow(null);
+      return;
+    }
+    const mover = position.turn;
+    if (!(mover === 'b' ? showArrowB : showArrowW)) {
+      setSuggestArrow(null);
+      return;
+    }
+    let cancelled = false;
+    setSuggestThinking(true);
+    (async () => {
+      try {
+        const engine = await ensureEngine();
+        const r = await engine.analyze(branch.base, branch.moves, { movetimeMs: replyMs });
+        if (cancelled) return;
+        setSuggestArrow(
+          r.bestMove
+            ? {
+                from: r.bestMove[1] === '*' ? null : usiToSquare(r.bestMove.slice(0, 2)),
+                to: usiToSquare(r.bestMove.slice(2, 4)),
+                kind: 'best',
+                piece: r.bestMove[1] === '*' ? (r.bestMove[0] as PieceType) : undefined,
+              }
+            : null,
+        );
+      } catch {
+        // Une flèche ratée n'empêche pas de continuer à explorer.
+        if (!cancelled) setSuggestArrow(null);
+      } finally {
+        if (!cancelled) setSuggestThinking(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [branch, thinking, position, showArrowB, showArrowW, replyMs, ensureEngine]);
 
   const legalMoves = useMemo(
     () => generateLegalMoves(position, position.turn),
@@ -300,7 +361,7 @@ export function ExploreBoard({
         legalDestinations={destinations()}
         handSide={position.turn}
         flipped={flipped}
-        arrows={branch ? undefined : gameArrows}
+        arrows={branch ? (suggestArrow ? [suggestArrow] : undefined) : gameArrows}
         blackName={blackName}
         whiteName={whiteName}
         onSquareClick={onSquareClick}
@@ -326,7 +387,9 @@ export function ExploreBoard({
             {evalCp !== null && !thinking && (
               <span className="explore-eval">{evalCp > 0 ? `+${Math.round(evalCp)}` : Math.round(evalCp)}</span>
             )}
-            {thinking && <span className="explore-thinking">le moteur réfléchit…</span>}
+            {(thinking || suggestThinking) && (
+              <span className="explore-thinking">le moteur réfléchit…</span>
+            )}
           </div>
           <p className="explore-moves">{labels.join('  ')}</p>
           <div className="explore-actions">
