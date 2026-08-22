@@ -59,6 +59,12 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   arrière. Vidée de ses coups, la variante leur rend la partie. Naviguer dans la partie
   abandonne la variante — la garder obligerait à choisir en permanence entre deux positions
   affichées, pour une idée qu'on explore le plus souvent d'un trait.
+
+  La flèche verte du coup recommandé se coupait d'un bloc, un seul bouton dans
+  les réglages généraux. Deux cases dans le panneau « Explorer » la
+  remplacent, une par camp : « Flèche Sente » et « Flèche Gote » se coupent
+  indépendamment, pour ne suivre les suggestions que du camp qu'on étudie
+  sans se faire souffler la réponse de l'adversaire.
 - **Onglet Analyse en deux colonnes** : le plateau d'un côté, le reste de l'autre.
   Un sélecteur « Coups / Explorer » ne montre qu'un panneau à la fois — **identique
   à toutes les largeurs**, du téléphone au bureau. Il a un temps disparu au-dessus
@@ -158,7 +164,9 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   de pourcentage de victoire pour valoir d'être reprise, et l'exclure en
   laissait la moitié de côté sans raison. Chaque entrée du sélecteur porte
   donc sa qualité (« Gaffe » ou « Erreur ») pour rester lisible une fois les
-  deux mélangées.
+  deux mélangées. Revenir à l'onglet Analyse depuis l'entraînement y montre
+  maintenant la position qu'on venait de regarder, plutôt que celle où
+  l'analyse était restée — potentiellement un tout autre moment de la partie.
 - **Détection des tsume** : les positions où un mat forcé était disponible sont
   repérées, distinguées selon qu'il a été porté ou laissé passer, et rejouables —
   on joue le mat, le moteur défend, jusqu'au mat ou jusqu'à ce qu'il s'échappe.

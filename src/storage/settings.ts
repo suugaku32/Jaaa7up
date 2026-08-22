@@ -7,8 +7,13 @@
 export interface Settings {
   /** Plateau vu depuis Gote. */
   flipped: boolean;
-  /** Flèche du coup recommandé sur le plateau d'analyse. */
-  showBestArrow: boolean;
+  /**
+   * Flèche du coup recommandé sur le plateau d'analyse, par camp : elle ne
+   * s'affiche que sur les tours du ou des camps cochés, plutôt que sur les
+   * deux à la fois ou pas du tout.
+   */
+  showArrowB: boolean;
+  showArrowW: boolean;
   /** Joueur(s) suivi(s) par les compteurs et les listes. */
   focusSide: 'both' | 'b' | 'w';
   /** Temps par position, première passe. */
@@ -30,7 +35,8 @@ export interface Settings {
  */
 export const DEFAULT_SETTINGS: Settings = {
   flipped: false,
-  showBestArrow: true,
+  showArrowB: true,
+  showArrowW: true,
   focusSide: 'both',
   movetimeMs: 800,
 };
@@ -54,8 +60,10 @@ export function loadSettings(): Settings {
     const p = JSON.parse(raw) as Partial<Settings>;
     return {
       flipped: typeof p.flipped === 'boolean' ? p.flipped : DEFAULT_SETTINGS.flipped,
-      showBestArrow:
-        typeof p.showBestArrow === 'boolean' ? p.showBestArrow : DEFAULT_SETTINGS.showBestArrow,
+      showArrowB:
+        typeof p.showArrowB === 'boolean' ? p.showArrowB : DEFAULT_SETTINGS.showArrowB,
+      showArrowW:
+        typeof p.showArrowW === 'boolean' ? p.showArrowW : DEFAULT_SETTINGS.showArrowW,
       focusSide:
         p.focusSide === 'b' || p.focusSide === 'w' || p.focusSide === 'both'
           ? p.focusSide

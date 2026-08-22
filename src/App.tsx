@@ -57,8 +57,15 @@ export default function App() {
   const [currentPly, setCurrentPly] = useState(0);
   const [tab, setTab] = useState<Tab>('analysis');
   const [flipped, setFlipped] = useState(initialSettings.flipped);
-  const [showBestArrow, setShowBestArrow] = useState(initialSettings.showBestArrow);
+  const [showArrowB, setShowArrowB] = useState(initialSettings.showArrowB);
+  const [showArrowW, setShowArrowW] = useState(initialSettings.showArrowW);
   const [focusSide, setFocusSide] = useState<'both' | 'b' | 'w'>(initialSettings.focusSide);
+  /**
+   * Dernier coup regardé en entraînement — pour que revenir à l'onglet Analyse
+   * y affiche la même position plutôt que de reprendre où l'analyse en était
+   * restée, potentiellement une tout autre partie de la même partie.
+   */
+  const [trainingPly, setTrainingPly] = useState<number | null>(null);
   /*
    * Demandé une fois l'analyse finie, jamais avant : le choix porte sur des
    * noms de joueurs qu'on ne connaît qu'après lecture du kifu. Et il commande
@@ -117,11 +124,11 @@ export default function App() {
     applyPieceFont(pieceFont);
   }, [pieceFont]);
 
-  // Ces trois-là ne changent que par une action explicite : les suivre par effet
+  // Ces quatre-là ne changent que par une action explicite : les suivre par effet
   // est sans surprise.
   useEffect(() => {
-    saveSettings({ flipped, showBestArrow, focusSide });
-  }, [flipped, showBestArrow, focusSide]);
+    saveSettings({ flipped, showArrowB, showArrowW, focusSide });
+  }, [flipped, showArrowB, showArrowW, focusSide]);
 
   /*
    * Les temps de réflexion, eux, sont aussi réécrits par l'ouverture d'une
@@ -317,16 +324,26 @@ export default function App() {
     piece: usi[1] === '*' ? (usi[0] as PieceType) : undefined,
   });
 
-  // Dans une variante on annonce le coup suivant de la ligne ; sinon le meilleur
-  // coup depuis la position affichée — plies[i] a pour sfenBefore sfens[i], donc
-  // plies[currentPly] part bien de ce qu'on voit.
+  /*
+   * Dans une variante on annonce le coup suivant de la ligne ; sinon le
+   * meilleur coup depuis la position affichée — plies[i] a pour sfenBefore
+   * sfens[i], donc plies[currentPly] part bien de ce qu'on voit.
+   *
+   * Par camp : la flèche du trait de Sente ne s'affiche que si Sente est
+   * coché, indépendamment de Gote — utile pour ne suivre les suggestions que
+   * du camp qu'on étudie sans se faire souffler la réponse de l'adversaire.
+   */
   const arrows = useMemo<BoardArrow[]>(() => {
-    if (!showBestArrow) return [];
-    if (variationView) return variationView.next ? [toArrow(variationView.next, 'best')] : [];
-    const best = result?.plies[currentPly]?.bestMove;
-    return best ? [toArrow(best, 'best')] : [];
+    const showFor = (color: 'b' | 'w') => (color === 'b' ? showArrowB : showArrowW);
+    if (variationView) {
+      if (!variationView.next || !showFor(variationView.position.turn)) return [];
+      return [toArrow(variationView.next, 'best')];
+    }
+    const ply = result?.plies[currentPly];
+    if (!ply?.bestMove || !showFor(ply.color)) return [];
+    return [toArrow(ply.bestMove, 'best')];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, currentPly, showBestArrow, variationView]);
+  }, [result, currentPly, showArrowB, showArrowW, variationView]);
 
   const selectPly = useCallback((ply: number) => {
     setCurrentPly(ply);
@@ -534,13 +551,6 @@ export default function App() {
                 >
                   ⇅ {flipped ? 'Vue Gote' : 'Vue Sente'}
                 </button>
-                <button
-                  className="btn btn-ghost"
-                  onClick={() => setShowBestArrow((v) => !v)}
-                  title="Flèche verte : le coup recommandé depuis la position affichée"
-                >
-                  {showBestArrow ? '↗ Flèches affichées' : '↗ Flèches masquées'}
-                </button>
                 {/* La cadence est ici, et pas seulement sur l'écran de saisie :
                     sans elle, « réanalyser » referait exactement la même chose.
                     Le même composant des deux côtés — le menu qui vivait ici
@@ -639,7 +649,15 @@ export default function App() {
             <div className="tabs">
               <button
                 className={`tab${tab === 'analysis' ? ' active' : ''}`}
-                onClick={() => setTab('analysis')}
+                onClick={() => {
+                  /*
+                   * Revenir de l'entraînement montre la même position qu'on y
+                   * regardait, plutôt que celle où l'analyse était restée —
+                   * potentiellement un tout autre moment de la partie.
+                   */
+                  if (tab === 'training' && trainingPly !== null) setCurrentPly(trainingPly - 1);
+                  setTab('analysis');
+                }}
               >
                 Analyse
               </button>
@@ -842,6 +860,10 @@ export default function App() {
                       onReplyMs={setReplyMs}
                       autoReply={autoReply}
                       onAutoReply={setAutoReply}
+                      showArrowB={showArrowB}
+                      onShowArrowB={setShowArrowB}
+                      showArrowW={showArrowW}
+                      onShowArrowW={setShowArrowW}
                     />
                   </div>
                 </div>
@@ -856,6 +878,7 @@ export default function App() {
               flipped={flipped}
               blackName={game.black}
               whiteName={game.white}
+              onPositionChange={setTrainingPly}
             />
           ) : (
             <TsumeMode

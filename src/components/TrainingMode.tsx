@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Board } from './Board';
 import { VariationBar } from './VariationBar';
 import { DeepenControl } from './DeepenControl';
@@ -45,6 +45,11 @@ interface TrainingModeProps {
   flipped?: boolean;
   blackName?: string;
   whiteName?: string;
+  /**
+   * Le coup regardé, à chaque changement — pour que l'onglet Analyse, si on
+   * y revient, montre la même position plutôt que celle où il en était resté.
+   */
+  onPositionChange?: (ply: number) => void;
 }
 
 export function TrainingMode({
@@ -55,6 +60,7 @@ export function TrainingMode({
   flipped,
   blackName,
   whiteName,
+  onPositionChange,
 }: TrainingModeProps) {
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<
@@ -67,6 +73,10 @@ export function TrainingMode({
   /** Suite en cours de lecture : quelle ligne, et combien de coups rejoués. */
   const [replay, setReplay] = useState<{ line: Line; index: number } | null>(null);
   const current = mistakes[idx];
+
+  useEffect(() => {
+    if (current) onPositionChange?.(current.ply);
+  }, [current, onPositionChange]);
 
   const position = useMemo(
     () => (current ? Position.fromSfen(current.sfenBefore) : null),
