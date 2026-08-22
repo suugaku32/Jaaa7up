@@ -5,7 +5,7 @@ import { DeepenControl } from './DeepenControl';
 import type { BoardArrow } from './Board';
 import type { PlyEval } from '../analysis/analyze';
 import type { UsiEngine } from '../engine/UsiEngine';
-import { scoreToCp } from '../analysis/classify';
+import { scoreToCp, QUALITY_LABEL_FR } from '../analysis/classify';
 import { Position } from '../shogi/position';
 import { generateLegalMoves, moveToUsi } from '../shogi/moveGen';
 import { formatUsiMoveAsKif } from '../shogi/notation';
@@ -35,7 +35,8 @@ interface Line {
 }
 
 interface TrainingModeProps {
-  blunders: PlyEval[];
+  /** Gaffes et erreurs à reprendre — pas seulement les gaffes. */
+  mistakes: PlyEval[];
   /** Fournit le moteur, en le démarrant s'il ne l'est pas encore. */
   ensureEngine: () => Promise<UsiEngine>;
   /** Reprend cette position à la cadence demandée et met l'analyse à jour. */
@@ -47,7 +48,7 @@ interface TrainingModeProps {
 }
 
 export function TrainingMode({
-  blunders,
+  mistakes,
   ensureEngine,
   onDeepen,
   movetimeMs,
@@ -65,7 +66,7 @@ export function TrainingMode({
   const [solved, setSolved] = useState<Set<number>>(new Set());
   /** Suite en cours de lecture : quelle ligne, et combien de coups rejoués. */
   const [replay, setReplay] = useState<{ line: Line; index: number } | null>(null);
-  const current = blunders[idx];
+  const current = mistakes[idx];
 
   const position = useMemo(
     () => (current ? Position.fromSfen(current.sfenBefore) : null),
@@ -78,23 +79,25 @@ export function TrainingMode({
   );
 
   // Atteindre la 7e gaffe demandait six appuis sur « suivante », sans jamais
-  // voir ce que contenait la liste. Ces libellés la rendent consultable.
+  // voir ce que contenait la liste. Ces libellés la rendent consultable — la
+  // qualité en tête distingue une gaffe d'une simple erreur dans une liste qui
+  // mélange maintenant les deux.
   const labels = useMemo(
     () =>
-      blunders.map((b) => {
+      mistakes.map((b) => {
         const at = Position.fromSfen(b.sfenBefore);
         const side = b.color === 'b' ? '▲' : '△';
-        return `${b.ply}. ${side}${formatUsiMoveAsKif(at, b.moveUsi, null)} −${Math.round(
+        return `${QUALITY_LABEL_FR[b.quality]} · ${b.ply}. ${side}${formatUsiMoveAsKif(at, b.moveUsi, null)} −${Math.round(
           b.centipawnLoss,
         )}`;
       }),
-    [blunders],
+    [mistakes],
   );
 
   if (!current || !position) {
     return (
       <div className="training-empty">
-        <p>Aucune gaffe détectée dans cette partie — rien à réviser ici.</p>
+        <p>Aucune erreur ni gaffe détectée dans cette partie — rien à réviser ici.</p>
       </div>
     );
   }
@@ -328,15 +331,15 @@ export function TrainingMode({
       <div className="training-head">
         <div className="training-progress">
           <label className="picker">
-            <span className="picker-label">Gaffe</span>
+            <span className="picker-label">Coup</span>
             <select
               value={idx}
               onChange={(e) => goTo(Number(e.target.value))}
-              aria-label="Choisir une gaffe"
+              aria-label="Choisir un coup à revoir"
             >
               {labels.map((text, i) => (
                 <option key={i} value={i}>
-                  {i + 1}/{blunders.length} · {text}
+                  {i + 1}/{mistakes.length} · {text}
                   {solved.has(i) ? ' ✓' : ''}
                 </option>
               ))}
@@ -349,15 +352,15 @@ export function TrainingMode({
             className="btn btn-ghost"
             onClick={() => goTo(idx - 1)}
             disabled={idx === 0}
-            aria-label="Gaffe précédente"
+            aria-label="Coup précédent"
           >
             ‹<span className="nav-word"> Précédente</span>
           </button>
           <button
             className="btn btn-ghost"
             onClick={() => goTo(idx + 1)}
-            disabled={idx >= blunders.length - 1}
-            aria-label="Gaffe suivante"
+            disabled={idx >= mistakes.length - 1}
+            aria-label="Coup suivant"
           >
             <span className="nav-word">Suivante </span>›
           </button>
@@ -537,9 +540,9 @@ export function TrainingMode({
           )}
 
           {(verdict.kind === 'correct' || verdict.kind === 'revealed') &&
-            idx < blunders.length - 1 && (
+            idx < mistakes.length - 1 && (
               <button className="btn btn-primary" onClick={() => goTo(idx + 1)}>
-                Gaffe suivante ›
+                Coup suivant ›
               </button>
             )}
         </div>

@@ -149,11 +149,16 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   que sous la courbe entière : à sa taille maximale (573 px) plus la colonne
   des noms (108 px) dépassent la largeur de la courbe, le centrer sous les
   760 px l'aurait fait chevaucher les noms.
-- **Mode entraînement** : sur chaque gaffe, on rejoue la position ; le coup joué est
-  montré (flèche rouge), le coup proposé est évalué par le moteur et accepté s'il
-  perd au plus 50 centipions par rapport à la valeur que l'analyse a établie pour
-  la position. Le verdict distingue le coup du moteur d'un coup simplement toléré,
-  et nomme le premier quand ils diffèrent.
+- **Mode entraînement** : sur chaque gaffe *et chaque erreur*, on rejoue la
+  position ; le coup joué est montré (flèche rouge), le coup proposé est évalué
+  par le moteur et accepté s'il perd au plus 50 centipions par rapport à la
+  valeur que l'analyse a établie pour la position. Le verdict distingue le
+  coup du moteur d'un coup simplement toléré, et nomme le premier quand ils
+  diffèrent. La liste ne retenait que les gaffes ; une erreur perd déjà assez
+  de pourcentage de victoire pour valoir d'être reprise, et l'exclure en
+  laissait la moitié de côté sans raison. Chaque entrée du sélecteur porte
+  donc sa qualité (« Gaffe » ou « Erreur ») pour rester lisible une fois les
+  deux mélangées.
 - **Détection des tsume** : les positions où un mat forcé était disponible sont
   repérées, distinguées selon qu'il a été porté ou laissé passer, et rejouables —
   on joue le mat, le moteur défend, jusqu'au mat ou jusqu'à ce qu'il s'échappe.

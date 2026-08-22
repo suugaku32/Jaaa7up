@@ -429,8 +429,13 @@ export default function App() {
     [result, ensureEngine],
   );
 
-  const focusedBlunders = useMemo(
-    () => focusedPlies.filter((p) => p.quality === 'blunder'),
+  /*
+   * Gaffes et erreurs, pas seulement les gaffes : une erreur perd déjà assez de
+   * pourcentage de victoire pour valoir d'être reprise, et n'y trouver que les
+   * gaffes en laissait la moitié de côté sans raison.
+   */
+  const focusedMistakes = useMemo(
+    () => focusedPlies.filter((p) => p.quality === 'blunder' || p.quality === 'mistake'),
     [focusedPlies],
   );
   const focusedTsumes = useMemo(
@@ -642,7 +647,7 @@ export default function App() {
                 className={`tab${tab === 'training' ? ' active' : ''}`}
                 onClick={() => setTab('training')}
               >
-                Entraînement ({focusedBlunders.length})
+                Entraînement ({focusedMistakes.length})
               </button>
               <button
                 className={`tab${tab === 'tsume' ? ' active' : ''}`}
@@ -844,7 +849,7 @@ export default function App() {
             </>
           ) : tab === 'training' ? (
             <TrainingMode
-              blunders={focusedBlunders}
+              mistakes={focusedMistakes}
               ensureEngine={ensureEngine}
               onDeepen={deepenBlunder}
               movetimeMs={movetimeMs}
