@@ -175,6 +175,13 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   deux mélangées. Revenir à l'onglet Analyse depuis l'entraînement y montre
   maintenant la position qu'on venait de regarder, plutôt que celle où
   l'analyse était restée — potentiellement un tout autre moment de la partie.
+
+  Les chevrons flottants passaient d'une gaffe à la suivante — un rôle déjà
+  tenu par le sélecteur juste au-dessus, et sans intérêt tant que la solution
+  n'est pas connue : on ne sait pas encore ce qu'il y aurait à dérouler.
+  Une fois la position résolue ou dévoilée, ils déroulent plutôt la
+  meilleure suite, coup par coup — la même chose que les petites flèches
+  de sa barre, en plus grand et à portée du pouce sur téléphone.
 - **Détection des tsume** : les positions où un mat forcé était disponible sont
   repérées, distinguées selon qu'il a été porté ou laissé passer, et rejouables —
   on joue le mat, le moteur défend, jusqu'au mat ou jusqu'à ce qu'il s'échappe.

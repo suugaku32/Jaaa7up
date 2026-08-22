@@ -278,6 +278,20 @@ export function TrainingMode({
     }
   }
 
+  /*
+   * La ligne « meilleure suite » — ou, quand le coup proposé l'est déjà,
+   * « Votre coup, la suite » qui porte alors le même ton : les chevrons
+   * flottants n'ont qu'une suite à dérouler, jamais deux à la fois.
+   */
+  const bestLine = lines.find((l) => l.tone === 'best') ?? null;
+  const stepBestLine = (delta: -1 | 1) => {
+    if (!bestLine) return;
+    const at = replay?.line.label === bestLine.label ? replay.index : 0;
+    const next = at + delta;
+    if (next < 0 || next > bestLine.moves.length) return;
+    setReplay(next === 0 ? null : { line: bestLine, index: next });
+  };
+
   // Le plateau suit la suite en cours de lecture, sinon la position de l'exercice.
   // Pas de useMemo ici : ce code vit après le retour anticipé plus haut, et un
   // hook conditionnel casserait l'ordre des hooks entre deux rendus. Rejouer une
@@ -335,6 +349,7 @@ export function TrainingMode({
     ? formatUsiMoveAsKif(position, current.bestMove, null)
     : '—';
   const actualLabel = formatUsiMoveAsKif(position, current.moveUsi, null);
+  const bestLineAt = bestLine && replay?.line.label === bestLine.label ? replay.index : 0;
 
   return (
     <div className="training">
@@ -357,24 +372,32 @@ export function TrainingMode({
           </label>
           <span className="training-solved">{solved.size} résolue(s)</span>
         </div>
-        <div className="training-nav float-nav">
-          <button
-            className="btn btn-ghost"
-            onClick={() => goTo(idx - 1)}
-            disabled={idx === 0}
-            aria-label="Coup précédent"
-          >
-            ‹<span className="nav-word"> Précédente</span>
-          </button>
-          <button
-            className="btn btn-ghost"
-            onClick={() => goTo(idx + 1)}
-            disabled={idx >= mistakes.length - 1}
-            aria-label="Coup suivant"
-          >
-            <span className="nav-word">Suivante </span>›
-          </button>
-        </div>
+        {/*
+          N'apparaissent qu'une fois la solution affichée (résolue ou
+          dévoilée) — avant, il n'y a pas de suite à dérouler, et les
+          afficher inactifs n'aurait rien appris de plus que le sélecteur
+          ci-dessus, qui reste la façon de changer de coup à revoir.
+        */}
+        {bestLine && (
+          <div className="training-nav float-nav">
+            <button
+              className="btn btn-ghost"
+              onClick={() => stepBestLine(-1)}
+              disabled={bestLineAt === 0}
+              aria-label="Coup précédent de la meilleure suite"
+            >
+              ‹<span className="nav-word"> Précédente</span>
+            </button>
+            <button
+              className="btn btn-ghost"
+              onClick={() => stepBestLine(1)}
+              disabled={bestLineAt >= bestLine.moves.length}
+              aria-label="Coup suivant de la meilleure suite"
+            >
+              <span className="nav-word">Suivante </span>›
+            </button>
+          </div>
+        )}
       </div>
 
       <p className="training-prompt">
