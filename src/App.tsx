@@ -761,11 +761,21 @@ export default function App() {
                     <div className="summary">
                       {(['b', 'w'] as const).map((side) => (
                         <div className="summary-card" key={side}>
-                          <span className="summary-side">
+                          {/*
+                            Cliquer le nom reprend « Suivre » sans passer par
+                            les réglages : un second clic sur le même camp
+                            revient à « les deux joueurs », plutôt que de
+                            forcer à en choisir un.
+                          */}
+                          <button
+                            type="button"
+                            className={`summary-side${focusSide === side ? ' active' : ''}`}
+                            onClick={() => chooseFocus(focusSide === side ? 'both' : side)}
+                          >
                             {side === 'b' ? '▲ Sente' : '△ Gote'}
                             {side === 'b' && game.black ? ` — ${game.black}` : ''}
                             {side === 'w' && game.white ? ` — ${game.white}` : ''}
-                          </span>
+                          </button>
                           <span className="summary-stats">
                             <em style={{ color: 'var(--status-inaccuracy)' }}>
                               {summary[side].inaccuracy} {QUALITY_LABEL_FR.inaccuracy.toLowerCase()}

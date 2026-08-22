@@ -31,6 +31,9 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   position qu'on regarde.
 - **Choix du joueur suivi** à la fin de l'analyse : les compteurs, les gaffes et
   les tsume ne retiennent que ses coups, et le plateau se place de son côté.
+  Se choisit dans les réglages (« Suivre ») ou directement en cliquant le nom
+  du joueur sur sa carte de bilan — un second clic sur le même nom revient
+  aux deux joueurs, plutôt que d'obliger à en choisir un des deux.
 - **Passe tsume indépendante** : les positions où un mat forcé a été aperçu sont
   reprises à la cadence la plus longue disponible, pour en obtenir la séquence
   complète. Elle partageait auparavant son interrupteur avec la seconde passe,
