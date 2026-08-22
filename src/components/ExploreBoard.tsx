@@ -418,19 +418,11 @@ export function ExploreSettings({
   onReplyMs,
   autoReply,
   onAutoReply,
-  showArrowB,
-  onShowArrowB,
-  showArrowW,
-  onShowArrowW,
 }: {
   replyMs: number;
   onReplyMs: (ms: number) => void;
   autoReply: boolean;
   onAutoReply: (on: boolean) => void;
-  showArrowB: boolean;
-  onShowArrowB: (on: boolean) => void;
-  showArrowW: boolean;
-  onShowArrowW: (on: boolean) => void;
 }) {
   return (
     <div className="explore-settings">
@@ -459,29 +451,6 @@ export function ExploreSettings({
           <output>{(replyMs / 1000).toFixed(1).replace('.', ',')} s</output>
         </label>
       )}
-
-      {/*
-       * Par camp plutôt qu'une seule case : suivre le trait de Sente sans se
-       * faire souffler la réponse de Gote (ou l'inverse) demande de pouvoir
-       * couper l'un sans l'autre. La flèche verte reste celle du coup
-       * recommandé (voir `App.tsx`), juste affichée au bon moment.
-       */}
-      <label className="explore-toggle">
-        <input
-          type="checkbox"
-          checked={showArrowB}
-          onChange={(e) => onShowArrowB(e.target.checked)}
-        />
-        <span>Flèche Sente</span>
-      </label>
-      <label className="explore-toggle">
-        <input
-          type="checkbox"
-          checked={showArrowW}
-          onChange={(e) => onShowArrowW(e.target.checked)}
-        />
-        <span>Flèche Gote</span>
-      </label>
     </div>
   );
 }

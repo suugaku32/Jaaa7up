@@ -61,10 +61,13 @@ GitHub Pages suffit et aucun kifu n'est envoyé sur un serveur.
   affichées, pour une idée qu'on explore le plus souvent d'un trait.
 
   La flèche verte du coup recommandé se coupait d'un bloc, un seul bouton dans
-  les réglages généraux. Deux cases dans le panneau « Explorer » la
-  remplacent, une par camp : « Flèche Sente » et « Flèche Gote » se coupent
-  indépendamment, pour ne suivre les suggestions que du camp qu'on étudie
-  sans se faire souffler la réponse de l'adversaire.
+  les réglages généraux. Deux cases la remplacent, une par camp : « Flèche
+  Sente » et « Flèche Gote » se coupent indépendamment, pour ne suivre les
+  suggestions que du camp qu'on étudie sans se faire souffler la réponse de
+  l'adversaire. Elles vivaient d'abord dans le seul panneau « Explorer »,
+  avant de remonter au-dessus des onglets « Coups / Explorer » : la flèche
+  sert dans les deux panneaux, pas la peine de changer d'onglet pour la
+  couper en parcourant simplement la partie.
 
   Dans une variante, cette flèche vient d'une recherche en direct plutôt que
   du calcul précédent : une position jouée en explorant n'a jamais été

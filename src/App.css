@@ -296,6 +296,18 @@
 }
 
 /*
+ * Au-dessus des onglets « Coups / Explorer » : la flèche verte sert dans les
+ * deux panneaux (la partie suivie comme une variante explorée), pas la peine
+ * de changer d'onglet pour la couper.
+ */
+.arrow-toggles {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 2px 2px 4px;
+}
+
+/*
  * Sélecteur de panneau « Coups / Explorer », identique à toutes les largeurs.
  * Un temps, il disparaissait au-dessus de 860 px pour montrer les deux
  * panneaux empilés — mais alors rien ne les distinguait plus l'un de l'autre,

@@ -821,6 +821,31 @@ export default function App() {
                 </div>
 
                 <div className="analysis-side">
+                  {/*
+                    Au-dessus des onglets plutôt que dans le seul panneau
+                    Explorer : la flèche verte sert aussi bien en parcourant
+                    la partie (« Coups ») qu'en l'explorant, pas la peine de
+                    changer d'onglet pour la couper.
+                  */}
+                  <div className="arrow-toggles">
+                    <label className="explore-toggle">
+                      <input
+                        type="checkbox"
+                        checked={showArrowB}
+                        onChange={(e) => setShowArrowB(e.target.checked)}
+                      />
+                      <span>Flèche Sente</span>
+                    </label>
+                    <label className="explore-toggle">
+                      <input
+                        type="checkbox"
+                        checked={showArrowW}
+                        onChange={(e) => setShowArrowW(e.target.checked)}
+                      />
+                      <span>Flèche Gote</span>
+                    </label>
+                  </div>
+
                   <div className="analysis-segments" role="tablist">
                     <button
                       role="tab"
@@ -862,10 +887,6 @@ export default function App() {
                       onReplyMs={setReplyMs}
                       autoReply={autoReply}
                       onAutoReply={setAutoReply}
-                      showArrowB={showArrowB}
-                      onShowArrowB={setShowArrowB}
-                      showArrowW={showArrowW}
-                      onShowArrowW={setShowArrowW}
                     />
                   </div>
                 </div>
